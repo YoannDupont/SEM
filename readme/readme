@@ -1,0 +1,69 @@
+Conditions requises :
+	- python 2.4 ou supérieur
+	- le logiciel wapiti doit être installé
+
+/!\ Attention /!\
+Les scripts ne furent testés que sur Debian/Ubuntu et mac. Aucune garantie sur les autres systèmes d'exploitation.
+
+
+
+I) tagger_wlefff.py
+
+	Commande :
+		python tagger_wlefff.py in -l lefff_pickled --tag-list tag_list -m model -o out
+
+	Fichiers recquis :
+		- in : le fichier en entrée.
+		- lefff_pickled : ce fichier contient les données du lefff qui furent utilisées pour réaliser les modèles.
+		- tag_list : contient la liste des étiquettes rencontrées dans le French Tree Bank.
+		- model : le fichier model qui sera utilisé par wapiti pour étiqueter les mots.
+		- out : le fichier de sortie.
+
+
+
+II) tagger_wolefff.py
+
+	Commande :
+		python tagger_wolefff.py in -m model -o out
+
+	Fichiers recquis :
+		- in : le fichier en entrée.	
+		- model : le fichier model qui sera utilisé par wapiti pour étiqueter les mots.
+		- out : le fichier de sortie.
+
+
+
+III) Fichier d'entrée.
+
+	Le fichier d'entrée peut être écrit comme du texte normal, le segmenteur fonctionne bien, cependant il n'est pas parfait et peut donner de mauvais résultats, notamment si l'on met des ponctuations fortes juste avant une paranthèse fermante (pas d'autre cas d'échec recensé pour l'instant).
+
+
+
+IV) Remarques.
+
+	Le segmenteur suppose que l'entrée donnée est correcte et ne vérifie donc pas que chaque mot soit segmenté de la même façon : par exemple, il est tout-à-fait possible de donner les mots "c'est" et "c'_est" sans que cela ne créé d'erreur, wapiti fera l'étiquetage malgré tout.
+
+
+
+V) Liste des étiquettes.
+
+	- ADJ, ADJWH
+	- ADV, ADVWH
+	- CC
+	- CLO, CLR, CLS
+	- CS
+	- DET, DETWH
+	- ET
+	- I
+	- NC, NPP
+	- P, P+D, P+PRO
+	- PONCT
+	- PREF
+	- PRO, PROREL, PROWH
+	- V, VIMP, VINF, VPP, VPR, VS
+
+	WH fait référence auw "questions wh" de l'anglais. Les éléments qui appartiennent aux classes se terminant par WH ont pour but de répondre aux questions telles que "pourquoi?", "comment?", "où?", etc...
+
+	P+D sont les prépositions telles que "de", "au~", autrement dit les préposition+déterminant.
+
+	P+PRO sont les prépositions comme "duquel", donc les préposition+pronom.
