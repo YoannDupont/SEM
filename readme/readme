@@ -7,35 +7,39 @@ Les scripts ne furent testés que sur Debian/Ubuntu et mac. Aucune garantie sur 
 
 
 
-I) tagger_wlefff.py
+I) cem_tagger.py
 
-	Commande :
-		python tagger_wlefff.py in -l lefff_pickled --tag-list tag_list -m model -o out
+	Aide :
+		python cem_tagger.py -h
+
+	Commande pour étiqueter un texte sans utiliser le lefff :
+		python cem_tagger.py in -m model -o out/
+
+	Commande pour étiqueter un texte en utilisant le lefff :
+		python cem_tagger.py in tag_list -m model -o out/ -l lefff_pickled --tag-list
 
 	Fichiers recquis :
 		- in : le fichier en entrée.
 		- lefff_pickled : ce fichier contient les données du lefff qui furent utilisées pour réaliser les modèles.
 		- tag_list : contient la liste des étiquettes rencontrées dans le French Tree Bank.
 		- model : le fichier model qui sera utilisé par wapiti pour étiqueter les mots.
-		- out : le fichier de sortie.
+		- out : le dossier de sortie.
+
+	Autres options :
+		- (--segmentation, -s) : si le fichier en entrée est du texte brut et doit être auparavant segmenté de façon à être utilisable par les scripts et wapiti.
+		- (--clean, -c) : nettoie le dossier de sortie des fichiers générés par le script, à l'exception du résultat.
 
 
-
-II) tagger_wolefff.py
-
-	Commande :
-		python tagger_wolefff.py in -m model -o out
-
-	Fichiers recquis :
-		- in : le fichier en entrée.	
-		- model : le fichier model qui sera utilisé par wapiti pour étiqueter les mots.
-		- out : le fichier de sortie.
-
-
-
-III) Fichier d'entrée.
+II) Fichier d'entrée.
 
 	Le fichier d'entrée peut être écrit comme du texte normal, le segmenteur fonctionne bien, cependant il n'est pas parfait et peut donner de mauvais résultats, notamment si l'on met des ponctuations fortes juste avant une paranthèse fermante (pas d'autre cas d'échec recensé pour l'instant).
+
+
+III) Sortie.
+
+	Dans le dossier de sortie donné en paramètre seront générés plusieurs fichiers. Tout d'abord le fichier segmenté (si donné en option) qui aura le nom du fichier en entrée suivi de "_segment". Le fichier avec les informations de "base" (si le mot commence par une majuscule, s'il est un chiffre ou une ponctuation et ses trois dernières lettres) qui aura le nom du fichier en entrée suivi de "_informed". Le fichier auquel on a ajouté les informations extraites du lefff (si donné en option) et qui aura le nom du fichier en entrée suivi de "_lefff". "wapiti_out" qui est la sortie de wapiti (donc avec les colonnes d'information). Puis le fichier de sortie en lui-même qui ne contient que les mots et leurs étiquettes correpondantes, qui aura le nom du fichier en entrée suivi de "_out".
+
+	Les fichiers déjà éxistants seront écrasés sans demande à l'utilisateur et sans notification.
 
 
 
