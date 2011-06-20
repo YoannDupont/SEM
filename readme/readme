@@ -6,6 +6,10 @@ Conditions requises :
 Les scripts ne furent testés que sur Debian/Ubuntu et mac. Aucune garantie sur les autres systèmes d'exploitation.
 
 
+Licence :
+	cem_tagger est un logiciel sous la licence GNU GPL v3. Une copie de la version officielle (en anglais) est fournie dans le fichier "licence". Voir http://org.rodage.com/gpl-3.0.fr.html pour une traduction française (non officielle).
+
+
 
 I) cem_tagger.py
 

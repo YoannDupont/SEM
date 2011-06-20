@@ -1,6 +1,37 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
+#-----------------------------------------------------------------------------
+#
+# file: addInformations.py
+#
+# Description: add some informations to a file that is designed to be used
+# by the software wapiti.
+# Added informations are new columns between the word and the tag.
+# At this state, added informations are:
+#  | whether the word starts with a capital letter or not (1 or 0)
+#  | whether the word is a digit or not (1 or 0)
+#  | whether the word is a punctuation or not (1 or 0)
+#  | the 3 last letters of the word (less if the word is shorter)
+#
+# author: Yoann Dupont
+# copyright (c) 2011 Yoann Dupont - all rights reserved
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#-----------------------------------------------------------------------------
+
 import os, os.path, sys, string, time
 from corpus import ICorpus, OCorpus
 

@@ -1,5 +1,35 @@
 #! /usr/bin/python
 
+#-----------------------------------------------------------------------------
+#
+# file: lefffExtractPickled.py
+#
+# Description: add informations extracted from a pickle dumped Lefff file
+# to a one that is designed to be used by the software wapiti.
+# The extracted informations are added as columns which value can either be
+# 0 or 1.
+# Each value relates to a POS tag. 0 meaning that the tag does not correspond
+# to this word. 1 meaning that it may be the matching tag, because there can
+# be more than one column having this value.
+#
+# author: Yoann Dupont
+# copyright (c) 2011 Yoann Dupont - all rights reserved
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#-----------------------------------------------------------------------------
+
 import os, os.path, sys, cPickle, time
 from corpus import ICorpus, OCorpus
 
