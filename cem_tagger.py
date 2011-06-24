@@ -114,72 +114,71 @@ def tagger(infile, outdir=None, segment=False,
 
 def segmentation(incorpus, outcorpus):
 
-    for line in incorpus:
-        the_line = line[0].strip().split() # splitting the line in tokens
-        sentence = "" # the sentence to be written
-        current_position = 0
-        EOL = False # end of line
-        opening_char_count = 0
+    for paragraph in incorpus:
+        for line in paragraph:
+            the_line = line.strip().split() # splitting the line in tokens
+            sentence = "" # the sentence to be written
+            current_position = 0
+            EOL = False # end of line
+            opening_char_count = 0
 
-        while not EOL:
+            while not EOL:
 
-            if isOpeningChar(the_line[current_position][0]): # the token starts with an opening character
-                opening_char_count += 1
-                if isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
+                if isOpeningChar(the_line[current_position][0]): # the token starts with an opening character
+                    opening_char_count += 1
+                    if isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
+                        opening_char_count -= 1
+                        sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:-1] + u" " + the_line[current_position][-1]
+                    elif isChar(the_line[current_position]):
+                        sentence += u" " + the_line[current_position]
+                    else:
+                        sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:]
+
+                elif isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
                     opening_char_count -= 1
-                    sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:-1] + u" " + the_line[current_position][-1]
-                elif isChar(the_line[current_position]):
+                    if isChar(the_line[current_position]):
+                        sentence += u" " + the_line[current_position]
+                    else:
+                        sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
+
+                elif isStrongPunct(the_line[current_position]): # the token ends with a strong punctuation
                     sentence += u" " + the_line[current_position]
-                else:
-                    sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:]
-
-            elif isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
-                opening_char_count -= 1
-                if isChar(the_line[current_position]):
-                    sentence += u" " + the_line[current_position]
-                else:
-                    sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
-
-            elif isStrongPunct(the_line[current_position]): # the token ends with a strong punctuation
-                sentence += u" " + the_line[current_position]
-                if opening_char_count == 0:
-                    outcorpus.put(sentence.split())
-                    sentence = ""
-
-            elif isWeakPunct(the_line[current_position][-1]): # the token ends with a weak punctuation
-                sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
-
-            elif isUnit(the_line[current_position]) != -1: # the token is a number with an unit at its start or at its end
-                index = isUnit(the_line[current_position])
-                sentence += u" " + the_line[current_position][0 : index] + u" " + the_line[current_position][index : len(the_line[current_position])]
-
-            elif the_line[current_position][-1] == u".": # the token ends with a dot
-                token = the_line[current_position]
-                if (isAcronym(token)) or (isAbbreviationBeforeNoun(token)):
-                    sentence += u" " + token
-                elif not current_position == (len(the_line) - 1): # the token is not the last token of the line
-                    next_token = the_line[current_position+1]
-                    sentence += u" " + token[:-1] + u" " + token[-1]
-                    if next_token[0].isupper(): # the next token starts with an upper case character
-                        if opening_char_count == 0:
-                            outcorpus.put(sentence.split())
-                            sentence = ""
-                else: # the dot marks the end of the sentence
-                    sentence += u" " + token[:-1] + u" " + token[-1]
                     if opening_char_count == 0:
                         outcorpus.put(sentence.split())
                         sentence = ""
 
-            else: # any other case : the token is added
-                #if not opening_char_count > 0:
-                #    sentence += u" " + the_line[current_position]
-                sentence += u" " + the_line[current_position]
+                elif isWeakPunct(the_line[current_position][-1]): # the token ends with a weak punctuation
+                    sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
 
-            current_position += 1
-            EOL = current_position >= len(the_line)
+                elif isUnit(the_line[current_position]) != -1: # the token is a number with an unit at its start or at its end
+                    index = isUnit(the_line[current_position])
+                    sentence += u" " + the_line[current_position][0 : index] + u" " + the_line[current_position][index : len(the_line[current_position])]
 
-            if EOL and sentence != u"":
-                outcorpus.put(sentence.split())
+                elif the_line[current_position][-1] == u".": # the token ends with a dot
+                    token = the_line[current_position]
+                    if (isAcronym(token)) or (isAbbreviationBeforeNoun(token)):
+                        sentence += u" " + token
+                    elif not current_position == (len(the_line) - 1): # the token is not the last token of the line
+                        next_token = the_line[current_position+1]
+                        sentence += u" " + token[:-1] + u" " + token[-1]
+                        if next_token[0].isupper(): # the next token starts with an upper case character
+                            if opening_char_count == 0:
+                                outcorpus.put(sentence.split())
+                                sentence = ""
+                    else: # the dot marks the end of the sentence
+                        sentence += u" " + token[:-1] + u" " + token[-1]
+                        if opening_char_count == 0:
+                            outcorpus.put(sentence.split())
+                            sentence = ""
+
+                else: # any other case : the token is added
+                    sentence += u" " + the_line[current_position]
+
+                current_position += 1
+                EOL = current_position >= len(the_line)
+
+                if EOL and sentence != u"":
+                    outcorpus.put(sentence.split())
 
 
 def isChar(s):
