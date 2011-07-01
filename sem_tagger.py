@@ -70,7 +70,7 @@ def tagger(infile, outdir=None, segment=False,
 
     informed = outdir + os.path.basename(infile) + u"_informed"
     wapiti_in = informed
-    wapiti_out = outdir + u"wapiti_out"
+    wapiti_out = outdir + os.path.basename(infile) + u"_wapiti"
 
     # adding basic informations
     prc1 = subprocess.Popen(['python', 'addInformations.py', segmented_file, '-o', informed, '--input-encoding', input_encoding, '--output-encoding', output_encoding, '--no-tag', '--quiet'])
@@ -116,58 +116,40 @@ def segmentation(incorpus, outcorpus):
 
     for paragraph in incorpus:
         for line in paragraph:
-            the_line = line.strip().split() # splitting the line in tokens
+            the_line = cut(line)
+            the_line = the_line.strip().split() # splitting the line in tokens
             sentence = "" # the sentence to be written
             current_position = 0
             EOL = False # end of line
             opening_char_count = 0
 
             while not EOL:
+                token = the_line[current_position]
 
-                if isOpeningChar(the_line[current_position][0]): # the token starts with an opening character
-                    opening_char_count += 1
-                    if isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
+                if isChar(token):
+                    if isOpeningChar(token):
+                        opening_char_count += 1
+                    if isClosingChar(token):
                         opening_char_count -= 1
-                        sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:-1] + u" " + the_line[current_position][-1]
-                    elif isChar(the_line[current_position]):
-                        sentence += u" " + the_line[current_position]
+                    if current_position == 0:
+                        sentence += token
                     else:
-                        sentence += u" " + the_line[current_position][0] + u" " + the_line[current_position][1:]
-
-                elif isClosingChar(the_line[current_position][-1]): # the token ends with a closing character
-                    opening_char_count -= 1
-                    if isChar(the_line[current_position]):
-                        sentence += u" " + the_line[current_position]
-                    else:
-                        sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
-
-                elif isStrongPunct(the_line[current_position]): # the token ends with a strong punctuation
-                    sentence += u" " + the_line[current_position]
-                    if opening_char_count == 0:
-                        outcorpus.put(sentence.split())
-                        sentence = ""
-
-                elif isWeakPunct(the_line[current_position][-1]): # the token ends with a weak punctuation
-                    sentence += u" " + the_line[current_position][:-1] + u" " + the_line[current_position][-1]
-
-                elif isUnit(the_line[current_position]) != -1: # the token is a number with an unit at its start or at its end
-                    index = isUnit(the_line[current_position])
-                    sentence += u" " + the_line[current_position][0 : index] + u" " + the_line[current_position][index : len(the_line[current_position])]
-
-                elif the_line[current_position][-1] == u".": # the token ends with a dot
-                    token = the_line[current_position]
-                    if (isAcronym(token)) or (isAbbreviationBeforeNoun(token)):
-                        sentence += u" " + token
-                    elif not current_position == (len(the_line) - 1): # the token is not the last token of the line
-                        next_token = the_line[current_position+1]
-                        sentence += u" " + token[:-1] + u" " + token[-1]
-                        if next_token[0].isupper(): # the next token starts with an upper case character
+                        sentence += u' '+token
+                        if isStrongPunct(token):
                             if opening_char_count == 0:
                                 outcorpus.put(sentence.split())
                                 sentence = ""
-                    else: # the dot marks the end of the sentence
+
+                elif isUnit(token) != -1: # the token is a number with an unit at its start or at its end
+                    index = isUnit(token)
+                    sentence += u" " + token[0 : index] + u" " + token[index : len(token)]
+
+                elif token[-1] == u".": # the token ends with a dot
+                    if (isAcronym(token)) or (isAbbreviationBeforeNoun(token)):
+                        sentence += u" " + token
+                    else:
                         sentence += u" " + token[:-1] + u" " + token[-1]
-                        if opening_char_count == 0:
+                        if isSentenceDot(the_line, token, current_position) and (opening_char_count == 0):
                             outcorpus.put(sentence.split())
                             sentence = ""
 
@@ -181,46 +163,83 @@ def segmentation(incorpus, outcorpus):
                     outcorpus.put(sentence.split())
 
 
-def isChar(s):
-    return len(s) == 1
+def isSentenceDot(the_line, token, current_position):
+    EOS = False # End Of Sentence
+
+    if not current_position >= (len(the_line) - 2): # the token is not in the two last tokens of the line
+        next_token = the_line[current_position+1]
+        if next_token[0].isupper() or (not next_token.isalpha()):
+            EOS = True
+    else: # the dot may be followed by a double-quote or a closing char
+        EOS = False
+
+    return EOS
+
+
+def cut(token):
+    if isChar(token): return token
+
+    res = cutByOpeningChars(token)
+    res = cutByClosingChars(res)
+    res = cutByStrongPuncts(res)
+    res = cutByWeakPuncts(res)
+
+    return res
+
+
+def cutByOpeningChars(token):
+    return separate(token, u"([{«", False)
+
+
+def cutByClosingChars(token):
+    return separate(token, u")]}»", True)
+
+
+def cutByStrongPuncts(token):
+    s = separate(token, u"?!…", True)
+    return s.replace(u'...', u' ...')
+
+
+def cutByWeakPuncts(token):
+    return separate(token, u",:;", True)
+
+
+def separate(token, separating_chars, Before):
+    str_buffer = token
+
+    for S_C in separating_chars:
+        if Before:
+            str_buffer = str_buffer.replace(S_C, u' '+S_C)
+        else:
+            str_buffer = str_buffer.replace(S_C, S_C+u' ')
+
+    return str_buffer
 
 
 def isOpeningChar(s):
-    opening_chars = u"([{«"
-    
-    if isChar(s):
-        return opening_chars.find(s) != -1
-    else:
-        return False
+    return isCharIn(s, u"([{«")
 
 
 def isClosingChar(s):
-    closing_chars = u")]}»"
-    
-    if isChar(s):
-        return closing_chars.find(s) != -1
-    else:
-        return False
+    return isCharIn(s, u")]}»")
 
 
 # '.' is not considered as a strong punctuation
 # because it can be used to other purposes.
 def isStrongPunct(s):
-    strong_puncts = u"?!…"
-    
-    if isChar(s):
-        return strong_puncts.find(s) != -1
-    else:
-        return s == u"..."
+    b = isCharIn(s, u"?!…")
+    b = b or (u'...'.find(s) != -1)
+    return b
 
-
-def isWeakPunct(s):
-    weak_puncts = u",:;"
-    
-    if isChar(s):
-        return weak_puncts.find(s) != -1
+def isCharIn(token, characters):
+    if isChar(token):
+        return characters.find(token) != -1
     else:
         return False
+
+
+def isChar(s):
+    return len(s) == 1
 
 
 def isAbbreviationBeforeNoun(token):
