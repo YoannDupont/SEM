@@ -3,7 +3,7 @@
 
 #-----------------------------------------------------------------------------
 #
-# file: cem_tagger.py
+# file: sem_tagger.py
 #
 # Description: evaluates the POS tags of a given text file. It may be
 # plain text and thus will have to be segmented or may be so already.
@@ -29,6 +29,7 @@
 #-----------------------------------------------------------------------------
 
 from corpus import ICorpus, OCorpus
+from segmentation import Segmentation
 import os, time, random, subprocess
 
 def log(msg):
@@ -45,6 +46,8 @@ def tagger(infile, outdir=None, segment=False,
         raise RuntimeError(u'file not found: %s' %infile)
     if not outdir:
         outdir = u'./'
+    elif outdir[:-1] != u'/':
+        outdir += u'/'
     elif not os.path.exists(outdir):
         raise RuntimeError(u'directory not found: %s' %outdir)
     if lefff_pickled:
@@ -64,7 +67,8 @@ def tagger(infile, outdir=None, segment=False,
             log(u"Segmentation...")
         segmented_file = outdir + os.path.basename(infile) + u"_segment"
         temp_outcorpus = OCorpus(segmented_file, output_encoding)
-        segmentation(incorpus, temp_outcorpus)
+        segmenteur = Segmentation(incorpus, temp_outcorpus)
+        segmenteur.segmentation()
         if not quiet:
             log(u" Done ! \n")
 
@@ -110,170 +114,6 @@ def tagger(infile, outdir=None, segment=False,
         os.remove(wapiti_out)
     if not quiet:
         log("All done !\n")
-
-
-def segmentation(incorpus, outcorpus):
-
-    for paragraph in incorpus:
-        for line in paragraph:
-            the_line = cut(line)
-            the_line = the_line.strip().split() # splitting the line in tokens
-            sentence = "" # the sentence to be written
-            current_position = 0
-            EOL = False # end of line
-            opening_char_count = 0
-
-            while not EOL:
-                token = the_line[current_position]
-
-                if isChar(token):
-                    if isOpeningChar(token):
-                        opening_char_count += 1
-                    if isClosingChar(token):
-                        opening_char_count -= 1
-                    if current_position == 0:
-                        sentence += token
-                    else:
-                        sentence += u' '+token
-                        if isStrongPunct(token):
-                            if opening_char_count == 0:
-                                outcorpus.put(sentence.split())
-                                sentence = ""
-
-                elif isUnit(token) != -1: # the token is a number with an unit at its start or at its end
-                    index = isUnit(token)
-                    sentence += u" " + token[0 : index] + u" " + token[index : len(token)]
-
-                elif token[-1] == u".": # the token ends with a dot
-                    if (isAcronym(token)) or (isAbbreviationBeforeNoun(token)):
-                        sentence += u" " + token
-                    else:
-                        sentence += u" " + token[:-1] + u" " + token[-1]
-                        if isSentenceDot(the_line, token, current_position) and (opening_char_count == 0):
-                            outcorpus.put(sentence.split())
-                            sentence = ""
-
-                else: # any other case : the token is added
-                    sentence += u" " + the_line[current_position]
-
-                current_position += 1
-                EOL = current_position >= len(the_line)
-
-                if EOL and sentence != u"":
-                    outcorpus.put(sentence.split())
-
-
-def isSentenceDot(the_line, token, current_position):
-    EOS = False # End Of Sentence
-
-    if not current_position >= (len(the_line) - 2): # the token is not in the two last tokens of the line
-        next_token = the_line[current_position+1]
-        if next_token[0].isupper() or (not next_token.isalpha()):
-            EOS = True
-    else: # the dot may be followed by a double-quote or a closing char
-        EOS = False
-
-    return EOS
-
-
-def cut(token):
-    if isChar(token): return token
-
-    res = cutByOpeningChars(token)
-    res = cutByClosingChars(res)
-    res = cutByStrongPuncts(res)
-    res = cutByWeakPuncts(res)
-
-    return res
-
-
-def cutByOpeningChars(token):
-    return separate(token, u"([{«", False)
-
-
-def cutByClosingChars(token):
-    return separate(token, u")]}»", True)
-
-
-def cutByStrongPuncts(token):
-    s = separate(token, u"?!…", True)
-    return s.replace(u'...', u' ...')
-
-
-def cutByWeakPuncts(token):
-    return separate(token, u",:;", True)
-
-
-def separate(token, separating_chars, Before):
-    str_buffer = token
-
-    for S_C in separating_chars:
-        if Before:
-            str_buffer = str_buffer.replace(S_C, u' '+S_C)
-        else:
-            str_buffer = str_buffer.replace(S_C, S_C+u' ')
-
-    return str_buffer
-
-
-def isOpeningChar(s):
-    return isCharIn(s, u"([{«")
-
-
-def isClosingChar(s):
-    return isCharIn(s, u")]}»")
-
-
-# '.' is not considered as a strong punctuation
-# because it can be used to other purposes.
-def isStrongPunct(s):
-    b = isCharIn(s, u"?!…")
-    b = b or (u'...'.find(s) != -1)
-    return b
-
-def isCharIn(token, characters):
-    if isChar(token):
-        return characters.find(token) != -1
-    else:
-        return False
-
-
-def isChar(s):
-    return len(s) == 1
-
-
-def isAbbreviationBeforeNoun(token):
-    abbr_list = [u"mme.", u"mmes.", u"melle.", u"melles.", u"mlle.", u"mlles.", u"m.", u"mr.", u"me.", u"mrs.", u"st."]
-
-    return abbr_list.count(token.lower()) != 0
-
-
-# A token is a unit if:
-#  | it start by letter(s) and ends with number(s)
-#  | it start by number(s) and ends with number(s)
-#  | and the numbers and letters are not "mixed"
-# if the token is not a unit, the returned inex is -1
-def isUnit(token):
-    left = token.lstrip(u"0123456789")
-    right = token.rstrip(u"0123456789")
-
-    if len(left) < len(token):
-        for C in left:
-            if C.isdigit():
-                return -1
-        return len(token) - len(left)
-    elif len(right) < len(token):
-        for C in right:
-            if C.isdigit():
-                return -1
-        return len(right)
-    else:
-        return -1
-
-
-def isAcronym(token):
-    return token.count(u".") > 1 or token.replace(".","").isupper()
-
 
 if __name__ == '__main__':
     import optparse, sys
