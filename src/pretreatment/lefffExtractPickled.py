@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #
 # file: lefffExtractPickled.py
 #
@@ -28,10 +28,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 import os, os.path, sys, cPickle, time
-from corpus import ICorpus, OCorpus
+from ..io.corpus import ICorpus, OCorpus
 
 def log(msg):
     sys.stdout.write(msg)
@@ -73,8 +73,12 @@ def lefffExtract(dictionary,
     incorpus = ICorpus(infile, input_encoding)
     tag_dict,tag_list = TagDictListCouple(tagfile)
     format = formatFromList(tag_list)
+    lines = []
+    out = OCorpus(outfile,output_encoding)
     
-    outlines = []
+    #writing
+    if not quiet:
+        log(u'Writing...\n')
     
     for paragraph in incorpus:
         for line in paragraph:
@@ -83,25 +87,25 @@ def lefffExtract(dictionary,
                 position = len(elts)
             else:
                 position = -1
+
             word = elts[0]
             wordl = word.lower()
+
             if lefff_words.has_key(word):
                 for i in lefff_words[word]: #it is supposed that the dictionary has every key
                     tag_dict[i] = 1
             elif lefff_words.has_key(wordl):
                 for i in lefff_words[wordl]: #it is supposed that the dictionary has every key
                     tag_dict[i] = 1
+
             s = (format %tag_dict)
             reinitialize(tag_dict)
             elts.insert(position,s)
-            outlines.append(u'\t'.join(elts))
-        outlines.append(u'')
-    
-    if not quiet:
-        log(u'Writing...\n')
-    #writing
-    out = OCorpus(outfile,output_encoding)
-    out.put(outlines)
+            lines.append(u'\t'.join(elts))
+
+        out.put(lines)
+        del lines[:]
+
     if not quiet:
         log(u'\nDone in %ss !\n' % str(time.time()-temps))
             
@@ -109,6 +113,7 @@ def lefffExtract(dictionary,
 def reinitialize(myDict):
     for key in myDict.keys():
         myDict[key] = 0
+
     return myDict
 
 

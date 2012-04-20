@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #
 # file: sem_tagger.py
 #
@@ -26,10 +26,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-from corpus import ICorpus, OCorpus
-from segmentation import Segmentation
+from src.pretreatment.segmentation import Segmentation
+from src.pretreatment.addInformations import addInformations
+from src.pretreatment.lefffExtractPickled import lefffExtract
+
+from src.io.corpus import ICorpus, OCorpus
+
 import os, time, random, subprocess
 
 def log(msg):
@@ -44,47 +48,58 @@ def tagger(infile, outdir=None, segment=False,
 
     if not os.path.exists(infile):
         raise RuntimeError(u'file not found: %s' %infile)
+
     if not outdir:
         outdir = u'./'
-    elif outdir[:-1] != u'/':
+    elif not outdir.endswith(u'/'):
         outdir += u'/'
     elif not os.path.exists(outdir):
         raise RuntimeError(u'directory not found: %s' %outdir)
+
     if lefff_pickled:
         if not os.path.exists(lefff_pickled):
             raise RuntimeError(u"Lefff file not found: %s" %lefff_pickled)
+
     if not tagfile:
-        tagfile = u"./tag_list"
+        tagfile = u"./ressources/tag_list"
+
     if not model:
         model = u"./model"
 
-    incorpus = ICorpus(infile,input_encoding)
+    incorpus = ICorpus(infile, input_encoding)
     segmented_file = infile
 
     # segmentation of the in file if needed
     if segment:
         if not quiet:
             log(u"Segmentation...")
+
         segmented_file = outdir + os.path.basename(infile) + u"_segment"
         temp_outcorpus = OCorpus(segmented_file, output_encoding)
-        segmenteur = Segmentation(incorpus, temp_outcorpus)
-        segmenteur.segmentation()
+        sequencer = Segmentation(incorpus, temp_outcorpus)
+        sequencer.segmentation()
         if not quiet:
-            log(u" Done ! \n")
+            log(u" Done !\n\n")
 
     informed = outdir + os.path.basename(infile) + u"_informed"
     wapiti_in = informed
     wapiti_out = outdir + os.path.basename(infile) + u"_wapiti"
-
+    
     # adding basic informations
-    prc1 = subprocess.Popen(['python', 'addInformations.py', segmented_file, '-o', informed, '--input-encoding', input_encoding, '--output-encoding', output_encoding, '--no-tag', '--quiet'])
-    prc1.wait()
+    addInformations(segmented_file, informed,
+                    input_encoding, output_encoding,
+                    True, quiet)
+    print
 
     # adding lefff informations if needed
     if lefff_pickled:
         wapiti_in = outdir + os.path.basename(infile) + "_lefff"
-        prc2 = subprocess.Popen(['python', 'lefffExtractPickled.py', lefff_pickled, '-i', informed, '-o', wapiti_in, '--tag-list', tagfile, '--encoding', output_encoding, '--no-tag', '--quiet'])
-        prc2.wait()
+        lefffExtract(lefff_pickled,
+                     tagfile, True,
+                     informed, wapiti_in,
+                     output_encoding, output_encoding,
+                     quiet)
+        print
 
     # calling wapiti
     prc3 = subprocess.Popen(['wapiti', 'label', '-m', model, wapiti_in, wapiti_out])
@@ -93,16 +108,15 @@ def tagger(infile, outdir=None, segment=False,
     wapiti_corpus = ICorpus(wapiti_out, input_encoding)
     outfile = outdir + os.path.basename(infile) + "_out"
     outcorpus = OCorpus(outfile, output_encoding)
-    outlines = []
+    lines = [] # will stock the paragraph to be written
 
     # writing the out file containing the words and their matching tags
     for paragraph in wapiti_corpus:
         for line in paragraph:
             temp = line.split('\t')
-            outlines.append(temp[0]+'\t'+temp[-1])
-        outlines.append('')
-
-    outcorpus.put(outlines)
+            lines.append(temp[0]+'\t'+temp[-1])
+        outcorpus.put(lines)
+        del lines[:]
 
     if not quiet and clean:
         log("Cleaning files...\n")
@@ -134,7 +148,7 @@ if __name__ == '__main__':
         )
     parser.add_option(
         "--tag-list", dest="tagfile", default=None, metavar="STR",
-        help="path/name of the file containing tags (default: ./tag_list)"
+        help="path/name of the file containing tags (default: ./ressources/tag_list)"
         )
     parser.add_option(
         "--model", '-m', dest="model", default=None, metavar="STR",

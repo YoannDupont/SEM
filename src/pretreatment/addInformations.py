@@ -33,13 +33,13 @@
 #-----------------------------------------------------------------------------
 
 import os, os.path, sys, string, time
-from corpus import ICorpus, OCorpus
+from ..io.corpus import ICorpus, OCorpus
 
 def log(msg):
 	sys.stdout.write(msg)
 	sys.stdout.flush()
 
-def test(incorpus=None,outcorpus=None,
+def addInformations(incorpus=None,outcorpus=None,
          input_encoding='utf-8',output_encoding='utf-8',
          no_tag=False,
          quiet=False):
@@ -58,20 +58,24 @@ def test(incorpus=None,outcorpus=None,
 
     if not quiet:
         log(u'Initializing information adding algorithm')
+
     #ajout des informations
     l = mkentry(icorpus,['Word','Tag'])
-    l = addCommenceParMajuscule(l)
+    l = addStartsWithUpper(l)
     l = addIsDigit(l)
     l = addIsPunct(l)
     l = addNLasts(l,3)
     
-    format = u'%(Word)s\t%(CPMaj)s\t%(IsDigit)s\t%(IsPunct)s\t%(3Lasts)s'
+    format = u'%(Word)s\t%(SWUpper)s\t%(IsDigit)s\t%(IsPunct)s\t%(3Lasts)s'
+
     if not no_tag:
         format += u'\t%(Tag)s'
+
     for a in l:
         ocorpus.putformat(a,format)
         if not quiet:
             log(u'.')
+
     if not quiet:
         log(u'\nDone in : %ss !\n' %str(time.time()-temps))
 
@@ -85,7 +89,7 @@ def mkentry(it, cols):
             lines.append(l2)
         yield lines
 
-def addCommenceParMajuscule(it, name='CPMaj'):
+def addStartsWithUpper(it, name='SWUpper'):
     for liste in it:
         l = []
         for element in liste:
@@ -169,7 +173,7 @@ if __name__ == '__main__':
     options, args = parser.parse_args()
     if len(args) != 1:
         raise RuntimeError("expected exactly one positional argument")
-    test(args[0], outcorpus=options.outcorpus,
+    addInformations(args[0], outcorpus=options.outcorpus,
 		   input_encoding=options.ienc or options.enc,
 		   output_encoding=options.oenc or options.enc,
            no_tag=options.no_tag,

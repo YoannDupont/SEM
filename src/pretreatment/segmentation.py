@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from corpus import ICorpus, OCorpus
+from ..io.corpus import ICorpus, OCorpus
 
 class Segmentation(object):
 
@@ -27,8 +27,6 @@ class Segmentation(object):
             return characters.find(token) != -1
         else:
             return False
-
-        return str_buffer
 
     def isOpeningChar(self, s): 
       return self.isCharIn(s, self.opening_chars)
@@ -105,6 +103,7 @@ class Segmentation(object):
                 str_buffer = str_buffer.replace(S_C, u' '+S_C)
             else:
                 str_buffer = str_buffer.replace(S_C, S_C+u' ')
+
         return str_buffer
 
     def cutByOpeningChars(self, token):
@@ -121,8 +120,14 @@ class Segmentation(object):
         return self.separate(token, self.weak_puncts, True)
 
     def cutByClitics(self, token):
-        cl = [u'-je',u'-tu',u'-il',u'-elle',u'-nous',u'-vous',u'-ils',u'-elles',u'-moi',u'-toi',u'-lui',u'-on',u'-ce',u'-le',u'-la',u'-les']
-        return self.separate(token, cl, True)
+        cl_long = [u'-t-']
+        tmp = self.separate(token, cl_long, True)
+
+        if len(tmp) == len(token): # nothing was done, thus we do not have a long clitic
+            cl_short = [u'-je',u'-tu',u'-il',u'-elle',u'-nous',u'-vous',u'-ils',u'-elles',u'-moi',u'-toi',u'-lui',u'-on',u'-ce',u'-le',u'-la',u'-les']
+            tmp = self.separate(token, cl_short, True)
+
+        return tmp
 
     def handleChar(self, token, current_position):
         if self.isOpeningChar(token):
