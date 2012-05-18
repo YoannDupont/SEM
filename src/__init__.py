@@ -21,3 +21,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #-------------------------------------------------------------------------------
+
+
+#------------------#
+# "constant" masks #
+#------------------#
+MASKS = [2**i for i in range(0, 31)]
+POS = MASKS[0]
+CHUNK = MASKS[1]
+
+
+# returns the mask value of the string in parameter
+def val(string):
+    string = string.upper()
+
+    if string == "POS":
+        return POS
+    elif string == "CHUNK":
+        return CHUNK
+    else:
+        raise ValueError(u"Invalid code : " + string)
+
+# code is a string containing the different codes representing the wanted
+# labellings. POS, CHUNK, POS+CHUNK are examples of such codes.
+def getcode(code):
+    if code is None:
+        raise ValueError(u"No code given in parameter !")
+    else:
+        codelist = list(set([s.upper() for s in code.split("+")]))
+        code = sum([val(c) for c in codelist])
+        del codelist[:]
+        return code
