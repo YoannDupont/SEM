@@ -32,9 +32,20 @@ from src.pretreatment.segmentation import Segmentation
 from src.pretreatment.addInformations import addInformations
 from src.pretreatment.lefffExtractPickled import lefffExtract
 
+from src.posttreatment.textualise import textualise
+
 from src.io.corpus import ICorpus, OCorpus
 
+from src import *
+
 import os, time, random, subprocess
+"""
+import sys
+textualise(sys.argv[1], None,
+           "utf-8", "utf-8",
+           'POS', "./src/posttreatment/tl",
+           False)
+sys.exit(0)"""
 
 def log(msg):
 	sys.stdout.write(msg)
@@ -42,10 +53,14 @@ def log(msg):
 
 def tagger(infile, outdir=None, segment=False,
            lefff_pickled=None, tagfile=None,
-           model=None, clean=False,
+           model=None, code=None,
+           clean=False,
            input_encoding="UTF-8", output_encoding="UTF-8",
-           quiet=True):
+           no_tag = True, quiet=True):
 
+    #--------------------------------------------------------------------------#
+    #                            exception handling                            #
+    #--------------------------------------------------------------------------#
     if not os.path.exists(infile):
         raise RuntimeError(u'file not found: %s' %infile)
 
@@ -65,6 +80,14 @@ def tagger(infile, outdir=None, segment=False,
 
     if not model:
         model = u"./model"
+    
+    if code is None:
+        raise ValueError(u"No code given in parameter !")
+    else:
+        code = getcode(code)
+    #--------------------------------------------------------------------------#
+    #                        end of exception handling                         #
+    #--------------------------------------------------------------------------#
 
     incorpus = ICorpus(infile, input_encoding)
     segmented_file = infile
@@ -88,14 +111,14 @@ def tagger(infile, outdir=None, segment=False,
     # adding basic informations
     addInformations(segmented_file, informed,
                     input_encoding, output_encoding,
-                    True, quiet)
+                    no_tag, quiet)
     print
 
     # adding lefff informations if needed
     if lefff_pickled:
         wapiti_in = outdir + os.path.basename(infile) + "_lefff"
         lefffExtract(lefff_pickled,
-                     tagfile, True,
+                     tagfile, no_tag,
                      informed, wapiti_in,
                      output_encoding, output_encoding,
                      quiet)
@@ -104,6 +127,9 @@ def tagger(infile, outdir=None, segment=False,
     # calling wapiti
     prc3 = subprocess.Popen(['wapiti', 'label', '-m', model, wapiti_in, wapiti_out])
     prc3.wait()
+    
+    if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
+        raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
 
     wapiti_corpus = ICorpus(wapiti_out, input_encoding)
     outfile = outdir + os.path.basename(infile) + "_out"
@@ -114,9 +140,17 @@ def tagger(infile, outdir=None, segment=False,
     for paragraph in wapiti_corpus:
         for line in paragraph:
             temp = line.split('\t')
-            lines.append(temp[0]+'\t'+temp[-1])
+            if no_tag:
+                lines.append(temp[0]+'\t'+temp[-1])
+            else:
+                lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
         outcorpus.put(lines)
         del lines[:]
+    
+    textualise(outfile, None,
+           output_encoding, output_encoding,
+           code, tagfile,
+           quiet)
 
     if not quiet and clean:
         log("Cleaning files...\n")
@@ -155,6 +189,10 @@ if __name__ == '__main__':
         help="path/name of the model file (default: ./model)"
         )
     parser.add_option(
+        "--tag-code", "-t", dest="code", default=None,
+        help="POS, CHUNK, etc... Elements should be concatenated with a + if more than one is wanted (ex: POS+CHUNK)"
+        )
+    parser.add_option(
         "--clean", "-c", action="store_true", dest="clean", default=False,
         help="clean all out files except the result"
         )
@@ -171,6 +209,10 @@ if __name__ == '__main__':
         help="encoding for the output file (the corpus)"
         )
     parser.add_option(
+        "--no-tag", action="store_true", dest="no_tag", default=False,
+        help="no tag will be read from input file"
+        )
+    parser.add_option(
         "--quiet", "-q", action="store_true", dest="quiet", default=False,
         help="write no feedback during processing"
         )
@@ -180,8 +222,9 @@ if __name__ == '__main__':
         raise RuntimeError("expected exactly one positional arguments")
     tagger(args[0], outdir=options.outdir, segment=options.segment,
           lefff_pickled=options.lefff_pickled, tagfile=options.tagfile,
-          model=options.model, clean=options.clean,
+          model=options.model, code=options.code,
+          clean=options.clean,
           input_encoding=options.ienc or options.enc,
           output_encoding=options.oenc or options.enc,
-          quiet=options.quiet)
+          no_tag = options.no_tag, quiet=options.quiet)
     sys.exit(0)
