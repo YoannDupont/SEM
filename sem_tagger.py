@@ -39,13 +39,6 @@ from src.io.corpus import ICorpus, OCorpus
 from src import *
 
 import os, time, random, subprocess
-"""
-import sys
-textualise(sys.argv[1], None,
-           "utf-8", "utf-8",
-           'POS', "./src/posttreatment/tl",
-           False)
-sys.exit(0)"""
 
 def log(msg):
 	sys.stdout.write(msg)
@@ -57,6 +50,8 @@ def tagger(infile, outdir=None, segment=False,
            clean=False,
            input_encoding="UTF-8", output_encoding="UTF-8",
            no_tag = True, quiet=True):
+   
+    outfile = u""
 
     #--------------------------------------------------------------------------#
     #                            exception handling                            #
@@ -78,35 +73,46 @@ def tagger(infile, outdir=None, segment=False,
     if not tagfile:
         tagfile = u"./ressources/tag_list"
 
+    models = []
     if not model:
-        model = u"./model"
-    
-    if code is None:
-        raise ValueError(u"No code given in parameter !")
+        models = [u"./model"] * code.count("+")
     else:
-        code = getcode(code)
+        models = model.split("+")
+        for m in models:
+            if not os.path.exists(m):
+                raise IOError(u"File not found: %s" %m)
+
+    if code is None:
+        code = u"POS"
+
+    code = getcode(code)
+    
+    if (code & POS) != POS: # the POS tagging is recquiered no matter what 
+        raise ValueError(u"POS tagging is not optional ATM !")
     #--------------------------------------------------------------------------#
     #                        end of exception handling                         #
     #--------------------------------------------------------------------------#
 
+    outfile = u""
+
     incorpus = ICorpus(infile, input_encoding)
     segmented_file = infile
-
+    
     # segmentation of the in file if needed
     if segment:
         if not quiet:
             log(u"Segmentation...")
 
-        segmented_file = outdir + os.path.basename(infile) + u"_segment"
+        segmented_file = outdir + os.path.basename(infile) + u".segment"
         temp_outcorpus = OCorpus(segmented_file, output_encoding)
         sequencer = Segmentation(incorpus, temp_outcorpus)
         sequencer.segmentation()
         if not quiet:
             log(u" Done !\n\n")
 
-    informed = outdir + os.path.basename(infile) + u"_informed"
+    informed = outdir + os.path.basename(infile) + u".informed"
     wapiti_in = informed
-    wapiti_out = outdir + os.path.basename(infile) + u"_wapiti"
+    wapiti_out = outdir + os.path.basename(infile) + u".wapiti"
     
     # adding basic informations
     addInformations(segmented_file, informed,
@@ -116,7 +122,7 @@ def tagger(infile, outdir=None, segment=False,
 
     # adding lefff informations if needed
     if lefff_pickled:
-        wapiti_in = outdir + os.path.basename(infile) + "_lefff"
+        wapiti_in = outdir + os.path.basename(infile) + ".lefff"
         lefffExtract(lefff_pickled,
                      tagfile, no_tag,
                      informed, wapiti_in,
@@ -125,15 +131,15 @@ def tagger(infile, outdir=None, segment=False,
         print
 
     # calling wapiti
-    prc3 = subprocess.Popen(['wapiti', 'label', '-m', model, wapiti_in, wapiti_out])
+    prc3 = subprocess.Popen(['wapiti', 'label', '-m', models[0], wapiti_in, wapiti_out])
     prc3.wait()
-    
+
     if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
         raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
 
     wapiti_corpus = ICorpus(wapiti_out, input_encoding)
-    outfile = outdir + os.path.basename(infile) + "_out"
-    outcorpus = OCorpus(outfile, output_encoding)
+    postfile = outdir + os.path.basename(infile) + ".POS"
+    POSTagging = OCorpus(postfile, output_encoding)
     lines = [] # will stock the paragraph to be written
 
     # writing the out file containing the words and their matching tags
@@ -144,9 +150,21 @@ def tagger(infile, outdir=None, segment=False,
                 lines.append(temp[0]+'\t'+temp[-1])
             else:
                 lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
-        outcorpus.put(lines)
+        POSTagging.put(lines)
         del lines[:]
-    
+
+    outfile = postfile
+
+    if (code & CHUNK) == CHUNK:
+        outfile = outdir + os.path.basename(outfile) + u".CHUNK"
+
+        # calling wapiti
+        prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[1], postfile, outfile])
+        prc4.wait()
+
+        if file(outfile).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
+            raise RuntimeError(u"Error: Wapiti could not label the file : " + outfile + ". Check the source of this error using Wapiti.")
+
     textualise(outfile, None,
            output_encoding, output_encoding,
            code, tagfile,
@@ -185,12 +203,12 @@ if __name__ == '__main__':
         help="path/name of the file containing tags (default: ./ressources/tag_list)"
         )
     parser.add_option(
-        "--model", '-m', dest="model", default=None, metavar="STR",
-        help="path/name of the model file (default: ./model)"
+        "--tag-code", "-t", dest="code", default=None,
+        help="POS, CHUNK, etc... Elements should be concatenated with a + if more than one is wanted. ex: POS+CHUNK (default: POS)"
         )
     parser.add_option(
-        "--tag-code", "-t", dest="code", default=None,
-        help="POS, CHUNK, etc... Elements should be concatenated with a + if more than one is wanted (ex: POS+CHUNK)"
+        "--model", '-m', dest="model", default=None, metavar="STR",
+        help="path/name of the model file (default: ./model)"
         )
     parser.add_option(
         "--clean", "-c", action="store_true", dest="clean", default=False,
