@@ -38,7 +38,7 @@ from src.io.corpus import ICorpus, OCorpus
 
 from src import *
 
-import os, time, random, subprocess
+import os, time, random, subprocess, codecs
 
 def log(msg):
 	sys.stdout.write(msg)
@@ -171,6 +171,16 @@ def tagger(infile, outdir=None, segment=False,
         # calling wapiti
         prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[index], postfile, outfile])
         prc4.wait()
+
+        if no_tag:
+            temp = outfile + ".TEMP"
+            f = codecs.open(temp, "w", output_encoding)
+            for line in codecs.open(outfile, "r", output_encoding):
+                l = line.split()
+                f.write(u"\t".join(l[:-2] + l[-1:]))
+                f.write(os.linesep)
+            f.close()
+            os.rename(temp, outfile)
 
         if file(outfile).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
             raise RuntimeError(u"Error: Wapiti could not label the file : " + outfile + ". Check the source of this error using Wapiti.")
