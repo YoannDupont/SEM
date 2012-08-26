@@ -87,8 +87,10 @@ def tagger(infile, outdir=None, segment=False,
 
     code = getcode(code)
     
-    if (code & POS) != POS: # the POS tagging is recquiered no matter what 
-        raise ValueError(u"POS tagging is not optional ATM !")
+    if code == CHUNK and no_tag: # the CHUNK tagging may not be done without POST
+        tag_list = eval(file(tagfile,"r").readline())
+        if file(infile, "r").readline().split()[-1] in tag_list:
+            raise ValueError(u"Cannot remove POS when chunking alone !")
     #--------------------------------------------------------------------------#
     #                        end of exception handling                         #
     #--------------------------------------------------------------------------#
@@ -110,65 +112,73 @@ def tagger(infile, outdir=None, segment=False,
         if not quiet:
             log(u" Done !\n\n")
 
-    informed = outdir + os.path.basename(infile) + u".informed"
-    wapiti_in = informed
-    wapiti_out = outdir + os.path.basename(infile) + u".wapiti"
-    
-    # adding basic informations
-    addInformations(segmented_file, informed,
-                    input_encoding, output_encoding,
-                    no_tag, quiet)
-    print
+    postfile = segmented_file
 
-    # adding lefff informations if needed
-    if lefff_pickled:
-        wapiti_in = outdir + os.path.basename(infile) + ".lefff"
-        lefffExtract(lefff_pickled,
-                     tagfile, no_tag,
-                     informed, wapiti_in,
-                     output_encoding, output_encoding,
-                     quiet)
+    if (code & POS) == POS:
+        informed = outdir + os.path.basename(infile) + u".informed"
+        wapiti_in = informed
+        wapiti_out = outdir + os.path.basename(infile) + u".wapiti"
+        
+        # adding basic informations
+        addInformations(segmented_file, informed,
+                        input_encoding, output_encoding,
+                        no_tag, quiet)
         print
 
-    # calling wapiti
-    prc3 = subprocess.Popen(['wapiti', 'label', '-m', models[0], wapiti_in, wapiti_out])
-    prc3.wait()
-
-    if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
-        raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
-
-    wapiti_corpus = ICorpus(wapiti_out, input_encoding)
-    postfile = outdir + os.path.basename(infile) + ".POS"
-    POSTagging = OCorpus(postfile, output_encoding)
-    lines = [] # will stock the paragraph to be written
-
-    # writing the out file containing the words and their matching tags
-    for paragraph in wapiti_corpus:
-        for line in paragraph:
-            temp = line.split('\t')
-            if no_tag:
-                lines.append(temp[0]+'\t'+temp[-1])
-            else:
-                lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
-        POSTagging.put(lines)
-        del lines[:]
-
-    outfile = postfile
-
-    if (code & CHUNK) == CHUNK:
-        outfile = outdir + os.path.basename(outfile) + u".CHUNK"
+        # adding lefff informations if needed
+        if lefff_pickled:
+            wapiti_in = outdir + os.path.basename(infile) + ".lefff"
+            lefffExtract(lefff_pickled,
+                         tagfile, no_tag,
+                         informed, wapiti_in,
+                         output_encoding, output_encoding,
+                         quiet)
+            print
 
         # calling wapiti
-        prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[1], postfile, outfile])
+        prc3 = subprocess.Popen(['wapiti', 'label', '-m', models[0], wapiti_in, wapiti_out])
+        prc3.wait()
+
+        if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
+            raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
+
+        wapiti_corpus = ICorpus(wapiti_out, input_encoding)
+        postfile = outdir + os.path.basename(infile) + ".POS"
+        POSTagging = OCorpus(postfile, output_encoding)
+        lines = [] # will stock the paragraph to be written
+
+        # writing the out file containing the words and their matching tags
+        for paragraph in wapiti_corpus:
+            for line in paragraph:
+                temp = line.split('\t')
+                if no_tag:
+                    lines.append(temp[0]+'\t'+temp[-1])
+                else:
+                    lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
+            POSTagging.put(lines)
+            del lines[:]
+
+        outfile = postfile
+
+    if (code & CHUNK) == CHUNK:
+        index = (0 if code == CHUNK else 1)
+
+        if index == 1:
+            outfile = outdir + os.path.basename(outfile) + u".CHUNK"
+        else:
+            outfile = outdir + os.path.basename(infile) + u".CHUNK"
+
+        # calling wapiti
+        prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[index], postfile, outfile])
         prc4.wait()
 
         if file(outfile).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
             raise RuntimeError(u"Error: Wapiti could not label the file : " + outfile + ". Check the source of this error using Wapiti.")
 
     textualise(outfile, None,
-           output_encoding, output_encoding,
-           code, tagfile,
-           quiet)
+               output_encoding, output_encoding,
+               code, tagfile,
+               quiet)
 
     if not quiet and clean:
         log("Cleaning files...\n")
