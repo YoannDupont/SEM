@@ -1,0 +1,90 @@
+# comment lines start with a # character
+#
+# white lines separate different values in the config file.
+#
+# The assignation of a value to a key follow the following rule :
+# KEY{new_line}VALUES{empty_line}
+#  VALUES may be unitary, meaning it can only have one value assigned to it
+#  or they may be of a list type, meaning that every value should be given
+#  with at least one blank character seperating them or a new_line
+#
+# List of the different variables :
+#  IN_FILE : the file to read
+#  OUT_DIRECTORY : the directory where every file will be created
+#  SEGMENTATION : {YES, Y, NO, N, TRUE, FALSE} whether or not the file needs to be segmented
+#  LEFFF_FILE : the file containing the Lefff dictionary. Do not mention if you do not want to use it, or leave an empty line.
+#  POS_TAGS : the list of Part of Speech Tags.
+#  CHUNK_TAGS : the list of chunks identifiers. It is not useful to add positional argument B, I or O.
+#  CODE : {POS, CHUNK, POS+CHUNK}, depending on what you want to do.
+#  MODELS : the model files that wapiti will use. Act accordingly to CODE.
+#  CLEAN : {YES, Y, NO, N, TRUE, FALSE}, intermidiate files will be deleted after treatment
+#  USE_TAGGING : {YES, Y, NO, N, TRUE, FALSE}, whether or not tags will be read from the input file
+#  INPUT_ENCODING : encoding of the input file
+#  OUTPUT_ENCODING : encoding of output files
+#  QUIET : {YES, Y, NO, N, TRUE, FALSE} writes no feedback.
+
+IN_FILE
+test
+
+OUT_DIRECTORY
+out/
+
+SEGMENTATION
+Y
+
+LEFFF_FILE
+#resources/lefff_pickled
+
+POS_TAGS
+ADJ ADJWH
+ADV ADVWH
+CC
+CL CLO CLR CLS
+CS
+DET DETWH
+ET
+I
+NC NPP
+P P+D P+PRO
+PONCT
+PREF
+PRO PROREL PROWH
+V VIMP VINF VPP VPR VS
+_ADJ _ADJWH
+_ADV _ADVWH
+_CC
+_CL _CLO _CLR _CLS
+_CS
+_DET _DETWH
+_ET
+_I
+_NC _NPP
+_P _P+D _P+PRO
+_PONCT
+_PREF
+_PRO _PROREL _PROWH
+_V _VIMP _VINF _VPP _VPR _VS
+
+CHUNK_TAGS
+AdP AP CONJ NP PP VN __UNKNOWN__
+
+CODE
+POS+CHUNK
+
+MODELS
+resources/models/POS/plain+resources/models/chunk/plain_all
+
+CLEAN
+NO
+
+USE_TAGGING
+NO
+
+INPUT_ENCODING
+UTF-8
+
+OUTPUT_ENCODING
+UTF-8
+
+QUIET
+NO

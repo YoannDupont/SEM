@@ -31,6 +31,8 @@
 #-------------------------------------------------------------------------------
 
 import os, os.path, sys, cPickle, time
+
+from ..config.configParser import *
 from ..io.corpus import ICorpus, OCorpus
 
 def log(msg):
@@ -39,39 +41,48 @@ def log(msg):
 
 
 def lefffExtract(dictionary,
-                 tagfile=None, no_tag=False,
                  infile=None, outfile=None,
-                 input_encoding="UTF-8", output_encoding="UTF-8",
-				quiet=False):
-    temps = time.time()
+                 configfile=None):
+    tlaps = time.time()
     
     #exceptions handling
     if not dictionary:
         dictionary = 'lefff-ext-3.0.txt'
     if not os.path.exists(dictionary):
-        raise RuntimeError(u'File not found: %s' %dictionary)
+        raise IOError(u'File not found: %s' %dictionary)
     if not infile:
         infile = u'informed'
     if not os.path.exists(infile):
-        raise RuntimeError(u'File not found: %s' %infile)
-    if not tagfile:
-        tagfile = u'tag_list'
-    if not os.path.exists(tagfile):
-        raise RuntimeError(u'File not found: %s' %tagfile)
+        raise IOError(u'File not found: %s' %infile)
     if not outfile:
         outfile = 'out'
-    
+    if not configfile:
+        configfile = u"../../resources/config.default"
+    if not os.path.exists(configfile):
+        raise IOError(u"File not found : " + configfile)
+    C = Config(configfile)
+
+    quiet = C.quiet
+    tag_list = C.pos_tags
+    input_encoding = C.input_encoding
+    output_encoding = C.output_encoding
+    no_tag = not C.use_tagging
+
     if not quiet:
         log(u'Creating dictionary...\n')
     
     #creating the dictionary with the lefff file given
     lefff_words = cPickle.load(file(dictionary,"r"))
     if not quiet:
-        t1 = time.time()-temps
+        t1 = time.time()-tlaps
         log('dictionary of single words created in: %ss\n' %str(t1))
     
-    incorpus = ICorpus(infile, input_encoding)
-    tag_dict,tag_list = TagDictListCouple(tagfile)
+
+    try:
+        incorpus = ICorpus(infile, input_encoding)
+    except UnicodeDecodeError:
+        incorpus = ICorpus(infile, output_encoding)
+    tag_dict,tag_list = TagDictListCouple(tag_list)
     format = formatFromList(tag_list)
     lines = []
     out = OCorpus(outfile,output_encoding)
@@ -107,7 +118,7 @@ def lefffExtract(dictionary,
         del lines[:]
 
     if not quiet:
-        log(u'\nDone in %ss !\n' % str(time.time()-temps))
+        log(u'\nDone in %ss !\n' % str(time.time()-tlaps))
             
     
 def reinitialize(myDict):
@@ -117,9 +128,8 @@ def reinitialize(myDict):
     return myDict
 
 
-def TagDictListCouple(tagfile):
+def TagDictListCouple(tag_list):
     tag_dict = {}
-    tag_list = eval(file(tagfile,"r").readline())
     
     #tag_list is supposed to be correct
     for tag in tag_list:
@@ -155,14 +165,6 @@ if __name__ == '__main__':
         usage="usage: %prog [options] LEFFF-PICKLED"
         )
     parser.add_option(
-        "--tag-list", dest="tagfile", default=None, metavar="STR",
-        help="path/basename of the file containing tags (default: ./tag_list)"
-        )
-    parser.add_option(
-        "--no-tag", action="store_true", dest="no_tag", default=False,
-        help="no tag will be read from input file"
-        )
-    parser.add_option(
         "--infile", '-i', dest="infile", default=None, metavar="STR",
         help="path/basename of the corpus (default: ./informed)"
         )
@@ -171,29 +173,14 @@ if __name__ == '__main__':
         help="path/name of the out file (default: out)"
         )
     parser.add_option(
-        "--encoding", dest="enc", default="UTF-8", metavar="ENC",
-        help="encoding to use for input and output unless overriden (default: UTF-8)"
-        )
-    parser.add_option(
-        "--input-encoding", dest="ienc", default=None, metavar="ENC",
-        help="encoding for the input file (the corpus)"
-        )
-    parser.add_option(
-        "--output-encoding", dest="oenc", default="UTF-8", metavar="ENC",
-        help="encoding for the output file"
-        )
-    parser.add_option(
-        "--quiet", "-q", action="store_true", dest="quiet", default=False,
-        help="write no feedback during processing"
+        "--config-file", '-c', dest="config", default=None, metavar="STR",
+        help="Configuration file."
         )
 
     options, args = parser.parse_args()
     if len(args) != 1:
         raise RuntimeError("expected exactly one positional arguments")
     lefffExtract(args[0],
-          tagfile=options.tagfile, no_tag=options.no_tag,
           infile=options.infile, outfile=options.outfile,
-          input_encoding=options.ienc or options.enc,
-          output_encoding=options.oenc or options.enc,
-          quiet=options.quiet)
+          config=options.config)
     sys.exit(0)

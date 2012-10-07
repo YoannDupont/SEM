@@ -39,16 +39,20 @@ import os, os.path, sys, string, time
 
 from ..io.corpus import ICorpus, OCorpus
 
+from ..config.configParser import *
+
 from .. import *
+
+B = u"B"
+I = u"I"
+O = u"O0"
 
 def log(msg):
 	sys.stdout.write(msg)
 	sys.stdout.flush()
 
 def textualise(inc, outcorpus=None,
-               input_encoding="utf-8", output_encoding="utf-8",
-               code=None, tagfile=None,
-               quiet=False):
+               configfile=None):
 
     #--------------------------------------------------------------------------#
     #                            exception handling                            #
@@ -56,16 +60,19 @@ def textualise(inc, outcorpus=None,
     if not os.path.exists(inc):
         raise IOError(u"File not found : " + inc)
 
+    if not configfile:
+        configfile = u"../../resources/config.default"
+    if not os.path.exists(configfile):
+        raise IOError(u"File not found : " + configfile)
+    C = Config(configfile)
+
     if outcorpus is None:
         outcorpus = inc + u".textualised"
     outcorpus = OCorpus(outcorpus)
 
-    if tagfile is None:
-        tagfile = "./ressources/tag_list"
-    if not os.path.exists(tagfile):
-        raise IOError(u"File not found : " + tagfile)
+    code = getcode(C.code)
+    tag_list = C.pos_tags
 
-    tag_list = eval(file(tagfile,"r").readline())
     inc = ICorpus(inc)
     index, found = getposcol(inc, tag_list)
     
@@ -88,35 +95,48 @@ def textualize_pos(inc, outc, poscol):
 
 def textualize_chunk(inc, outc, poscol):
     chkid = u""
-    current = u"("
+    result = u""
+    tokens = []
     for paragraph in inc:
         chkid = getchunkid(paragraph[0].split()[-1])
         for line in paragraph:
-            if getchunkid(line.split()[-1]) == chkid:
-                current += (u" " if len(current)!=1 else u"") + line.split()[0]
+            if (getchunkid(line.split()[-1]) == chkid) or (getchunkid(line.split()[-1]) == I and chkid in [B,I]):
+                tokens.append(line.split()[0])
             else:
-                current += u")" + chkid + u" (" + line.split()[0]
+                result += (u"" if result == u"" else u" ") + to_string(tokens, chkid)
+                del tokens[:]
+                tokens.append(line.split()[0])
                 chkid = getchunkid(line.split()[-1])
-                if line == paragraph[-1]:
-                    current += ")" + chkid
-        outc.put([current])
-        current = u"("
+        if line == paragraph[-1]:
+            result += u" " + to_string(tokens, chkid)
+            del tokens[:]
+        outc.put([result])
+        result = u""
 
 def textualize_posandchunk(inc, outc):
     chkid = u""
-    current = u"("
+    result = u""
+    tokens = []
+    POS = []
     for paragraph in inc:
         chkid = getchunkid(paragraph[0].split()[-1])
         for line in paragraph:
-            if getchunkid(line.split()[-1]) == chkid:
-                current += (u" " if len(current)!=1 else u"") + u"/".join(getchunkid(line.split()))
+            if (getchunkid(line.split()[-1]) == chkid) or (getchunkid(line.split()[-1]) == I and chkid in [B,I]):
+                tokens.append(line.split()[0])
+                POS.append(line.split()[-2])
             else:
-                current += u")" + chkid + u" (" + u"/".join(getchunkid(line.split()))
+                result += (u"" if result == u"" else u" ") + to_string_POS(tokens, POS, chkid)
+                del tokens[:]
+                del POS[:]
+                tokens.append(line.split()[0])
+                POS.append(line.split()[-2])
                 chkid = getchunkid(line.split()[-1])
-                if line == paragraph[-1]:
-                    current += ")" + chkid
-        outc.put([current])
-        current = u"("
+        if line == paragraph[-1]:
+            result += u" " + to_string_POS(tokens, POS, chkid)
+            del tokens[:]
+            del POS[:]
+        outc.put([result])
+        result = u""
 
 # get the POS column as it may not be the last
 def getposcol(inc, taglist):
@@ -136,6 +156,26 @@ def getposcol(inc, taglist):
 def getchunkid(chunk):
     return (chunk[2:] if (chunk[0:2]==(u'B-') or chunk[0:2]==(u'I-')) else chunk) # trimming "B-" or "I-" if necessary
 
+def to_string(tokens, chkid):
+    res = u" ".join(tokens)
+    if chkid in O:
+        return res
+    else:
+        res = u"(" + res + u")"
+        if chkid not in [B,I]:
+            res += chkid
+        return res
+
+def to_string_POS(tokens, POS, chkid):
+    res = u" ".join([token + u"/" + tag for token,tag in zip(tokens,POS)])
+    if chkid in O:
+        return res
+    else:
+        res = u"(" + res + u")"
+        if chkid not in [B,I]:
+            res += chkid
+        return res
+
 if __name__ == '__main__':
     import optparse, sys
     parser = optparse.OptionParser(
@@ -146,36 +186,13 @@ if __name__ == '__main__':
         help="path/name of the out file (default: FILENAME.textualised). Overwritten if existing."
         )
     parser.add_option(
-        "--code", "-c", dest="code", default=None,
-        help="POS, CHUNK, etc... Elements should be concatenated with a + if more than one is wanted (ex: POS+CHUNK)"
-        )
-    parser.add_option(
-        "--tag-list", dest="tagfile", default=None, metavar="STR",
-        help="path/basename of the file containing tags (default: ressources/tag_list)"
-        )
-    parser.add_option(
-        "--encoding", dest="enc", default="UTF-8", metavar="ENC",
-        help="encoding to use for input and output unless overriden (default: UTF-8)"
-        )
-    parser.add_option(
-        "--input-encoding", dest="ienc", default=None, metavar="ENC",
-        help="encoding for the input file (the corpus)"
-        )
-    parser.add_option(
-        "--output-encoding", dest="oenc", default=None, metavar="ENC",
-        help="encoding for the output file"
-        )
-    parser.add_option(
-        "--quiet", "-q", action="store_true", dest="quiet", default=False,
-        help="write no feedback during processing"
+        "--config-file", '-c', dest="config", default=None, metavar="STR",
+        help="Configuration file."
         )
 
     options, args = parser.parse_args()
     if len(args) != 1:
         raise RuntimeError("expected exactly one positional argument")
     textualise(args[0], outcorpus=options.outcorpus,
-		   input_encoding=options.ienc or options.enc,
-		   output_encoding=options.oenc or options.enc,
-           code=options.code, tagfile=options.tagfile,
-		   quiet=options.quiet)
+               config=options.config)
     sys.exit(0)
