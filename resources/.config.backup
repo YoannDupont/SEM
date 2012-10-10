@@ -9,18 +9,18 @@
 #  with at least one blank character seperating them or a new_line
 #
 # List of the different variables :
-#  IN_FILE : the file to read
-#  OUT_DIRECTORY : the directory where every file will be created
-#  SEGMENTATION : {YES, Y, NO, N, TRUE, FALSE} whether or not the file needs to be segmented
+#  IN_FILE : the file to read.
+#  OUT_DIRECTORY : the directory where every file will be created.
+#  SEGMENTATION : {YES, Y, NO, N, TRUE, FALSE} whether or not the file needs to be segmented.
 #  LEFFF_FILE : the file containing the Lefff dictionary. Do not mention if you do not want to use it, or leave an empty line.
 #  POS_TAGS : the list of Part of Speech Tags.
 #  CHUNK_TAGS : the list of chunks identifiers. It is not useful to add positional argument B, I or O.
 #  CODE : {POS, CHUNK, POS+CHUNK}, depending on what you want to do.
 #  MODELS : the model files that wapiti will use. Act accordingly to CODE.
-#  CLEAN : {YES, Y, NO, N, TRUE, FALSE}, intermidiate files will be deleted after treatment
-#  USE_TAGGING : {YES, Y, NO, N, TRUE, FALSE}, whether or not tags will be read from the input file
-#  INPUT_ENCODING : encoding of the input file
-#  OUTPUT_ENCODING : encoding of output files
+#  CLEAN : {YES, Y, NO, N, TRUE, FALSE}, intermidiate files will be deleted after treatment.
+#  HAS_TAGGING : {YES, Y, NO, N, TRUE, FALSE}, whether or not a set of tags is present and will thus be read from the input file.
+#  INPUT_ENCODING : encoding of the input file.
+#  OUTPUT_ENCODING : encoding of output files.
 #  QUIET : {YES, Y, NO, N, TRUE, FALSE} writes no feedback.
 
 IN_FILE
@@ -72,12 +72,12 @@ CODE
 POS+CHUNK
 
 MODELS
-resources/models/POS/plain+resources/models/chunk/plain_all
+resources/models/POS/plain+resources/models/chunk/plain_np
 
 CLEAN
 NO
 
-USE_TAGGING
+HAS_TAGGING
 NO
 
 INPUT_ENCODING

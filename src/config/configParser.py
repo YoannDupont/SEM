@@ -4,7 +4,7 @@
 import codecs
 
 
-_keys = set([u"IN_FILE", u"OUT_DIRECTORY", u"SEGMENTATION", u"LEFFF_FILE", u"POS_TAGS", u"CHUNK_TAGS", u"CODE", u"MODELS", u"CLEAN", u"INPUT_ENCODING", u"OUTPUT_ENCODING", u"QUIET", u"USE_TAGGING"])
+_keys = set([u"IN_FILE", u"OUT_DIRECTORY", u"SEGMENTATION", u"LEFFF_FILE", u"POS_TAGS", u"CHUNK_TAGS", u"CODE", u"MODELS", u"CLEAN", u"INPUT_ENCODING", u"OUTPUT_ENCODING", u"QUIET", u"HAS_TAGGING"])
 
 _list_args = _keys & set([u"POS_TAGS", u"CHUNK_TAGS"])
 
@@ -157,5 +157,5 @@ class Config(object):
         return self._values[u"SEGMENTATION"]
 
     @property
-    def use_tagging(self):
-        return self._values[u"USE_TAGGING"]
+    def has_tagging(self):
+        return self._values[u"HAS_TAGGING"]
