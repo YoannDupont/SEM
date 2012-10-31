@@ -57,7 +57,7 @@ def addInformations(incorpus=None,outcorpus=None,
     ocorpus = OCorpus(outcorpus)
 
     if not quiet:
-        log(u'Initializing information adding algorithm')
+        log(u'Initializing information adding algorithm.')
 
     #ajout des informations
     l = mkentry(icorpus,['Word','Tag'])
@@ -65,6 +65,8 @@ def addInformations(incorpus=None,outcorpus=None,
     l = addIsDigit(l)
     l = addIsPunct(l)
     l = addNLasts(l,3)
+    if not quiet:
+        log(u'.')
     
     format = u'%(Word)s\t%(SWUpper)s\t%(IsDigit)s\t%(IsPunct)s\t%(3Lasts)s'
 
@@ -72,9 +74,9 @@ def addInformations(incorpus=None,outcorpus=None,
         format += u'\t%(Tag)s'
 
     for a in l:
-        ocorpus.putformat(a,format)
-        if not quiet:
-            log(u'.')
+        ocorpus.putformat(a, format)
+    if not quiet:
+        log(u'.')
 
     if not quiet:
         log(u'\nDone in : %ss !\n' %str(time.time()-temps))

@@ -135,7 +135,7 @@ def textualize_posandchunk(inc, outc):
             result += u" " + to_string_POS(tokens, POS, chkid)
             del tokens[:]
             del POS[:]
-        outc.put([result])
+        outc.put([result.trim()])
         result = u""
 
 # get the POS column as it may not be the last

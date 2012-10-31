@@ -30,7 +30,7 @@
 
 from src.pretreatment.segmentation import Segmentation
 from src.pretreatment.addInformations import addInformations
-from src.pretreatment.lefffExtractPickled import lefffExtract
+from src.pretreatment.lefffExtractPickled import lefffExtract, load_lefff
 
 from src.posttreatment.textualise import textualise
 
@@ -40,7 +40,7 @@ from src.config.configParser import *
 
 from src import *
 
-import os, time, random, subprocess, codecs
+import os, time, random, subprocess, codecs, cPickle
 
 def log(msg):
 	sys.stdout.write(msg)
@@ -52,12 +52,12 @@ def tagger(configfile):
 
     clean = C.clean
     code = C.code
-    infile = C.in_file
+    in_file = C.in_file
     input_encoding = C.input_encoding
     output_encoding = C.output_encoding
     lefff_pickled = C.lefff_file
     model = C.models
-    no_tag = not C.use_tagging
+    no_tag = not C.has_tagging
     outdir = C.out_directory
     pos_tags = C.pos_tags
     quiet = C.quiet
@@ -66,8 +66,8 @@ def tagger(configfile):
     #--------------------------------------------------------------------------#
     #                            exception handling                            #
     #--------------------------------------------------------------------------#
-    if not os.path.exists(infile):
-        raise RuntimeError(u'file not found: %s' %infile)
+    if not os.path.exists(in_file):
+        raise RuntimeError(u'file not found: %s' %in_file)
 
     if not outdir:
         outdir = u'./'
@@ -95,122 +95,147 @@ def tagger(configfile):
         for m in models:
             if not os.path.exists(m):
                 raise IOError(u"File not found: %s" %m)
+
+    # here we check whether it is needed to load the dictionary before-hand.
+    # It is the case if the file given in parameter is a directory.
+    if os.path.isdir(in_file):
+        folder = (C.in_file + u"/" if C.in_file[-1] != u"/" else C.in_file)
+        in_file = os.listdir(folder)
+        in_file.sort()
+        in_file[:] = [folder + elt for elt in in_file]
+
+        if (code & POS) == POS and C.lefff_file is not None:
+            lefff_pickled = load_lefff(C.lefff_file, quiet)
+    else:
+        in_file = [in_file]
     
     if code == CHUNK:
+        line = file(in_file[0], "r").readline()
         # the CHUNK tagging may not be done without POST
         if no_tag:
-            if file(infile, "r").readline().split()[-1] in pos_tags:
+            if line.split()[-1] not in pos_tags:
                 raise ValueError(u"Invalid POS tags or file format.")
         else:
-            if file(infile, "r").readline().split()[-2] in pos_tags:
+            if line.split()[-2] not in pos_tags:
                 raise ValueError(u"Invalid POS tags or file format.")
     #--------------------------------------------------------------------------#
     #                        end of exception handling                         #
     #--------------------------------------------------------------------------#
 
+    segmented_file = u""
+    informed = u""
+    wapiti_in = u""
+    wapiti_out = u""
+    postfile = u""
     outfile = u""
 
-    incorpus = ICorpus(infile, input_encoding)
-    segmented_file = infile
-    
-    # segmentation of the in file if needed
-    if segment:
-        if not quiet:
-            log(u"Segmentation...")
-
-        segmented_file = outdir + os.path.basename(infile) + u".segment"
-        temp_outcorpus = OCorpus(segmented_file, output_encoding)
-        sequencer = Segmentation(incorpus, temp_outcorpus)
-        sequencer.segmentation()
-        if not quiet:
-            log(u" Done !\n\n")
-
-    postfile = segmented_file
-
-    if (code & POS) == POS:
-        informed = outdir + os.path.basename(infile) + u".informed"
-        wapiti_in = informed
-        wapiti_out = outdir + os.path.basename(infile) + u".wapiti"
+    for infile in in_file:
+        incorpus = ICorpus(infile, input_encoding)
         
-        # adding basic informations
-        addInformations(segmented_file, informed,
-                        input_encoding, output_encoding,
-                        no_tag, quiet)
-        if not quiet:
-            print
+        # segmentation of the in file if needed
+        if segment:
+            if not quiet:
+                log(u"Segmentation...")
 
-        # adding lefff informations if needed
-        if lefff_pickled:
-            wapiti_in = outdir + os.path.basename(infile) + ".lefff"
-            lefffExtract(lefff_pickled,
-                         informed, wapiti_in,
-                         configfile)
+            segmented_file = outdir + os.path.basename(infile) + u".segment"
+            temp_outcorpus = OCorpus(segmented_file, output_encoding)
+            sequencer = Segmentation(incorpus, temp_outcorpus)
+            sequencer.segmentation()
+            if not quiet:
+                log(u" Done !\n\n")
+        else:
+            segmented_file = infile
+
+        if (code & POS) == POS:
+            informed = outdir + os.path.basename(infile) + u".informed"
+            wapiti_in = informed
+            wapiti_out = outdir + os.path.basename(infile) + u".wapiti"
+            
+            # adding basic informations
+            addInformations(segmented_file, informed,
+                            input_encoding, output_encoding,
+                            no_tag, quiet)
             if not quiet:
                 print
 
-        # calling wapiti
-        prc3 = subprocess.Popen(['wapiti', 'label', '-m', models[0], wapiti_in, wapiti_out])
-        prc3.wait()
+            # adding lefff informations if needed
+            if lefff_pickled:
+                wapiti_in = outdir + os.path.basename(infile) + ".lefff"
+                lefffExtract(lefff_pickled,
+                             informed, wapiti_in,
+                             configfile)
+                if not quiet:
+                    print
 
-        if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
-            raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
+            # calling wapiti
+            prc3 = subprocess.Popen(['wapiti', 'label', '-m', models[0], wapiti_in, wapiti_out])
+            prc3.wait()
 
-        wapiti_corpus = ICorpus(wapiti_out, input_encoding)
-        postfile = outdir + os.path.basename(infile) + ".POS"
-        POSTagging = OCorpus(postfile, output_encoding)
-        lines = [] # will stock the paragraph to be written
+            if file(wapiti_out).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
+                raise RuntimeError(u"Error: Wapiti could not label the file : " + wapiti_in + ". Check the source of this error using Wapiti.")
 
-        # writing the out file containing the words and their matching tags
-        for paragraph in wapiti_corpus:
-            for line in paragraph:
-                temp = line.split('\t')
-                if no_tag:
-                    lines.append(temp[0]+'\t'+temp[-1])
-                else:
-                    lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
-            POSTagging.put(lines)
-            del lines[:]
+            wapiti_corpus = ICorpus(wapiti_out, input_encoding)
+            postfile = outdir + os.path.basename(infile) + ".POS"
+            POSTagging = OCorpus(postfile, output_encoding)
+            lines = [] # will stock the paragraph to be written
 
-        outfile = postfile
+            # writing the out file containing the words and their matching tags
+            for paragraph in wapiti_corpus:
+                for line in paragraph:
+                    temp = line.split('\t')
+                    if no_tag:
+                        lines.append(temp[0]+'\t'+temp[-1])
+                    else:
+                        lines.append(temp[0]+'\t'+temp[-2]+'\t'+temp[-1])
+                POSTagging.put(lines)
+                del lines[:]
 
-    if (code & CHUNK) == CHUNK:
-        index = (0 if code == CHUNK else 1)
+            outfile = postfile
 
-        if index == 1:
-            outfile = outdir + os.path.basename(outfile) + u".CHUNK"
-        else:
-            outfile = outdir + os.path.basename(infile) + u".CHUNK"
+        if (code & CHUNK) == CHUNK:
+            index = (0 if code == CHUNK else 1)
 
-        # calling wapiti
-        prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[index], postfile, outfile])
-        prc4.wait()
+            if index == 0:
+                postfile = infile
 
-        if no_tag and False:
-            temp = outfile + ".TEMP"
-            f = codecs.open(temp, "w", output_encoding)
-            for line in codecs.open(outfile, "r", output_encoding):
-                l = line.split()
-                f.write(u"\t".join(l[:-2] + l[-1:]))
-                f.write(os.linesep)
-            f.close()
-            os.rename(temp, outfile)
+            if index == 1:
+                outfile = outdir + os.path.basename(outfile) + u".CHUNK"
+            else:
+                outfile = outdir + os.path.basename(infile) + u".CHUNK"
 
-        if file(outfile).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
-            raise RuntimeError(u"Error: Wapiti could not label the file : " + outfile + ". Check the source of this error using Wapiti.")
+            # calling wapiti
+            prc4 = subprocess.Popen(['wapiti', 'label', '-m', models[index], postfile, outfile])
+            prc4.wait()
 
-    textualise(outfile, None,
-               configfile)
+            if no_tag and False:
+                temp = outfile + ".TEMP"
+                f = codecs.open(temp, "w", output_encoding)
+                for line in codecs.open(outfile, "r", output_encoding):
+                    l = line.split()
+                    f.write(u"\t".join(l[:-2] + l[-1:]))
+                    f.write(os.linesep)
+                f.close()
+                os.rename(temp, outfile)
 
-    if not quiet and clean:
-        log("Cleaning files...\n")
-    if clean:
-        os.remove(segmented_file)
-        os.remove(informed)
-        if os.path.exists(wapiti_in): # this may be equal to informed
-            os.remove(wapiti_in)
-        os.remove(wapiti_out)
-    if not quiet:
-        log("All done !\n")
+            if file(outfile).read(1) == "": # nothing was written by Wapiti, meaning an error has occured
+                raise RuntimeError(u"Error: Wapiti could not label the file : " + outfile + ". Check the source of this error using Wapiti.")
+
+        textualise(outfile, None,
+                   configfile)
+
+        if not quiet and clean:
+            log("Cleaning files...\n")
+        if clean:
+            if os.path.exists(segmented_file):
+                os.remove(segmented_file)
+            if os.path.exists(informed):
+                os.remove(informed)
+            if os.path.exists(wapiti_in):
+                os.remove(wapiti_in)
+            if os.path.exists(wapiti_out):
+                os.remove(wapiti_out)
+        if not quiet:
+            log("All done !\n")
 
 
 

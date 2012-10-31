@@ -48,7 +48,7 @@ def lefffExtract(dictionary,
     #exceptions handling
     if not dictionary:
         dictionary = 'lefff-ext-3.0.txt'
-    if not os.path.exists(dictionary):
+    if type(dictionary) in[str, unicode] and not os.path.exists(dictionary):
         raise IOError(u'File not found: %s' %dictionary)
     if not infile:
         infile = u'informed'
@@ -66,17 +66,21 @@ def lefffExtract(dictionary,
     tag_list = C.pos_tags
     input_encoding = C.input_encoding
     output_encoding = C.output_encoding
-    no_tag = not C.use_tagging
+    no_tag = not C.has_tagging
 
-    if not quiet:
-        log(u'Creating dictionary...\n')
-    
-    #creating the dictionary with the lefff file given
-    lefff_words = cPickle.load(file(dictionary,"r"))
-    if not quiet:
-        t1 = time.time()-tlaps
-        log('dictionary of single words created in: %ss\n' %str(t1))
-    
+    # If dictionary is either string or unicode, then it should be loaded here.
+    # Else, it means that it is already loaded and was given in parameter.
+    lefff_words = None
+
+    if type(dictionary) in[str, unicode]:
+        lefff_words = load_lefff(dictionary, quiet)
+    elif type(dictionary) == dict:
+        lefff_words = dictionary
+        if not quiet:
+            log("Dictionary already loaded...\n")
+    else:
+        raise TypeError("Dictionary is neither a path to a file nor a python dictionary.")
+
 
     try:
         incorpus = ICorpus(infile, input_encoding)
@@ -119,7 +123,21 @@ def lefffExtract(dictionary,
 
     if not quiet:
         log(u'\nDone in %ss !\n' % str(time.time()-tlaps))
-            
+
+
+def load_lefff(dictionary, quiet):
+    tlaps = time.time()
+    
+    if not quiet:
+        log(u'Creating dictionary...\n')
+    
+    #creating the dictionary with the lefff file given
+    lefff_words = cPickle.load(file(dictionary,"r"))
+    if not quiet:
+        t1 = time.time()-tlaps
+        log('dictionary of single words created in: %ss\n' %str(t1))
+
+    return lefff_words
     
 def reinitialize(myDict):
     for key in myDict.keys():

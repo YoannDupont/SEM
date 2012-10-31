@@ -12,14 +12,13 @@ US = u"_"
 pos_tags = u"POS_TAGS"
 Hyphen = u"-"
 B, I, O = u"BIO"
-_chunks = set([B, I, O])
-# the minimum chunk set, used to label a single type of data
+_chunks = set([B, I, O]) # the minimum chunk set, used to label a single type of data
 chk_tags = u"CHUNK_TAGS"
 
 C, R, W = u"CRW"
-# Creating a new entry in the config dictionary with its unitary value
-# Reading values for list arguments
-# Waiting for a new key
+# C: Creating a new entry in the config dictionary with its unitary value
+# R: Reading values for list arguments
+# W: Waiting for a new key
 
 SHARP = u"#"
 # comment lines and sub-lines
