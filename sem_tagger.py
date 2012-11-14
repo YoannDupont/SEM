@@ -113,7 +113,12 @@ def tagger(configfile):
         line = file(in_file[0], "r").readline()
         # the CHUNK tagging may not be done without POST
         if no_tag:
-            if line.split()[-1] not in pos_tags:
+            found = False
+            for token in line.split()[1:]:
+                if token in pos_tags:
+                    found = True
+                    break
+            if not found:
                 raise ValueError(u"Invalid POS tags or file format.")
         else:
             if line.split()[-2] not in pos_tags:
@@ -226,7 +231,7 @@ def tagger(configfile):
         if not quiet and clean:
             log("Cleaning files...\n")
         if clean:
-            if os.path.exists(segmented_file):
+            if os.path.exists(segmented_file) and segmented_file != infile:
                 os.remove(segmented_file)
             if os.path.exists(informed):
                 os.remove(informed)
