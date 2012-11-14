@@ -49,6 +49,13 @@ class OCorpus(object):
             self._fd.write(line)
             self._fd.write(u"\n")
 
+    def put_concise(self, entry):
+        if self.bof:
+            self.bof = False
+        else:
+            self._fd.write(u"\n")
+        self._fd.write(u"\n".join(entry))
+
     def putformat(self, entry, format):
         if self.bof:
             self.bof = False

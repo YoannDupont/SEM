@@ -91,7 +91,7 @@ def textualise(inc, outcorpus=None,
 
 def textualize_pos(inc, outc, poscol):
     for paragraph in inc:
-        outc.put( [u" ".join( [u"/".join( [line.split()[0]] + [line.split()[poscol]] ) for line in paragraph] )] )
+        outc.put_concise( [u" ".join( [u"/".join( [line.split()[0]] + [line.split()[poscol]] ) for line in paragraph] )])
 
 def textualize_chunk(inc, outc, poscol):
     chkid = u""
@@ -135,7 +135,7 @@ def textualize_posandchunk(inc, outc):
             result += u" " + to_string_POS(tokens, POS, chkid)
             del tokens[:]
             del POS[:]
-        outc.put([result.trim()])
+        outc.put([result])
         result = u""
 
 # get the POS column as it may not be the last
