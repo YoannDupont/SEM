@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..io.corpus import ICorpus, OCorpus
+import re
 
 class Segmentation(object):
 
@@ -46,7 +47,9 @@ class Segmentation(object):
 
     def isSentenceDot(self, the_line, token, current_position):
         EOS = False # End Of Sentence
-        if not current_position >= (len(the_line) - 2): # the token is not in the two last tokens of the line
+        if token[:-1].isdigit():
+            EOS = True
+        elif not current_position >= (len(the_line) - 2): # the token is not in the two last tokens of the line
             next_token = the_line[current_position+1]
             if next_token[0].isupper() or (not next_token.isalpha()):
                 EOS = True
@@ -62,25 +65,34 @@ class Segmentation(object):
         return abbr_list.count(token.lower()) != 0
 
     # A token is a unit if:
-    #  | it start by letter(s) and ends with number(s)
-    #  | it start by number(s) and ends with number(s)
-    #  | and the numbers and letters are not "mixed"
-    # if the token is not a unit, the returned inex is -1
+    #  | it matches a quantity and then a unit
+    #  | it matches a unit and then a quantity
+    # if the token is not a unit, the returned index is -1
     def isUnit(self, token):
-        left = token.lstrip(u"0123456789")
-        right = token.rstrip(u"0123456789")
-        which = None
+        quantity = u"\d+([\.,\d]\d+)?"
+        unit = u"[^\.,\d]+"
+        
+        if token[0].isdigit():
+            q_pat = re.compile(quantity)
+            u_pat = re.compile(unit + u"$")
+            q_match = re.match(q_pat, token)
 
-        if len(left) < len(token):
-            which = left
-        elif len(right) < len(token):
-            which = right
-        else:
-            return -1
-        for C in which:
-            if C.isdigit():
-                return -1
-        return len(token) - len(left)
+            if q_match != None:
+                u_match = re.match(u_pat, token[q_match.end():])
+                if u_match != None:
+                    return q_match.end()
+                    
+        elif token[-1].isdigit():
+            u_pat = re.compile(unit)
+            q_pat = re.compile(quantity + u"$")
+            u_match = re.match(u_pat, token)
+            
+            if u_match != None:
+                q_match = re.match(q_pat, token[u_match.end():])
+                if q_match != None:
+                    return u_match.end()
+
+        return -1
 
     def cut(self, token):
         if self.isChar(token):
@@ -180,6 +192,11 @@ class Segmentation(object):
                         self.sentence += u" " + token[0 : index] + u" " + token[index : len(token)]
                     elif token[-1] == u".": # the token ends with a dot
                         self.handleTerminatingDot(the_line, token, current_position)
+                    elif u"." in token:
+                        index = token.index(".")
+                        self.sentence += u" " + token[0 : index] + u" " + token[index]
+                        self.out_corpus.put(self.sentence.split())
+                        self.sentence = token[index+1:]
                     else: # any other case : the token is added
                         self.sentence += u" " + the_line[current_position]
 

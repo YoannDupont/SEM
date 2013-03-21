@@ -43,8 +43,10 @@ def addInformations(incorpus=None,outcorpus=None,
          input_encoding='utf-8',output_encoding='utf-8',
          no_tag=False,
          quiet=False):
+
     temps = time.time()
-    #gestion des cas particuliers
+
+    # exception handling
     if not os.path.exists(incorpus):
         raise RuntimeError(u"file not found: %s" % incorpus)
     if not outcorpus:
@@ -52,14 +54,14 @@ def addInformations(incorpus=None,outcorpus=None,
         outcorpus = os.path.join(path,name+'_informed')
     if incorpus==outcorpus:
         raise RuntimeError(u'Files have to be different from one another!')
-    #creation des entrees/sorties
-    icorpus = ICorpus(incorpus)
-    ocorpus = OCorpus(outcorpus)
+    # input/output creation
+    icorpus = ICorpus(incorpus, input_encoding)
+    ocorpus = OCorpus(outcorpus, output_encoding)
 
     if not quiet:
         log(u'Initializing information adding algorithm.')
 
-    #ajout des informations
+    # adding informations
     l = mkentry(icorpus,['Word','Tag'])
     l = addStartsWithUpper(l)
     l = addIsDigit(l)

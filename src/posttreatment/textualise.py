@@ -65,15 +65,17 @@ def textualise(inc, outcorpus=None,
     if not os.path.exists(configfile):
         raise IOError(u"File not found : " + configfile)
     C = Config(configfile)
+    input_encoding = C.input_encoding
+    output_encoding = C.output_encoding
 
     if outcorpus is None:
         outcorpus = inc + u".textualised"
-    outcorpus = OCorpus(outcorpus)
+    outcorpus = OCorpus(outcorpus, output_encoding)
 
     code = getcode(C.code)
     tag_list = C.pos_tags
 
-    inc = ICorpus(inc)
+    inc = ICorpus(inc, input_encoding)
     index, found = getposcol(inc, tag_list)
     
     if not found:

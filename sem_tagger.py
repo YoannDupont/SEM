@@ -89,7 +89,7 @@ def tagger(configfile):
 
     models = []
     if not model:
-        models = [u"./model"] * C.code.count("+")
+        raise RuntimeError("No model given in configuration file !")
     else:
         models = model.split("+")
         for m in models:

@@ -34,7 +34,11 @@ def valueof(elt):
 
 
 def indexof(l, elt):
-    return (line.index(elt) if elt in l else len(l))
+    return (l.index(elt) if elt in l else len(l))
+    
+
+def stripsharp(s):
+    return s[0 : indexof(s, SHARP)].strip()
 
 
 class Config(object):
@@ -55,7 +59,7 @@ class Config(object):
         return repres
 
     def _readfile(self, filename):
-        f = codecs.open(filename, u"r", u"UTF-8")
+        f = codecs.open(filename, u"rU", u"UTF-8")
         status = W
         value = u""
         s = set()
@@ -71,7 +75,7 @@ class Config(object):
             elif line[0] != SHARP:
                 if status == W:
                     status = C
-                    value = line[0 : indexof(line, SHARP)]
+                    value = stripsharp(line)
                     if not value in _keys:
                         raise KeyError(u"The key \"%s\" is not valid. Valid keys are %s" %(value, _keys))
                     if value == chk_tags:
@@ -82,30 +86,33 @@ class Config(object):
                 elif status == C:
                     if value not in _list_args:
                         if self._values[value] == None:
-                            self._values[value] = valueof(line[0 : indexof(line, SHARP)])
+                            self._values[value] = valueof(stripsharp(line))
                         else:
                             raise ValueError("Unitary value assigned multiple times: %r assigned with %r and then %r" %(value, self._values[value], line))
                     else:
-                        for token in line[0 : indexof(line, SHARP)].split():
+                        for token in stripsharp(line).split():
                             if value == chk_tags:
                                 s.add(B + Hyphen + token)
                                 s.add(I + Hyphen + token)
-#                            elif value == pos_tags:
-#                                 s.add(token)
-#                                s.add(US + token)
                             else:
                                 s.add(token)
 
                 elif status == R:
-                    for token in line[0 : indexof(line, SHARP)].split():
+                    for token in stripsharp(line).split():
                         if value == chk_tags:
                             s.add(B + Hyphen + token)
                             s.add(I + Hyphen + token)
-#                        elif value == pos_tags:
-#                            s.add(token)
-#                            s.add(US + token)
                         else:
                             s.add(token)
+        self._check()
+    
+    def _check(self):
+        code_tokens = self.code.split(u'+')
+        model_tokens = self.models.split(u'+')
+        if len(code_tokens) != len(model_tokens):
+            raise RuntimeError("Tagging code and models mismatch:\n"+\
+            "number of expected taggings: " + str(len(code_tokens)) + "\n"\
+            "number of models: " +str(len(model_tokens)))
 
     @property
     def chunk_tags(self):
