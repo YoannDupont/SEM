@@ -194,9 +194,12 @@ class Segmentation(object):
                         self.handleTerminatingDot(the_line, token, current_position)
                     elif u"." in token:
                         index = token.index(".")
-                        self.sentence += u" " + token[0 : index] + u" " + token[index]
-                        self.out_corpus.put(self.sentence.split())
-                        self.sentence = token[index+1:]
+                        if token[:index].isdigit() and token[index+1:].isdigit():
+                            self.sentence += u" " + token
+                        else:
+                            self.sentence += u" " + token[0 : index] + u" " + token[index]
+                            self.out_corpus.put(self.sentence.split())
+                            self.sentence = token[index+1:]
                     else: # any other case : the token is added
                         self.sentence += u" " + the_line[current_position]
 
