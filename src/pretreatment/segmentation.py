@@ -191,7 +191,12 @@ class Segmentation(object):
                         index = self.isUnit(token)
                         self.sentence += u" " + token[0 : index] + u" " + token[index : len(token)]
                     elif token[-1] == u".": # the token ends with a dot
-                        self.handleTerminatingDot(the_line, token, current_position)
+                        if token == u"...":
+                            self.sentence += u" " + token
+                            self.out_corpus.put(self.sentence.split())
+                            self.sentence = u""
+                        else:
+                            self.handleTerminatingDot(the_line, token, current_position)
                     elif u"." in token:
                         index = token.index(".")
                         if token[:index].isdigit() and token[index+1:].isdigit():
