@@ -105,6 +105,8 @@ class Segmentation(object):
             res = self.cutByClitics(res)
             if self.apostrophes:
                 res = self.separate(res, u"'’", False)
+                res = self.separate(res, u'"', False)
+                res = self.separate(res, u'"', True)
         return res
 
     def separate(self, token, separating_chars, Before):
