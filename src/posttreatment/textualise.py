@@ -37,9 +37,8 @@
 
 import os, os.path, sys, string, time
 
-from ..io.corpus import ICorpus, OCorpus
-
-from ..config.configParser import *
+from obj.corpus import ICorpus, OCorpus
+from obj.configParser import *
 
 from .. import *
 
@@ -192,9 +191,12 @@ if __name__ == '__main__':
         help="Configuration file."
         )
 
-    options, args = parser.parse_args()
+    if not __package__:
+        options, args = parser.parse_args()
+    else:
+        options, args = parser.parse_args(sys.argv[2:])
     if len(args) != 1:
         raise RuntimeError("expected exactly one positional argument")
     textualise(args[0], outcorpus=options.outcorpus,
-               config=options.config)
+               configfile=options.config)
     sys.exit(0)

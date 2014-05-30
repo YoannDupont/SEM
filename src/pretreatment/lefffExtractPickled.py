@@ -32,8 +32,8 @@
 
 import os, os.path, sys, cPickle, time
 
-from ..config.configParser import *
-from ..io.corpus import ICorpus, OCorpus
+from obj.configParser import *
+from obj.corpus import ICorpus, OCorpus
 
 def log(msg):
     sys.stdout.write(msg)

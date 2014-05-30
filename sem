@@ -1,0 +1,46 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+#-------------------------------------------------------------------------------
+#
+# file: sem.py
+#
+# Description: a wrapper for every module available in sem.
+#
+# author: Yoann Dupont
+# copyright (c) 2013 Yoann Dupont - all rights reserved
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#-------------------------------------------------------------------------------
+
+from obj.setup import get_modules
+
+if __name__ == "__main__":
+    import sys, runpy, os.path
+    
+    ids, pathes = get_modules("src")
+    name        = os.path.basename(sys.argv[0])
+    operation   = sys.argv[1]
+    
+    if operation in ids:
+        n = ids.index(operation)
+        runpy.run_module(pathes[n], run_name="__main__", alter_sys=True)
+    elif operation in ["-h", "--help"]:
+        print "Usage: " + name + " <module> [module arguments]\n"
+        print "Module list:"
+        for i in ids:
+            print "\t"+i
+    else:
+        print "Module not found: " + operation
