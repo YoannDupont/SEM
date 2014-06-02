@@ -391,7 +391,7 @@ class MultiWordNode(Node):
     """
     
     def __init__(self, path):
-        super(TokenNode, self).__init__()
+        super(MultiWordNode, self).__init__()
         self.path = path # path to the configuration file
     
     def parse(self, elt, parent):

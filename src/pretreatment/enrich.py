@@ -1,4 +1,4 @@
-from obj.tree        import Tree, BooleanNode, ListNode
+from obj.tree        import Tree, BooleanNode, ListNode, TokenNode, MultiWordNode
 from obj.information import Informations
 from obj.corpus      import ICorpus, OCorpus
 from obj.logger      import log
@@ -26,8 +26,13 @@ def enrich(infile, infofile, outfile,
     if verbose:
         log("Loading exogene traits...")
     for exo in info.exogenes():
-        l    = add(l, exo)
-        fmt += "\t%(" + endo.get_name() + ")s"
+        if isinstance(exo.root, TokenNode):
+            l = add(l, exo)
+        elif isinstance(exo.root, MultiWordNode):
+            l = addSequence(l, exo)
+        else:
+            raise RuntimeError('Unknown node type "%s"...' %exo.__class__.__name__)
+        fmt += "\t%(" + exo.get_name() + ")s"
     if verbose:
         log(" Done.\n")
     
@@ -41,17 +46,17 @@ def enrich(infile, infofile, outfile,
     if verbose:
         log(" Done.\n")
 
-def add(corpus, endo):
+def add(corpus, trait):
     def to_pseudo_boolean_if_possible(string):
         s = string.lower()
         return ("1" if s=="true" else "0" if s=="false" else string)
 
-    name = endo.get_name()
+    name = trait.get_name()
     for sent in corpus:
         token = []
         for i in xrange(len(sent)):
             enriched = dict(sent[i])
-            enriched[name] = to_pseudo_boolean_if_possible(endo.eval(sent, i))
+            enriched[name] = to_pseudo_boolean_if_possible(trait.eval(sent, i))
             token.append(enriched)
         yield token
 
@@ -65,11 +70,11 @@ def addSequence(corpus, trait):
     """
     
     name     = trait.get_name()
-    resource = trait.value()
+    resource = trait.root.value
     NUL      = u""
     
     if not resource:
-        for sent in it:
+        for sent in corpus:
             l = []
             for token in sent:
                 y = dict(token)
@@ -77,7 +82,7 @@ def addSequence(corpus, trait):
                 l.append(y)
             yield l
     
-    for sent in it:
+    for sent in corpus:
         tmp       = resource
         l         = [dict(elt) for elt in sent]
         length    = len(sent)
@@ -90,7 +95,7 @@ def addSequence(corpus, trait):
             cont = True
             while cont and (cur < length):
                 if (NUL not in tmp):
-                    ckey = sent[cur][u"Word"]
+                    ckey = sent[cur][u"word"]
                     
                     if (ckey in tmp):
                         tmp = tmp[ckey]

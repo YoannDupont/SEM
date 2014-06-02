@@ -32,22 +32,20 @@
     <exogene>
         <!-- "token" is a token dictionary, meaning that only one token needs -->
         <!-- to be checked -->
-        <token name="token.city" path="../NER/token/city" />
-        <token name="token.company" path="../NER/token/company" />
-        <token name="token.country" path="../NER/token/country" />
-        <token name="token.lefff-ext-3.0.3" path="../NER/token/lefff-ext-3.0.3" />
-        <token name="token.location" path="../NER/token/location" />
-        <token name="token.person" path="../NER/token/person" />
-        <token name="token.sigla" path="../NER/token/sigla" />
+        <token name="token.city" path="../../NER/token/city" />
+        <token name="token.company" path="../../NER/token/company" />
+        <token name="token.country" path="../../NER/token/country" />
+        <token name="token.lefff-ext-3.0.3" path="../../NER/token/lefff-ext-3.0.3" />
+        <token name="token.location" path="../../NER/token/location" />
+        <token name="token.person" path="../../NER/token/person" />
+        <token name="token.sigla" path="../../NER/token/sigla" />
         
         <!-- "multiword" is a word sequence dictionary, meaning that sequences -->
         <!--  of words are matches -->
-        <multiword name="mw.city" path="../NER/multiword/city" />
-        <multiword name="mw.company" path="../NER/multiword/company" />
-        <multiword name="mw.country" path="../NER/multiword/country" />
-        <multiword name="mw.lefff-ext-3.0.3" path="../NER/multiword/lefff-ext-3.0.3" />
-        <multiword name="mw.location" path="../NER/multiword/location" />
-        <multiword name="mw.person" path="../NER/multiword/person" />
-        <multiword name="mw.sigla" path="../NER/multiword/sigla" />
+        <multiword name="mw.city" path="../../NER/multiword/city" />
+        <multiword name="mw.company" path="../../NER/multiword/company" />
+        <multiword name="mw.lefff-ext-3.0.3" path="../../NER/multiword/lefff-ext-3.0.3" />
+        <multiword name="mw.location" path="../../NER/multiword/location" />
+        <multiword name="mw.person" path="../../NER/multiword/person" />
     </exogene>
 </information>

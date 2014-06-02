@@ -3,10 +3,10 @@
     <pipeline input-file="test" output-directory="out">
         <segmentation />
         <enrich config="../enrich/pos.xml" />
-        <label model="../models/POS/plain" />
+        <label model="../../models/POS/plain" />
         <clean_info to-keep="0,-1" />
         <enrich config="../enrich/NER.xml" />
-        <label model="../models/NER/plain_ner" />
+        <label model="../../models/NER/plain_NER" />
     </pipeline>
     
     <options>

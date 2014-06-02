@@ -3,9 +3,9 @@
     <pipeline input-file="test" output-directory="out">
         <segmentation />
         <enrich config="../enrich/pos.xml" />
-        <label model="../models/POS/plain" />
+        <label model="../../models/POS/plain" />
         <clean_info to-keep="0,-1" />
-        <label model="../models/chunk/plain_all" />
+        <label model="../../models/chunk/plain_all" />
     </pipeline>
     
     <options>

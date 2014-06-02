@@ -3,7 +3,7 @@
     <pipeline input-file="test" output-directory="out">
         <segmentation />
         <enrich config="../enrich/pos.xml" />
-        <label model="../models/POS/plain" />
+        <label model="../../models/POS/plain" />
         <clean_info to-keep="0,-1" />
     </pipeline>
     
