@@ -2,8 +2,8 @@
 <master>
     <pipeline>
         <segmentation />
-        <enrich config="../enrich/pos.xml" />
-        <label model="../../models/POS/plain" />
+        <enrich config="../enrich/pos-lefff.xml" />
+        <label model="../../models/POS/plain.lefff" />
         <clean_info to-keep="0,-1" />
         <enrich config="../enrich/NER.xml" />
         <label model="../../models/NER/plain_NER" />

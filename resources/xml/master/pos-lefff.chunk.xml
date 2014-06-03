@@ -3,7 +3,7 @@
     <pipeline>
         <segmentation />
         <enrich config="../enrich/pos-lefff.xml" />
-        <label model="../../models/POS/plain" />
+        <label model="../../models/POS/plain.lefff" />
         <clean_info to-keep="0,-1" />
         <label model="../../models/chunk/plain_all" />
         <textualise pos="1" chunk="2" />
