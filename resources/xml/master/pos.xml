@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <master>
-    <pipeline input-file="test" output-directory="out">
+    <pipeline>
         <segmentation />
         <enrich config="../enrich/pos.xml" />
         <label model="../../models/POS/plain" />
         <clean_info to-keep="0,-1" />
+        <textualise pos="1" />
     </pipeline>
     
     <options>

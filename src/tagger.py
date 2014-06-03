@@ -26,26 +26,27 @@ along with this program. If not, see GNU official website.
 
 from obj.master_parser import Master
 from obj.wapiti        import Wapiti
+from obj.logger        import log
 
 from src.pretreatment.segmentation import segmentation
 from src.pretreatment.enrich       import enrich
-from src.pretreatment.clean_info   import clean_info
+
+from src.posttreatment.clean_info   import clean_info
+from src.posttreatment.textualise   import textualise
 
 import os.path
 join     = os.path.join
 basename = os.path.basename
 dirname  = os.path.dirname
 
-def tagger(masterfile):
+def tagger(masterfile, current_input, directory="."):
     MASTER    = Master(masterfile)
     pipeline  = MASTER.pipeline
     options   = MASTER.options
-    directory = MASTER.output_directory
     
-    file_history   = []                # the files generated so far in the pipeline
-    current_input  = MASTER.input_file # the current input in the pipeline
-    current_output = u""               # the current output in the pipeline
-
+    file_history   = []  # the files generated so far in the pipeline
+    current_output = u"" # the current output in the pipeline
+    
     nth  = 1
     ienc = options.ienc
     oenc = options.oenc
@@ -53,11 +54,14 @@ def tagger(masterfile):
     if pipeline[0].identifier == u"segmentation":
         current_output = join(directory, basename(current_input) + ".segmentation")
         
-        segmentation(current_input, current_output)
+        segmentation(current_input, current_output, verbose=options.verbose)
         
         current_input  = current_output
         nth           += 1
         pipeline       = pipeline[1:]
+        
+        if options.verbose:
+            log('\n')
     
     for process in pipeline:
         # segmentation may only be first. If we are in this loop, a segmentation
@@ -65,11 +69,15 @@ def tagger(masterfile):
         if process.identifier == u"segmentation":
             raise RuntimeError(u"Segmentation can only be performed first. Asked as process number %d" %nth)
             
+        elif process.identifier == u"clean_info":
+            current_output = join(directory, basename(current_input) + ".clean")
+            clean_info(current_input, current_output, process.args["to-keep"], ienc=ienc, oenc=oenc, verbose=options.verbose)
+            
         elif process.identifier == u"enrich":
             information    = join(dirname(masterfile), process.args["config"])
             current_output = join(directory, basename(current_input) + "." + basename(information[:-4]))
             
-            enrich(current_input, information, current_output, ienc=ienc, oenc=oenc)
+            enrich(current_input, information, current_output, ienc=ienc, oenc=oenc, verbose=options.verbose)
             
         elif process.identifier == u"label":
             model          = join(dirname(masterfile), process.args["model"])
@@ -77,12 +85,18 @@ def tagger(masterfile):
             
             Wapiti.label(current_input, model, output=current_output)
             
-        elif process.identifier == u"clean_info":
-            current_output = join(directory, basename(current_input) + ".clean")
-            clean_info(current_input, current_output, process.args["to-keep"], ienc=ienc, oenc=oenc)
+        elif process.identifier == u"textualise":
+            poscol         = int(process.args["pos"]) if "pos" in process.args else 0
+            chunkcol       = int(process.args["chunk"]) if "chunk" in process.args else 0
+            current_output = join(directory, basename(current_input) + ".textualise")
+            
+            textualise(current_input, current_output, pos_column=poscol, chunk_column=chunkcol, ienc=oenc, oenc=oenc, verbose=options.verbose)
             
         else:
             raise RuntimeError(u'Unknown process "%s"' %process.identifier)
+        
+        if options.verbose:
+            log("\n")
         
         if nth > 1:      file_history.append(current_input)
         if ienc != oenc: ienc = oenc
@@ -92,8 +106,12 @@ def tagger(masterfile):
         nth += 1
     
     if options.clean:
+        if options.verbose:
+            log("Cleaning files...")
         for filename in file_history:
             os.remove(filename)
+        if options.verbose:
+            log(" Done.\n")
 
 
 if __name__ == '__main__':
@@ -102,11 +120,16 @@ if __name__ == '__main__':
     
     parser.add_argument("master",
                         help="The master configuration file. Defines at least the pipeline and may provide some options.")
+    parser.add_argument("input_file",
+                        help="The input file for the tagger.")
+    parser.add_argument("-o", "--output-directory", dest="output_directory", default=".",
+                        help="The output directory (default: '.')")
     
     if not __package__:
         parser = parser.parse_args()
     else:
         parser = parser.parse_args(sys.argv[2:])
     
-    tagger(parser.master)
+    tagger(parser.master, parser.input_file,
+           directory=parser.output_directory)
     sys.exit(0)

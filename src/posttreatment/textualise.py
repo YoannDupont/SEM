@@ -38,121 +38,89 @@
 import os, os.path, sys, string, time
 
 from obj.corpus import ICorpus, OCorpus
-from obj.configParser import *
-
-from .. import *
+from obj.logger import log
 
 B = u"B"
 I = u"I"
 O = u"O0"
 
-def log(msg):
-	sys.stdout.write(msg)
-	sys.stdout.flush()
-
-def textualise(inc, outcorpus=None,
-               configfile=None):
-
-    #--------------------------------------------------------------------------#
-    #                            exception handling                            #
-    #--------------------------------------------------------------------------#
-    if not os.path.exists(inc):
-        raise IOError(u"File not found : " + inc)
-
-    if not configfile:
-        configfile = u"../../resources/config.default"
-    if not os.path.exists(configfile):
-        raise IOError(u"File not found : " + configfile)
-    C = Config(configfile)
-    input_encoding = C.input_encoding
-    output_encoding = C.output_encoding
-
-    if outcorpus is None:
-        outcorpus = inc + u".textualised"
-    outcorpus = OCorpus(outcorpus, output_encoding)
-
-    code = getcode(C.code)
-    tag_list = C.pos_tags
-
-    inc = ICorpus(inc, input_encoding)
-    index, found = getposcol(inc, tag_list)
+def textualise(inputfile, outputfile,
+               pos_column=0, chunk_column=0,
+               ienc="utf-8", oenc="utf-8", verbose=False):
     
-    if not found:
-        raise RuntimeError(u"None of the tags in " + tagfile + " were found.")
-    #--------------------------------------------------------------------------#
-    #                        end of exception handling                         #
-    #--------------------------------------------------------------------------#
+    assert(pos_column != chunk_column or pos_column == 0)
     
-    if (code & (POS | CHUNK)) == POS + CHUNK:   # doing both POS and CHUNKING
-        textualize_posandchunk(inc, outcorpus)
-    elif (code & POS) == POS:                   # doing only POS
-        textualize_pos(inc, outcorpus, 1)
-    elif (code & CHUNK) == CHUNK:               # doing only chunk
-        textualize_chunk(inc, outcorpus, 1)
+    if verbose:
+        log('Textualising "%s"...' %inputfile)
+    
+    incorpus = ICorpus(inputfile)
+    outcorpus = OCorpus(outputfile)
+    
+    if pos_column != 0 and chunk_column != 0:   # doing both POS and CHUNKING
+        textualise_posandchunk(incorpus, outcorpus, pos_column, chunk_column)
+    elif pos_column != 0:                   # doing only POS
+        textualise_pos(incorpus, outcorpus, 1)
+    elif chunk_column != 0:               # doing only chunk
+        textualise_chunk(incorpus, outcorpus, 1)
+    else:
+        log("\n/!\ Both POS and chunk are 0, not doing anything...\n")
+    
+    if verbose:
+        log(' Done.\n')
 
-def textualize_pos(inc, outc, poscol):
-    for paragraph in inc:
+def textualise_pos(incorpus, outc, poscol):
+    for paragraph in incorpus:
         outc.put_concise( [u" ".join( [u"/".join( [line.split()[0]] + [line.split()[poscol]] ) for line in paragraph] )])
 
-def textualize_chunk(inc, outc, poscol):
+def textualise_chunk(incorpus, outc, chunkcol):
     chkid = u""
     result = u""
     tokens = []
-    for paragraph in inc:
-        chkid = getchunkid(paragraph[0].split()[-1])
+    for paragraph in incorpus:
+        chkid = getchunkid(paragraph[0].split()[chunkcol])
         for line in paragraph:
-            if (getchunkid(line.split()[-1]) == chkid) or (getchunkid(line.split()[-1]) == I and chkid in [B,I]):
-                tokens.append(line.split()[0])
+            informations = line.split()
+            chunk        = informations[chunkcol]
+            if (getchunkid(chunk) == chkid) or (getchunkid(chunk) == I and chkid in [B,I]):
+                tokens.append(informations[0])
             else:
                 result += (u"" if result == u"" else u" ") + to_string(tokens, chkid)
                 del tokens[:]
-                tokens.append(line.split()[0])
-                chkid = getchunkid(line.split()[-1])
+                tokens.append(informations[0])
+                chkid = getchunkid(chunk)
         if line == paragraph[-1]:
             result += u" " + to_string(tokens, chkid)
             del tokens[:]
         outc.put([result])
         result = u""
 
-def textualize_posandchunk(inc, outc):
-    chkid = u""
-    result = u""
-    tokens = []
-    POS = []
-    for paragraph in inc:
-        chkid = getchunkid(paragraph[0].split()[-1])
+def textualise_posandchunk(incorpus, outc, poscol, chunkcol):
+    chkid   = u""
+    result  = u""
+    tokens  = []
+    POS_seq = []
+    for paragraph in incorpus:
+        chkid = getchunkid(paragraph[0].split()[chunkcol])
         for line in paragraph:
-            if (getchunkid(line.split()[-1]) == chkid) or (getchunkid(line.split()[-1]) == I and chkid in [B,I]):
-                tokens.append(line.split()[0])
-                POS.append(line.split()[-2])
+            informations = line.split()
+            pos          = informations[poscol]
+            chunk        = informations[chunkcol]
+            if (getchunkid(chunk) == chkid) or (getchunkid(chunk) == I and chkid in [B,I]):
+                tokens.append(informations[0])
+                POS_seq.append(pos)
             else:
-                result += (u"" if result == u"" else u" ") + to_string_POS(tokens, POS, chkid)
+                result += (u"" if result == u"" else u" ") + to_string_POS(tokens, POS_seq, chkid)
                 del tokens[:]
-                del POS[:]
-                tokens.append(line.split()[0])
-                POS.append(line.split()[-2])
-                chkid = getchunkid(line.split()[-1])
+                del POS_seq[:]
+                tokens.append(informations[0])
+                POS_seq.append(pos)
+                chkid = getchunkid(chunk)
         if line == paragraph[-1]:
-            result += u" " + to_string_POS(tokens, POS, chkid)
+            result += u" " + to_string_POS(tokens, POS_seq, chkid)
             del tokens[:]
-            del POS[:]
+            del POS_seq[:]
         outc.put([result])
         result = u""
-
-# get the POS column as it may not be the last
-def getposcol(inc, taglist):
-    index = -1
-    found = False
-    for paragraph in inc:
-        for elt in paragraph[0].split():
-            index += 1
-            if elt in taglist:
-                found = True
-                break
-        break
-
-    inc = ICorpus(inc.filename, inc.encoding)
-    return [index, found]
 
 def getchunkid(chunk):
     return (chunk[2:] if (chunk[0:2]==(u'B-') or chunk[0:2]==(u'I-')) else chunk) # trimming "B-" or "I-" if necessary
@@ -162,9 +130,10 @@ def to_string(tokens, chkid):
     if chkid in O:
         return res
     else:
-        res = u"(" + res + u")"
+        pref = u"("
         if chkid not in [B,I]:
-            res += chkid
+            pref += chkid + " "
+        res = pref + res + u")"
         return res
 
 def to_string_POS(tokens, POS, chkid):
@@ -172,31 +141,40 @@ def to_string_POS(tokens, POS, chkid):
     if chkid in O:
         return res
     else:
-        res = u"(" + res + u")"
+        pref = u"("
         if chkid not in [B,I]:
-            res += chkid
+            pref += chkid + " "
+        res = pref + res + u")"
         return res
 
 if __name__ == '__main__':
-    import optparse, sys
-    parser = optparse.OptionParser(
-        usage="usage: %prog [options] FILENAME"
-        )
-    parser.add_option(
-        "--out", '-o', dest="outcorpus", default=None, metavar="STR",
-        help="path/name of the out file (default: FILENAME.textualised). Overwritten if existing."
-        )
-    parser.add_option(
-        "--config-file", '-c', dest="config", default=None, metavar="STR",
-        help="Configuration file."
-        )
+    import argparse, sys
+    parser = argparse.ArgumentParser(description="Takes a vectorized text (in a file) and outputs an linear text (in a file).")
+    
+    parser.add_argument("input",
+                        help="path/name of the out file. Overwritten if existing.")
+    parser.add_argument("output",
+                        help="path/name of the out file. Overwritten if existing.")
+    parser.add_argument('-p', '--pos-column', dest="pos_column", type=int, default=0,
+                        help="The column for POS. If 0, POS information is not added (default: 0)")
+    parser.add_argument('-c', '--chunk-column', dest="chunk_column", type=int, default=0,
+                        help="The column for chunk. If 0, chunk information is not added (default: 0)")
+    parser.add_argument("--input-encoding", dest="ienc",
+                        help="Encoding of the input (default: UTF-8)")
+    parser.add_argument("--output-encoding", dest="oenc",
+                        help="Encoding of the input (default: UTF-8)")
+    parser.add_argument("--encoding", dest="enc", default="UTF-8",
+                        help="Encoding of both the input and the output (default: UTF-8)")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+                        help="Basic feedback for user (default: False).")
 
     if not __package__:
-        options, args = parser.parse_args()
+        parser = parser.parse_args()
     else:
-        options, args = parser.parse_args(sys.argv[2:])
-    if len(args) != 1:
-        raise RuntimeError("expected exactly one positional argument")
-    textualise(args[0], outcorpus=options.outcorpus,
-               configfile=options.config)
+        parser = parser.parse_args(sys.argv[2:])
+    
+    textualise(parser.input, parser.output,
+               pos_column=parser.pos_column, chunk_column=parser.chunk_column,
+               ienc=parser.ienc or parser.enc, oenc=parser.oenc or parser.enc,
+               verbose=parser.verbose)
     sys.exit(0)

@@ -19,7 +19,7 @@ def clean_info(infile, outfile, ranges,
             O.write(u"\n")
     
     if verbose:
-        log(' Done !\n')
+        log(' Done.\n')
 
 if __name__ == "__main__":
     import argparse, sys

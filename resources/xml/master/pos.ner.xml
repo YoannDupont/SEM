@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <master>
-    <pipeline input-file="test" output-directory="out">
+    <pipeline>
         <segmentation />
         <enrich config="../enrich/pos.xml" />
         <label model="../../models/POS/plain" />
         <clean_info to-keep="0,-1" />
         <enrich config="../enrich/NER.xml" />
         <label model="../../models/NER/plain_NER" />
+        <clean_info to-keep="0,1,-1" />
+        <textualise pos="1" chunk="2" />
     </pipeline>
     
     <options>

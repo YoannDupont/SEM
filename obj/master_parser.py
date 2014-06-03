@@ -8,11 +8,11 @@ class Master(object):
     main parts:
         - [mandatory] a pipeline
         - [optional]  a set of global options
-    options are optional as they each have a default value. The pipeline is
-    mandatory as it is what the module has to do.
+    The pipeline is mandatory as it is what the module has to do.
+    Global options will affect every runned script.
     """
     
-    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info"])
+    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"textualise"])
     _allowed_options = set([u"encoding", u"verbose", u"clean"])
     
     class Process(object):
@@ -75,9 +75,6 @@ class Master(object):
             self._clean = clean
         
     def __init__(self, infile):
-        self._input            = None
-        self._output_directory = None
-        
         self.pipeline = []
         self.options  = Master.Options()
         
@@ -85,7 +82,6 @@ class Master(object):
     
     def _parse(self, infile):
         parsing = ElementTree()
-        
         parsing.parse(infile)
         
         root     = parsing.getroot()
@@ -96,11 +92,6 @@ class Master(object):
         assert (children[0].tag == "pipeline")
         if len(children) == 2:
             assert (children[1].tag == "options")
-        
-        self._input = children[0].attrib["input-file"]
-        assert (self._input != "")
-        
-        self._output_directory = children[0].attrib["output-directory"] or "."
         
         for child in children[0].getchildren():
             assert (child.tag in Master._allowed_pipes)
@@ -119,11 +110,3 @@ class Master(object):
                     self.options.set_verbose(True)
                 elif option == "clean":
                     self.options.set_clean(True)
-    
-    @property
-    def input_file(self):
-        return self._input
-    
-    @property
-    def output_directory(self):
-        return self._output_directory
