@@ -106,9 +106,9 @@ def addSequence(corpus, trait):
                     cont = False
             
             if NUL in tmp:
-                l[fst][name] = u'B-' + tmp[NUL]
+                l[fst][name] = u'B'
                 for i in xrange(fst+1, cur):
-                    l[i][name] = u'I-' + tmp[NUL]
+                    l[i][name] = u'I'
                 fst = cur
             else:
                 l[fst][name] = u'O'
