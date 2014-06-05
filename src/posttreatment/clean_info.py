@@ -44,6 +44,6 @@ if __name__ == "__main__":
     arguments = (sys.argv[2:] if __package__ else sys.argv)
     parser    = parser.parse_args(arguments)
     
-    enrich(parser.infile, parser.outfile, parser.ranges,
-           ienc=parser.ienc or parser.enc, oenc=parser.oenc or parser.enc, verbose=parser.verbose)
+    clean_info(parser.infile, parser.outfile, parser.ranges,
+               ienc=parser.ienc or parser.enc, oenc=parser.oenc or parser.enc, verbose=parser.verbose)
     sys.exit(0)
