@@ -35,38 +35,50 @@
 #
 #-------------------------------------------------------------------------------
 
-import os, os.path, sys, string, time
+import logging, os, os.path, sys, string, time
 
 from obj.corpus import ICorpus, OCorpus
-from obj.logger import log
+from obj.logger import logging_format
+from obj.misc   import to_dhms
 
 B = u"B"
 I = u"I"
 O = u"O0"
 
+textualise_logger = logging.getLogger("sem.textualise")
+
 def textualise(inputfile, outputfile,
                pos_column=0, chunk_column=0,
-               ienc="utf-8", oenc="utf-8", verbose=False):
+               ienc="utf-8", oenc="utf-8",
+               log_level=logging.CRITICAL, log_file=None):
+    start = time.time()
+    file_mode = u"a"
+    if type(log_file) in (str, unicode):
+        file_mode = u"w"
+    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
     
     assert(pos_column != chunk_column or pos_column == 0)
     
-    if verbose:
-        log('Textualising "%s"...' %inputfile)
+    textualise_logger.info('textualising "%s" into "%s"' %(inputfile, outputfile))
+    
+    if pos_column != 0:
+        textualise_logger.info('POS column is %i' %pos_column)
+    if chunk_column != 0:
+        textualise_logger.info('chunking column is %i' %chunk_column)
     
     incorpus = ICorpus(inputfile)
     outcorpus = OCorpus(outputfile)
     
-    if pos_column != 0 and chunk_column != 0:   # doing both POS and CHUNKING
+    if pos_column != 0 and chunk_column != 0: # doing both POS and CHUNKING
         textualise_posandchunk(incorpus, outcorpus, pos_column, chunk_column)
-    elif pos_column != 0:                   # doing only POS
-        textualise_pos(incorpus, outcorpus, 1)
-    elif chunk_column != 0:               # doing only chunk
-        textualise_chunk(incorpus, outcorpus, 1)
+    elif pos_column != 0: # doing only POS
+        textualise_pos(incorpus, outcorpus, pos_column)
+    elif chunk_column != 0: # doing only chunk
+        textualise_chunk(incorpus, outcorpus, chunk_column)
     else:
-        log("\n/!\ Both POS and chunk are 0, not doing anything...\n")
+        textualise_logger.info("both POS and chunk are 0, not doing anything")
     
-    if verbose:
-        log(' Done.\n')
+    textualise_logger.info("done in %s", to_dhms(time.time() - start))
 
 def textualise_pos(incorpus, outc, poscol):
     for paragraph in incorpus:
@@ -165,16 +177,16 @@ if __name__ == '__main__':
                         help="Encoding of the input (default: UTF-8)")
     parser.add_argument("--encoding", dest="enc", default="UTF-8",
                         help="Encoding of both the input and the output (default: UTF-8)")
-    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
-                        help="Basic feedback for user (default: False).")
-
-    if not __package__:
-        parser = parser.parse_args()
-    else:
-        parser = parser.parse_args(sys.argv[2:])
+    parser.add_argument("-l", "--log", dest="log_level", action="count",
+                        help="Increase log level (default: critical)")
+    parser.add_argument("--log-file", dest="log_file",
+                        help="The name of the log file")
+    
+    arguments = (sys.argv[2:] if __package__ else sys.argv)
+    parser    = parser.parse_args(arguments)
     
     textualise(parser.input, parser.output,
                pos_column=parser.pos_column, chunk_column=parser.chunk_column,
                ienc=parser.ienc or parser.enc, oenc=parser.oenc or parser.enc,
-               verbose=parser.verbose)
+               log_level=parser.log_level, log_file=parser.log_file)
     sys.exit(0)

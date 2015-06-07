@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 from xml.etree.ElementTree import ElementTree
 
 class Master(object):
@@ -13,7 +15,7 @@ class Master(object):
     """
     
     _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"textualise"])
-    _allowed_options = set([u"encoding", u"verbose", u"clean"])
+    _allowed_options = set([u"encoding", u"log", u"clean"])
     
     class Process(object):
         """
@@ -40,11 +42,12 @@ class Master(object):
         Options is a holder for global options in the "sem tagger" module.
         """
         
-        def __init__(self, ienc="utf-8", oenc="utf-8", verbose=False, clean=False):
-            self._ienc    = ienc
-            self._oenc    = oenc
-            self._verbose = verbose
-            self._clean   = clean
+        def __init__(self, ienc="utf-8", oenc="utf-8", log_level=logging.CRITICAL, log_file=None, clean=False):
+            self._ienc      = ienc
+            self._oenc      = oenc
+            self._log_level = log_level
+            self._log_file  = log_file
+            self._clean     = clean
         
         @property
         def ienc(self):
@@ -55,8 +58,12 @@ class Master(object):
             return self._oenc
         
         @property
-        def verbose(self):
-            return self._verbose
+        def log_level(self):
+            return self._log_level
+        
+        @property
+        def log_file(self):
+            return self._log_file
         
         @property
         def clean(self):
@@ -68,8 +75,11 @@ class Master(object):
         def set_oenc(self, oenc):
             self._oenc = oenc
         
-        def set_verbose(self, verbose):
-            self._verbose = verbose
+        def set_log_level(self, log_level):
+            self._log_level = log_level
+        
+        def set_log_file(self, log_file):
+            self._log_file = log_file
         
         def set_clean(self, clean):
             self._clean = clean
@@ -106,7 +116,8 @@ class Master(object):
                 if option == "encoding":
                     self.options.set_ienc(child.attrib["input-encoding"] or "utf-8")
                     self.options.set_oenc(child.attrib["output-encoding"] or "utf-8")
-                elif option == "verbose":
-                    self.options.set_verbose(True)
+                elif option == "log":
+                    self.options.set_log_level(logging._levelNames[child.attrib["level"] if "level" in child.attrib else "CRITICAL"])
+                    self.options.set_log_file(child.attrib["file"] if "file" in child.attrib else None)
                 elif option == "clean":
                     self.options.set_clean(True)

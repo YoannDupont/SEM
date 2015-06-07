@@ -1,12 +1,12 @@
 from xml.etree.ElementTree import ElementTree
-from tree import Tree, EndogeneNodeFromName, ExogeneNodeFromName
+from tree                  import Tree, EndogenousNodeFromName, ExogenousNodeFromName
 
 class Informations(object):
     def __init__(self, path=None):
-        self._bentries  = [] # informations that are before newly added information
-        self._aentries  = [] # informations that are after ...
-        self._endogenes = []
-        self._exogenes  = []
+        self._bentries   = [] # informations that are before newly added information
+        self._aentries   = [] # informations that are after ...
+        self._endogenous = []
+        self._exogenous  = []
         if path is not None:
             self.parse(path)
     
@@ -25,10 +25,10 @@ class Informations(object):
         if len(children) < 2: raise RuntimeError("Less than 2 fields for configuration file.")
         
         if len(children) == 2:
-            if children[0].tag != "entries" or children[1].tag not in ["endogene","exogene"]:
+            if children[0].tag != "entries" or children[1].tag not in ["endogenous","exogenous"]:
                 raise RuntimeError("malformed configuration file: either no base entry or endo/exo gene features.")
         elif len(children) == 3:
-            if children[0].tag != "entries" or children[1].tag != "endogene" or children[2].tag != "exogene":
+            if children[0].tag != "entries" or children[1].tag != "endogenous" or children[2].tag != "exogenous":
                 raise RuntimeError("malformed configuration file: either no base entry or endo/exo gene features.")
         else:
             raise RuntimeError("Invalid length")
@@ -43,28 +43,36 @@ class Informations(object):
                     name = c.attrib["name"]
                     safe_add(found, name)
                     self._bentries.append(name)
+                if len(self._bentries) == 0:
+                    raise RuntimeError("At least one before entry is required.")
             elif entry.tag == "after":
                 for c in entry.getchildren():
                     name = c.attrib["name"]
                     safe_add(found, name)
                     self._aentries.append(name)
         
-        self._endogenes = children[1].getchildren()
-        self._exogenes  = (children[2].getchildren() if len(children)>2 else [])
+        self._endogenous = []
+        self._exogenous  = []
+        n = 1
+        if children[n].tag == "endogenous":
+            self._endogenous = children[n].getchildren()
+            n += 1
+        if n < len(children) and children[n].tag == "exogenous":
+            self._exogenous  = children[n].getchildren()
         
-        for i in xrange(len(self._endogenes)):
-            name = self._endogenes[i].attrib["name"]
+        for i in xrange(len(self._endogenous)):
+            name = self._endogenous[i].attrib["name"]
             safe_add(found, name)
             
-            tmp = Tree(EndogeneNodeFromName(self._endogenes[i].tag))
-            tmp.parse(self._endogenes[i])
-            self._endogenes[i] = tmp
+            tmp = Tree(EndogenousNodeFromName(self._endogenous[i].tag, self._bentries[0]))
+            tmp.parse(self._endogenous[i])
+            self._endogenous[i] = tmp
         
-        if self._exogenes:
-            for i in xrange(len(self._exogenes)):
-                tmp = Tree(ExogeneNodeFromName(self._exogenes[i].tag, filename))
-                tmp.parse(self._exogenes[i])
-                self._exogenes[i] = tmp
+        if self._exogenous:
+            for i in xrange(len(self._exogenous)):
+                tmp = Tree(ExogenousNodeFromName(self._exogenous[i].tag, self._bentries[0], filename))
+                tmp.parse(self._exogenous[i])
+                self._exogenous[i] = tmp
     
     def bentries(self):
         return self._bentries
@@ -72,8 +80,8 @@ class Informations(object):
     def aentries(self):
         return self._aentries
     
-    def endogenes(self):
-        return self._endogenes
+    def endogenous(self):
+        return self._endogenous
     
-    def exogenes(self):
-        return self._exogenes
+    def exogenous(self):
+        return self._exogenous

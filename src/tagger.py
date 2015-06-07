@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 """
-file: tag.py
+file: tagger.py
 
 Description: performs a sequence of operations in a pipe given a configuration
 file.
@@ -24,9 +24,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see GNU official website.
 """
 
+import logging, os, time
+
+from os.path import join, basename, dirname
+
 from obj.master_parser import Master
 from obj.wapiti        import Wapiti
-from obj.logger        import log
+from obj.logger        import logging_format
+from obj.misc          import to_dhms
 
 from src.pretreatment.segmentation import segmentation
 from src.pretreatment.enrich       import enrich
@@ -34,15 +39,16 @@ from src.pretreatment.enrich       import enrich
 from src.posttreatment.clean_info   import clean_info
 from src.posttreatment.textualise   import textualise
 
-import os.path
-join     = os.path.join
-basename = os.path.basename
-dirname  = os.path.dirname
+sem_tagger_logger = logging.getLogger("sem.tagger")
 
 def tagger(masterfile, current_input, directory="."):
+    start = time.time()
+    
     MASTER    = Master(masterfile)
     pipeline  = MASTER.pipeline
     options   = MASTER.options
+    
+    logging.basicConfig(level=options.log_level, format=logging_format, filename=options.log_file)
     
     file_history   = []  # the files generated so far in the pipeline
     current_output = u"" # the current output in the pipeline
@@ -54,14 +60,13 @@ def tagger(masterfile, current_input, directory="."):
     if pipeline[0].identifier == u"segmentation":
         current_output = join(directory, basename(current_input) + ".segmentation")
         
-        segmentation(current_input, current_output, verbose=options.verbose)
+        segmentation(current_input, current_output, output_format="vector", log_level=options.log_level, log_file=options.log_file)
         
         current_input  = current_output
         nth           += 1
         pipeline       = pipeline[1:]
         
-        if options.verbose:
-            log('\n')
+        sem_tagger_logger.info("in %s", to_dhms(time.time() - start))
     
     for process in pipeline:
         # segmentation may only be first. If we are in this loop, a segmentation
@@ -71,13 +76,17 @@ def tagger(masterfile, current_input, directory="."):
             
         elif process.identifier == u"clean_info":
             current_output = join(directory, basename(current_input) + ".clean")
-            clean_info(current_input, current_output, process.args["to-keep"], ienc=ienc, oenc=oenc, verbose=options.verbose)
+            clean_info(current_input, current_output, process.args["to-keep"], ienc=ienc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
+            
+            sem_tagger_logger.info("in %s", to_dhms(time.time() - start))
             
         elif process.identifier == u"enrich":
             information    = join(dirname(masterfile), process.args["config"])
             current_output = join(directory, basename(current_input) + "." + basename(information[:-4]))
             
-            enrich(current_input, information, current_output, ienc=ienc, oenc=oenc, verbose=options.verbose)
+            enrich(current_input, information, current_output, ienc=ienc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
+            
+            sem_tagger_logger.info("in %s", to_dhms(time.time() - start))
             
         elif process.identifier == u"label":
             model          = join(dirname(masterfile), process.args["model"])
@@ -85,18 +94,18 @@ def tagger(masterfile, current_input, directory="."):
             
             Wapiti.label(current_input, model, output=current_output)
             
+            sem_tagger_logger.info("in %s", to_dhms(time.time() - start))
+            
         elif process.identifier == u"textualise":
             poscol         = int(process.args["pos"]) if "pos" in process.args else 0
             chunkcol       = int(process.args["chunk"]) if "chunk" in process.args else 0
             current_output = join(directory, basename(current_input) + ".textualise")
             
-            textualise(current_input, current_output, pos_column=poscol, chunk_column=chunkcol, ienc=oenc, oenc=oenc, verbose=options.verbose)
+            textualise(current_input, current_output, pos_column=poscol, chunk_column=chunkcol, ienc=oenc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
             
         else:
+            sem_tagger_logger.error(u'unknown process "%s"' %process.identifier)
             raise RuntimeError(u'Unknown process "%s"' %process.identifier)
-        
-        if options.verbose:
-            log("\n")
         
         if nth > 1:      file_history.append(current_input)
         if ienc != oenc: ienc = oenc
@@ -106,12 +115,11 @@ def tagger(masterfile, current_input, directory="."):
         nth += 1
     
     if options.clean:
-        if options.verbose:
-            log("Cleaning files...")
+        sem_tagger_logger.info("cleaning files")
         for filename in file_history:
             os.remove(filename)
-        if options.verbose:
-            log(" Done.\n")
+        sem_tagger_logger.info("done")
+        sem_tagger_logger.info("in %s", to_dhms(time.time() - start))
 
 
 if __name__ == '__main__':
