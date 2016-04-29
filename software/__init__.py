@@ -1,10 +1,16 @@
 #-*- encoding: utf-8-*-
 
+import sys
+
+from os.path import dirname, abspath
+
 class Software(object):
     u"""
     This class has the purpose of describing the software's current state.
     For example: current version, latest changes and planned changes.
     """
+    
+    SEM_HOME = dirname(dirname(abspath(__file__))).decode(sys.getfilesystemencoding())
     
     _name          = u"SEM"
     u"""
@@ -20,7 +26,7 @@ class Software(object):
     If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
     """
     
-    _version_minor = 2
+    _version_minor = 3
     u"""
     The minor version number.
     Is only incremented when medium changes are made to the program.
@@ -38,24 +44,25 @@ class Software(object):
     
     _latest_changes = \
 u"""List of latest changes:
-    - corrected typo in enrich files: endogene / exogene -> endogenous / exogenous.
-    - corrected a hard-coded "word" as first entry in files to be enriched.
-    - added a pdf manual that is now up to date.
-    - added versioning and information about the last revision.
-    - some other changes I do not recall..."""
+    1/ Added the export module that exports file to HTML
+    2/ Added MinGW (Windows) support for wapiti (still requires pthreads)
+    2/ simplified feature generation XML file
+    3/ transformed the ugly "tree.py" where every feature was coded to a feature library
+    4/ added some first step to multiple languages handling
+    5/ changed french tokeniser
+    6/ no more triggered features and sequence features (for now)"""
     
     _planned_changes = \
 u"""List of planned changes (without any order of priority):
-    1/ adding an export function that will allow the user to export the final data to various file formats, it will enumerate token-range information and chunk-range information. In master configuration file it will look like: <export format="FORMAT_NAME" token="RANGES" chunk="RANGES">
-        1.1/ remove textualise module. Will be replaced by <export format="text" word="WORD_COLUMN" pos="POS_COLUMN" chunk="CHUNK_COLUMN">
-        1.2/ add TEI as an export format.
-        1.3/ add Glozz as an export format.
+    1/ redo triggered features and sequence features.
     2/ add lemmatiser.
-    3/ add the possibility to work in memory rather than using files (existing proposition by lerela).
+    3/ add the possibility to work in memory rather than using files:
+        3.1/ existing proposition by lerela.
+        3.2/ use subprocess.Popen, subprocess.PIPE and subprocess.communicate to put wapiti output to a string.
     4/ migration to python3 ? (already made for revision 39 by lerela).
-    5/ add a Windows port to Wapiti using MinGW (would still require pthreads library).
-    6/ translate manual in English.
-    7/ Improve enrich speed. Possible way: runtime function generation"""
+    5/ translate manual in English.
+    6/ add paragraph segmentation
+    7/ update manual"""
     
     @classmethod
     def name(cls):

@@ -1,3 +1,27 @@
+# -*- coding: utf-8 -*-
+
+"""
+file: clean_info.py
+
+Description: 
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see GNU official website.
+"""
+
 import logging, codecs
 
 from obj.misc   import ranges_to_set
@@ -24,8 +48,9 @@ def clean_info(infile, outfile, ranges,
         clean_info_logger.error(u'asked to keep up to %i field(s), yet only %i are present in the "%s"' %(max_abs, nelts, infile))
         raise runtimeError(u'asked to keep up to %i field(s), yet only %i are present in the "%s"' %(max_abs, nelts, infile))
     
-    clean_info_logger.info(u'cleaning "%s" to "%s"' %(infile,outfile))
+    clean_info_logger.info(u'cleaning "%s"' %(infile))
     clean_info_logger.info(u'keeping columns: %s' %(u", ".join([str(s) for s in sorted(allowed)])))
+    clean_info_logger.info(u'writing "%s"' %(outfile))
         
     with codecs.open(outfile, "w", oenc) as O:
         for line in codecs.open(infile, "rU", ienc):

@@ -1,0 +1,153 @@
+/* default color for span */
+span{
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+/* colors for Part-of-Speech */
+
+span[id^="ADJ"] {
+    background-color: #FFCCCC;
+    color: #FF0000;
+}
+
+span[id^="ADV"] {
+    background-color: #FFDDFF;
+    color: #FF00FF;
+}
+
+span[id^="CC"] {
+    background-color: #FFEEAA;
+    color: #FFA500;
+}
+
+span[id^="CL"] {
+    background-color: #AAFFFF;
+    color: #007777;
+}
+
+span[id^="CS"] {
+    background-color: #FFEEAA;
+    color: #FFA500;
+}
+
+span[id^="DET"] {
+    background-color: #FFFF88;
+    color: #BBBB00;
+}
+
+span[id^="ET"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+span[id^="I"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+span[id^="N"] {
+    background-color: #CCCCFF;
+    color: #0000FF;
+}
+
+span[id^="P"] {
+    background-color: #CCEEEE;
+    color: #008888;
+}
+
+span[id^="P+D"] {
+    background-color: #CCEEEE;
+    color: #008888;
+}
+
+span[id^="P+PRO"] {
+    background-color: #CCEEEE;
+    color: #008888;
+}
+
+span[id^="PONCT"] {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+span[id^="PREF"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+span[id^="PRO"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+span[id^="V"] {
+    background-color: #DDFFDD;
+    color: #008800;
+}
+
+
+/* colors for chunking */
+
+span[id="AdP"] {
+    background-color: #FFDDFF;
+    color: #FF00FF;
+}
+
+span[id="AP"] {
+    background-color: #FFCCCC;
+    color: #FF0000;
+}
+
+span[id="CONJ"] {
+    background-color: #FFEEAA;
+    color: #FFA500;
+}
+
+span[id="NP"] {
+    background-color: #CCCCFF;
+    color: #0000FF;
+}
+
+span[id="PP"] {
+    background-color: #CCEEEE;
+    color: #008888;
+}
+
+span[id="VN"] {
+    background-color: #DDFFDD;
+    color: #008800;
+}
+
+
+/* colors for named entities */
+
+span[id="Company"] {
+    background-color: #DDFFDD;
+    color: #008800;
+}
+
+span[id="FictionalCharacter"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+span[id="Location"] {
+    background-color: #FFCCCC;
+    color: #FF0000;
+}
+
+span[id="Organization"] {
+    background-color: #CCEEEE;
+    color: #008888;
+}
+
+span[id="Person"] {
+    background-color: #CCCCFF;
+    color: #0000FF;
+}
+
+span[id="Product"] {
+    background-color: #CCCCCC;
+    color: #000000;
+}

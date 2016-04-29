@@ -14,7 +14,7 @@ class Master(object):
     Global options will affect every runned script.
     """
     
-    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"textualise"])
+    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"textualise", u"export"])
     _allowed_options = set([u"encoding", u"log", u"clean"])
     
     class Process(object):
@@ -104,20 +104,22 @@ class Master(object):
             assert (children[1].tag == "options")
         
         for child in children[0].getchildren():
-            assert (child.tag in Master._allowed_pipes)
+            if child.tag not in Master._allowed_pipes:
+                raise ValueError('"%s" is not a valid module.' %(child.tag))
             attrib = child.attrib
             self.pipeline.append(Master.Process(child.tag, attrib))
         
         if len(children) > 1:
             for child in children[1].getchildren():
-                assert (child.tag in Master._allowed_options)
+                if child.tag not in Master._allowed_options:
+                    raise ValueError('"%s" is not a valid option.' %(child.tag))
                 
                 option = child.tag
                 if option == "encoding":
-                    self.options.set_ienc(child.attrib["input-encoding"] or "utf-8")
-                    self.options.set_oenc(child.attrib["output-encoding"] or "utf-8")
+                    self.options.set_ienc(child.attrib.get("input-encoding", "utf-8"))
+                    self.options.set_oenc(child.attrib.get("output-encoding", "utf-8"))
                 elif option == "log":
-                    self.options.set_log_level(logging._levelNames[child.attrib["level"] if "level" in child.attrib else "CRITICAL"])
-                    self.options.set_log_file(child.attrib["file"] if "file" in child.attrib else None)
+                    self.options.set_log_level(child.attrib.get("level", "CRITICAL"))
+                    self.options.set_log_file(child.attrib.get("file", None))
                 elif option == "clean":
                     self.options.set_clean(True)

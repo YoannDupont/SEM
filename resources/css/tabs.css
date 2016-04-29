@@ -1,0 +1,86 @@
+/* original code taken from: http://www.sevensignature.com/blog/code/responsive-pure-css-tabs/ */
+
+*,
+*:after,
+*:before {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: monospace;
+    background: #C0C0FF;
+}
+
+h1 {
+    color: #302226;
+    text-align: center;
+    font-size: 28pt;
+    margin-top:1em;
+}
+
+.tab_container {
+    width: 95%;
+    margin: 0 auto;
+    padding-top: 70px;
+    position: relative;
+}
+
+input, section {
+    clear: both;
+    padding-top: 10px;
+    display: none;
+}
+
+label {
+    font-weight: 700;
+    font-size: 18px;
+    display: block;
+    float: left;
+    width: 25%;
+    padding: 1.5em;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    background: #DDDDDD;
+    color: #AAAAAA;
+}
+
+#tab1:checked ~ #content1,
+#tab2:checked ~ #content2,
+#tab3:checked ~ #content3 {
+    display: block;
+    padding: 20px;
+    background: #F8F8FF;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.tab_container .tab-content p,
+.tab_container .tab-content h3 {
+    -webkit-animation: fadeInScale 0.7s ease-in-out;
+    -moz-animation: fadeInScale 0.7s ease-in-out;
+    animation: fadeInScale 0.7s ease-in-out;
+}
+.tab_container .tab-content h3  {
+    text-align: center;
+}
+
+/* allows for potential additional tabs */
+.tab_container [id^="tab"]:checked + label {
+    background: #F8F8FF;
+    color: #000000;
+    box-shadow: inset 0 3px #0CE;
+}
+.tab_container [id="tab1"]:checked + label {
+    background: #F8F8FF;
+    box-shadow: inset 0 3px #FF0000;
+}
+.tab_container [id="tab2"]:checked + label {
+    background: #F8F8FF;
+    box-shadow: inset 0 3px #00FF00;
+}
+.tab_container [id="tab3"]:checked + label {
+    background: #F8F8FF;
+    box-shadow: inset 0 3px #0000FF;
+}

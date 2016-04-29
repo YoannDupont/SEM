@@ -1,3 +1,27 @@
+#-*- coding: utf-8 -*-
+
+"""
+file: decompile_dictionary.py
+
+Description: 
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import codecs, cPickle, logging
 
 from obj.logger import logging_format
@@ -60,11 +84,13 @@ if __name__ == "__main__":
     parser.add_argument("--log-file", dest="log_file",
                         help="The name of the log file")
     
-    arguments = (sys.argv[2:] if __package__ else sys.argv)
-    parser    = parser.parse_args(arguments)
+    if __package__:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args()
     
-    decompile_dictionary(parser.infile, parser.outfile,
-                         kind=parser.kind,
-                         oenc=parser.oenc,
-                         log_level=parser.log_level, log_file=parser.log_file)
+    decompile_dictionary(args.infile, args.outfile,
+                         kind=args.kind,
+                         oenc=args.oenc,
+                         log_level=args.log_level, log_file=args.log_file)
     sys.exit(0)

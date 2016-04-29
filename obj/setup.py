@@ -3,8 +3,6 @@
 import re, os.path
 join = os.path.join
 
-#module_directory = ".\\src"
-
 def get_modules(path):
     def to_module_name(name):
         return re.sub(r"[\\/]", ".", re.sub(r"^[./\\]+", "", elt[:-3], re.MULTILINE))

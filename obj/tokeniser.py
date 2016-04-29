@@ -69,7 +69,8 @@ def word_tokeniser(s):
         sentences or not. They will be inferred later. The only thing this
         function does is separating tokens.
     """
-    
+    import time
+    start = time.time()
     word_bounds = Index_To_Bound()
     word_bounds.add(0)
     index = 0
@@ -78,20 +79,20 @@ def word_tokeniser(s):
         if c == u" ":
             word_bounds.add(index)
             word_bounds.add_with(index+1, index)
-        if c == u"," and 0 < index < len(s) and not (s[index-1].isdigit() or s[index+1].isdigit()):
+        elif c == u"," and 0 < index < len(s) and not (s[index-1].isdigit() or s[index+1].isdigit()):
             word_bounds.add(index)
             word_bounds.add(index+1)
-        if c in u";:«»()[]":
+        elif c in u"\";:«»()[]*/":
             word_bounds.add(index)
             word_bounds.add(index+1)
-        if c in u"?!":
+        elif c in u"?!":
             if index > 0 and s[index-1] not in "?!":
                 word_bounds.add(index)
             if index < len(s)-1 and s[index+1] not in "?!":
                 word_bounds.add(index+1)
             if index == len(s)-1:
                 word_bounds.add(index+1)
-        if c == u".":
+        elif c == u".":
             if index == len(s)-1:
                 word_bounds.add(index)
                 word_bounds.add(index + 1)
@@ -100,7 +101,7 @@ def word_tokeniser(s):
                 if not(s[index-1].isdigit() and s[index+1].isdigit() or isabbrbeforenoun(prev)):
                     word_bounds.add(index)
                     word_bounds.add(index + 1)
-        if c in u"0123456789":
+        elif c in u"0123456789":
             if index > 0 and s[index-1] not in u"0123456789.,-": # unit is before
                 if not s[last_index(s[:index], " ") : index].isdigit():
                     word_bounds.add(index)
@@ -116,9 +117,9 @@ def word_tokeniser(s):
                 elif s[index+1] in "-":
                     word_bounds.add(index+1)
                     word_bounds.add(index+2)
-        if c in u"'ʼ":
+        elif c in u"'ʼ’":
             word_bounds.add(index+1)
-        if c == u"-":
+        elif c == u"-":
             i = -1
             try:
                 i = index + s[index : ].index(" ")
@@ -134,6 +135,8 @@ def word_tokeniser(s):
     # is the one at index -1.
     word_bounds.add(len(s))
     
+    laps = time.time() - start
+    print "%.2f tokens per second" %(float(len(word_bounds._matches)-1) / laps)
     tokens = []
     for i in range(len(word_bounds.matches)-1):
         tokens.append(s[word_bounds.matches[i][-1] : word_bounds.matches[i+1][0]])
