@@ -63,8 +63,8 @@ def textualise(inputfile, outputfile,
     if chunk_column != 0:
         textualise_logger.info('chunking column is %i' %chunk_column)
     
-    incorpus  = Reader(inputfile)
-    outcorpus = Writer(outputfile)
+    incorpus  = Reader(inputfile, ienc)
+    outcorpus = Writer(outputfile, oenc)
     
     if pos_column != 0 and chunk_column != 0: # doing both POS and CHUNKING
         textualise_posandchunk(incorpus, outcorpus, pos_column, chunk_column)
@@ -79,14 +79,14 @@ def textualise(inputfile, outputfile,
 
 def textualise_pos(incorpus, outc, poscol):
     for paragraph in incorpus:
-        outc.write_p( [u" ".join( [u"/".join( [line.split()[0]] + [line.split()[poscol]] ) for line in paragraph] )])
+        outc.write_l( [u" ".join( [u"/".join( [line[0], line[poscol]] ) for line in paragraph] )])
 
 def textualise_chunk(incorpus, outc, chunkcol):
     chkid  = u""
     result = u""
     tokens = []
     for paragraph in incorpus:
-        chkid = getchunkid(paragraph[0].split()[chunkcol])
+        chkid = getchunkid(paragraph[0][chunkcol])
         for informations in paragraph:
             chunk = informations[chunkcol]
             if (getchunkid(chunk) == chkid) or (getchunkid(chunk) == I and chkid in [B,I]):
@@ -96,10 +96,10 @@ def textualise_chunk(incorpus, outc, chunkcol):
                 del tokens[:]
                 tokens.append(informations[0])
                 chkid = getchunkid(chunk)
-        if line == paragraph[-1]:
-            result += u" " + to_string(tokens, chkid)
-            del tokens[:]
-        outc.write([result])
+            if informations == paragraph[-1]:
+                result += u" " + to_string(tokens, chkid)
+                del tokens[:]
+        outc.write_l([result.strip()])
         result = u""
 
 def textualise_posandchunk(incorpus, outc, poscol, chunkcol):
@@ -108,7 +108,7 @@ def textualise_posandchunk(incorpus, outc, poscol, chunkcol):
     tokens  = []
     POS_seq = []
     for paragraph in incorpus:
-        chkid = getchunkid(paragraph[0].split()[chunkcol])
+        chkid = getchunkid(paragraph[0][chunkcol])
         for informations in paragraph:
             pos   = informations[poscol]
             chunk = informations[chunkcol]
@@ -122,11 +122,11 @@ def textualise_posandchunk(incorpus, outc, poscol, chunkcol):
                 tokens.append(informations[0])
                 POS_seq.append(pos)
                 chkid = getchunkid(chunk)
-        if line == paragraph[-1]:
-            result += u" " + to_string_POS(tokens, POS_seq, chkid)
-            del tokens[:]
-            del POS_seq[:]
-        outc.write([result])
+            if informations == paragraph[-1]:
+                result += u" " + to_string_POS(tokens, POS_seq, chkid)
+                del tokens[:]
+                del POS_seq[:]
+        outc.write_l([result.strip()])
         result = u""
 
 def getchunkid(chunk):
