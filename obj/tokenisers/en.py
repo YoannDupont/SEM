@@ -64,6 +64,8 @@ class Tokeniser(DefaultTokeniser):
                     bounds.add_last(index)
                     bounds.append(index+1)
         
+        bounds.add_last(len(s))
+        
         return bounds
     
     def sentence_bounds(self, tokens):

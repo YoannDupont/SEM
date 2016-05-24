@@ -54,6 +54,9 @@ def textualise(inputfile, outputfile,
         file_mode = u"w"
     logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
     
+    def join_space(s):
+        return u" ".join(s)
+    
     assert(pos_column != chunk_column or pos_column == 0)
     
     textualise_logger.info('textualising "%s" into "%s"' %(inputfile, outputfile))
@@ -64,95 +67,43 @@ def textualise(inputfile, outputfile,
         textualise_logger.info('chunking column is %i' %chunk_column)
     
     incorpus  = Reader(inputfile, ienc)
-    outcorpus = Writer(outputfile, oenc)
+    outcorpus = Writer(outputfile, oenc, joiner=join_space)
     
-    if pos_column != 0 and chunk_column != 0: # doing both POS and CHUNKING
-        textualise_posandchunk(incorpus, outcorpus, pos_column, chunk_column)
-    elif pos_column != 0: # doing only POS
-        textualise_pos(incorpus, outcorpus, pos_column)
-    elif chunk_column != 0: # doing only chunk
-        textualise_chunk(incorpus, outcorpus, chunk_column)
+    if pos_column != 0 and chunk_column != 0:
+        tokens = get_tokens(incorpus)
+        if pos_column != 0:
+            add_pos(tokens, incorpus, pos_column)
+        if chunk_column != 0:
+            add_chunk(tokens, incorpus, chunk_column)
+        outcorpus.write([tokens])
     else:
-        textualise_logger.info("both POS and chunk are 0, not doing anything")
+        textualise_logger.warn("POS and chunk not requested, not doing anything")
     
     textualise_logger.info("done in %s", to_dhms(time.time() - start))
 
-def textualise_pos(incorpus, outc, poscol):
-    for paragraph in incorpus:
-        outc.write_l( [u" ".join( [u"/".join( [line[0], line[poscol]] ) for line in paragraph] )])
-
-def textualise_chunk(incorpus, outc, chunkcol):
-    chkid  = u""
-    result = u""
+def get_tokens(corpus):
     tokens = []
-    for paragraph in incorpus:
-        chkid = getchunkid(paragraph[0][chunkcol])
-        for informations in paragraph:
-            chunk = informations[chunkcol]
-            if (getchunkid(chunk) == chkid) or (getchunkid(chunk) == I and chkid in [B,I]):
-                tokens.append(informations[0])
-            else:
-                result += (u"" if result == u"" else u" ") + to_string(tokens, chkid)
-                del tokens[:]
-                tokens.append(informations[0])
-                chkid = getchunkid(chunk)
-            if informations == paragraph[-1]:
-                result += u" " + to_string(tokens, chkid)
-                del tokens[:]
-        outc.write_l([result.strip()])
-        result = u""
+    for sentence in corpus:
+        tokens.append([])
+        for token in sentence:
+            tokens[-1].append(token[0])
+    return tokens
 
-def textualise_posandchunk(incorpus, outc, poscol, chunkcol):
-    chkid   = u""
-    result  = u""
-    tokens  = []
-    POS_seq = []
-    for paragraph in incorpus:
-        chkid = getchunkid(paragraph[0][chunkcol])
-        for informations in paragraph:
-            pos   = informations[poscol]
-            chunk = informations[chunkcol]
-            if (getchunkid(chunk) == chkid) or (getchunkid(chunk) == I and chkid in [B,I]):
-                tokens.append(informations[0])
-                POS_seq.append(pos)
-            else:
-                result += (u"" if result == u"" else u" ") + to_string_POS(tokens, POS_seq, chkid)
-                del tokens[:]
-                del POS_seq[:]
-                tokens.append(informations[0])
-                POS_seq.append(pos)
-                chkid = getchunkid(chunk)
-            if informations == paragraph[-1]:
-                result += u" " + to_string_POS(tokens, POS_seq, chkid)
-                del tokens[:]
-                del POS_seq[:]
-        outc.write_l([result.strip()])
-        result = u""
+def add_pos(tokens, incorpus, poscol):
+    for i, sentence in enumerate(incorpus):
+        for j, token in enumerate(sentence):
+            tokens[i][j] += u"/"+token[poscol]
+
+def add_chunk(tokens, incorpus, chunkcol):
+    for i, sentence in enumerate(incorpus):
+        for j, token in enumerate(sentence):
+            if token[chunkcol][0] == B:
+                tokens[i][j] = u"(" + getchunkid(token[chunkcol]) + u" " + tokens[i][j]
+            if token[chunkcol][0] in B+I and (j == len(sentence)-1 or sentence[j+1][chunkcol][0] != I):
+                tokens[i][j] += u")"
 
 def getchunkid(chunk):
     return (chunk[2:] if (chunk[:2]==(u'B-') or chunk[:2]==(u'I-')) else chunk) # trimming "B-" or "I-" if necessary
-
-def to_string(tokens, chkid):
-    res = u" ".join(tokens)
-    if chkid in O:
-        return res
-    else:
-        pref = u"("
-        if chkid not in [B,I]:
-            pref += chkid + " "
-        res = pref + res + u")"
-        return res
-
-def to_string_POS(tokens, POS, chkid):
-    res = u" ".join([token + u"/" + tag for token,tag in zip(tokens,POS)])
-    if chkid in O:
-        return res
-    else:
-        pref = u"("
-        if chkid not in [B,I]:
-            pref += chkid + " "
-        res = pref + res + u")"
-        return res
 
 if __name__ == '__main__':
     import argparse, sys

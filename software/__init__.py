@@ -34,7 +34,7 @@ class Software(object):
     If this number is incremented, _version_patch is to be reseted to 0.
     """
     
-    _version_patch = 1
+    _version_patch = 2
     u"""
     The patch version number.
     Is only incremented when shallow changes are made to the program.

@@ -86,6 +86,8 @@ class Tokeniser(DefaultTokeniser):
         for force in self._force:
             bounds.force_regex(force, s)
         
+        bounds.add_last(len(s))
+        
         return bounds
     
     def sentence_bounds(self, tokens):
