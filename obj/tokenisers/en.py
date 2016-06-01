@@ -81,13 +81,13 @@ class Tokeniser(DefaultTokeniser):
                 count -= 1
             opening_counts[i] = count
         
-        sent_bounds.add(0)
+        sent_bounds.append(0)
         for index, token in enumerate(tokens):
             if re.match(u"^[?!]+$", token) or token == u"…" or re.match(u"\.\.+", token):
                 sent_bounds.append(index+1)
             elif token == u".":
                 if opening_counts[index] == 0:
                     sent_bounds.append(index+1)
-        sent_bounds.add_last(len(tokens))
+        sent_bounds.append(len(tokens))
         
         return sent_bounds
