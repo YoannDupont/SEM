@@ -44,7 +44,7 @@ class Tokeniser(DefaultTokeniser):
     
     def word_bounds(self, s):
         bounds = SpannedBounds()
-        bounds.append(0)
+        bounds.append(Span(0,0))
         
         atomic     = set(u";:«»()[]{}=+*$£€/\\\"?!%€$£")
         apostrophe = set(u"'ʼ’")
@@ -52,43 +52,44 @@ class Tokeniser(DefaultTokeniser):
         for forbidden in self._forbidden:
             bounds.add_forbiddens_regex(forbidden, s)
         
-        previous      = ""
+        previous = ""
         for index, c in enumerate(s):
             is_first = index == 0
             is_last  = index == len(s)-1
             
             if c.isspace():
                 if (index == bounds[-1].ub) and previous.isspace() or (index == (bounds[-1].lb) and index == (bounds[-1].ub)):
-                    bounds[-1].ub += 1
+                    bounds[-1].expand_ub(1)
                 else:
-                    bounds.append(index)
-                    bounds[-1].ub += 1
+                    bounds.append(Span(index, index+1))
             elif c in atomic:
-                bounds.add_last(index)
-                bounds.append(index+1)
+                bounds.add_last(Span(index, index))
+                bounds.append(Span(index+1, index+1))
             elif c in apostrophe:
-                bounds.append(index+1)
+                bounds.append(Span(index+1, index+1))
             elif c.isdigit():
                 if previous not in self._digit_valid:
-                    bounds.append(index)
+                    bounds.append(Span(index, index))
                 if is_last or s[index+1] not in self._digit_valid:
-                    bounds.append(index+1)
+                    bounds.append(Span(index+1, index+1))
             elif c == u',':
                 if is_first or is_last or not (previous.isdigit() and s[index+1].isdigit()):
-                    bounds.add_last(index)
-                    bounds.append(index+1)
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
             elif c == u".":
                 if is_first or is_last or not (previous.isdigit() and s[index+1].isdigit()):
-                    bounds.add_last(index)
-                    bounds.append(index+1)
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
             previous = c
         
         for force in self._force:
             bounds.force_regex(force, s)
         
-        bounds.add_last(len(s))
+        bounds.append(Span(len(s), len(s)))
         
-        print s, [str(b) for b in bounds._bounds]
+        for bd in bounds:
+            print bd
+        print
         
         return bounds
     
@@ -103,15 +104,13 @@ class Tokeniser(DefaultTokeniser):
                 count -= 1
             opening_counts[i] = count
         
-        sent_bounds.append(0)
+        sent_bounds.append(Span(0,0))
         for index, token in enumerate(tokens):
             if re.match(u"^[?!]+$", token) or token == u"…" or re.match(u"\.\.+", token):
-                sent_bounds.append(index+1)
+                sent_bounds.append(Span(index+1, index+1))
             elif token == u".":
                 if opening_counts[index] == 0:
-                    sent_bounds.append(index+1)
-        sent_bounds.append(len(tokens))
-        
-        print tokens, [str(b) for b in sent_bounds._bounds]
+                    sent_bounds.append(Span(index+1, index+1))
+        sent_bounds.append(Span(len(tokens), len(tokens)))
         
         return sent_bounds

@@ -35,3 +35,9 @@ class Span(object):
     
     def strictly_contains(self, i):
         return i > self._lb and i < self.ub
+    
+    def expand_lb(self, length):
+        self._lb -= length
+    
+    def expand_ub(self, length):
+        self._ub += length

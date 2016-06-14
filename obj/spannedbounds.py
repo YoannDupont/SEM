@@ -37,70 +37,31 @@ class SpannedBounds(object):
                 return (nth, True)
         return (-1, False)
     
-    def append(self, i):
-        if self.is_forbidden(i): return
-        if len(self._bounds) > 0 and self._bounds[-1].ub == i: return
+    def append(self, span):
+        if self.is_forbidden(span.lb): return
+        if len(self._bounds) > 0:
+            if span in self._bounds[-1] or span == self._bounds[-1]: return
         
-        self._bounds.append(Span(i,i))
+        self._bounds.append(span)
     
-    def add_span(self, span):
-        added = False
-        for i in range(len(self._bounds)):
-            if span.ub <= self._bounds[i]:
-                self._bounds.insert(i, span)
-                added = True
-            if added: break
-        if not added:
-            self._bounds.append(span)
-    
-    def add(self, i):
-        if self.is_forbidden(i): return
+    def add(self, span):
+        if self.is_forbidden(span.lb): return
         
-        index, found = self.find(i)
+        index, found = self.find(span.lb)
         if found:
             return
         else:
             if index == -1:
-                self._bounds.append(Span(i,i))
+                self._bounds.append(span)
             else:
-                self._bounds.insert(index, Span(i,i))
+                self._bounds.insert(index, span)
     
-    def add_at(self, i, index):
-        if i in self._forbidden: return
+    def add_last(self, span):
+        if self.is_forbidden(span.lb): return
+        if span in self._bounds[-1]: return
         
-        if i in self._bounds[index]:
-            return
-        else:
-            if i < self._bounds[index].lb:
-                self._bounds[index].lb = i
-            elif i > self._bounds[index].ub:
-                self._bounds[index].ub = i
-    
-    def add_with(self, i, j):
-        if self.is_forbidden(i): return
-        
-        index, found = self.find(j)
-        if not found:
-            return
-        else:
-            if i in self._bounds[index]:
-                return
-            else:
-                if i < self._bounds[index].lb:
-                    self._bounds[index].lb = i
-                elif i > self._bounds[index].ub:
-                    self._bounds[index].ub = i
-    
-    def add_last(self, i):
-        if self.is_forbidden(i): return
-        
-        if i in self._bounds[-1]:
-            return
-        else:
-            if i == self._bounds[-1].ub+1:
-                self._bounds[-1].ub = i
-            elif i > self._bounds[-1].ub+1:
-                self._bounds.append(Span(i,i))
+        if self._bounds[-1].ub == span.lb:
+            self._bounds[-1].expand_ub(span.ub - self._bounds[-1].ub)
     
     def is_forbidden(self, i):
         return i in self._forbidden
