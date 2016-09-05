@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 """
 file: stringfeatures.py
 
-Description: 
+Description: features based on "raw" string values.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

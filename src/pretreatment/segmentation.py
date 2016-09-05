@@ -25,42 +25,120 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import logging, codecs
+import logging, codecs, time
 
-from obj.tokenisers.dispatch import get_tokeniser
-from obj.logger              import logging_format
+from datetime import timedelta
+
+from obj.tokenisers.dispatch  import get_tokeniser
+from obj.storage.document     import Document
+from obj.storage.segmentation import Segmentation
+from obj.logger               import default_handler, file_handler
 
 segmentation_logger = logging.getLogger("sem.segmentation")
+segmentation_logger.addHandler(default_handler)
+
+def document_segmentation(document, tokeniser,
+                          field=u"word",
+                          log_level=logging.WARNING, log_file=None):
+    """
+    Updates a document with various segmentations and creates
+    an obj.corpus (CoNLL-formatted data) using field argument as index.
+    
+    Parameters
+    ----------
+    document : obj.storage.Document
+        the input data. It is a document with only a content
+    tokeniser : str or obj.tokenisers.Tokeniser
+        the tokeniser to segment content of the document with.
+        If tokeniser is a string, it will be looked up with
+        get_tokeniser method.
+    field : str
+        the field to index tokens with
+    log_level : str or int
+        the logging level
+    log_file : str
+        if not None, the file to log to (does not remove command-line
+        logging).
+    """
+    
+    start = time.time()
+    
+    if log_file is not None:
+        segmentation_logger.addHandler(file_handler(log_file))
+    segmentation_logger.setLevel(log_level)
+    
+    current_tokeniser = None
+    if type(tokeniser) in (str, unicode):
+        segmentation_logger.info('Getting tokeniser "%s"' %(tokeniser))
+        Tokeniser         = get_tokeniser(tokeniser)
+        current_tokeniser = Tokeniser()
+    else:
+        current_tokeniser = tokeniser
+    
+    content = document.content
+    
+    segmentation_logger.debug(u'segmenting "%s" content', document.name)
+    
+    token_spans     = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
+    sentence_spans  = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
+    paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
+    
+    segmentation_logger.info('segmented "%s" in %i sentences, %i tokens' %(document.name, len(sentence_spans), len(token_spans)))
+    
+    document.add_segmentation(Segmentation("tokens", spans=token_spans))
+    document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
+    document.add_segmentation(Segmentation("paragraphs", reference=document.segmentation("sentences"), spans=paragraph_spans))
+    document.corpus.from_segmentation(document.content, document.segmentation("tokens"), document.segmentation("sentences"))
+    
+    laps = time.time() - start
+    segmentation_logger.info('in %s' %(timedelta(seconds=laps)))
 
 def segmentation(infile, tokeniser_name, outfile,
                  output_format="vector",
                  ienc="utf-8", oenc="utf-8",
                  log_level=logging.WARNING, log_file=None):
-    file_mode = u"a"
+    """
+    Takes a "raw text" file and creates a CoNLL-formatted file with
+    tokenised text.
     
-    segmentation_logger.setLevel(log_level)
+    Parameters
+    ----------
+    infile : str
+        the input data. It is a document with only a content
+    tokeniser : str
+        the tokeniser name. It will be looked up with get_tokeniser
+        method.
+    ienc : str
+        the input file encoding
+    oenc : str
+        the output file encoding
+    log_level : str or int
+        the logging level
+    log_file : str
+        if not None, the file to log to (does not remove command-line
+        logging).
+    """
     
-    segmentation_logger.debug('Getting tokeniser "%s"' %(tokeniser_name))
+    start = time.time()
     
-    Tokeniser           = get_tokeniser(tokeniser_name)
-    tokeniser           = Tokeniser()
-    number_of_tokens    = 0
-    number_of_sentences = 0
+    document = Document(unicode(infile, errors="replace"), codecs.open(infile, "rU", ienc).read().lstrip(u"\ufeff")) # removing BOM
+    document_segmentation(document, tokeniser_name, log_level=log_level, log_file=log_file)
     
+    content   = document.content
+    tokens    = [content[token.lb : token.ub] for token in document.segmentation("tokens")]
+    sentences = [tokens[sentence.lb : sentence.ub] for sentence in document.segmentation("sentences")]
+    
+    segmentation_logger.info(u'writing to "%s"', outfile)
+    
+    joiner = (u" " if output_format=="line" else u"\n")
     with codecs.open(outfile, "w", oenc) as O:
-        segmentation_logger.debug(u'segmenting "%s" content to "%s"', unicode(infile, errors="replace"), unicode(outfile, errors="replace"))
-        joiner = (u" " if output_format=="line" else u"\n")
-        for line in codecs.open(infile, "rU", ienc):
-            line   = line.lstrip(u"\ufeff") # BOM
-            line   = line.strip()
-            tokens = tokeniser.tokenise(line, tokeniser.word_bounds(line))
-            for sentence in tokeniser.tokenise(tokens, tokeniser.sentence_bounds(tokens)):
-                number_of_sentences += 1
-                number_of_tokens    += len(sentence)
-                O.write(joiner.join(sentence) + u"\n")
-                if output_format == "vector":
-                    O.write(u"\n")
-        segmentation_logger.info('segmented "%s" in %i sentences, %i tokens' %(unicode(infile, errors="replace"), number_of_sentences, number_of_tokens))
+        for sentence in sentences:
+            O.write(joiner.join(sentence) + u"\n")
+            if output_format == "vector":
+                O.write(u"\n")
+    
+    laps = time.time() - start
+    segmentation_logger.info('in %s' %(timedelta(seconds=laps)))
 
 if __name__ == "__main__":
     import argparse, os.path, sys

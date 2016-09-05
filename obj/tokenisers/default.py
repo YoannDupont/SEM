@@ -22,12 +22,19 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see GNU official website.
 """
 
+import obj.constants
+
 from obj.span          import Span
 from obj.spannedbounds import SpannedBounds
 
 class Tokeniser(object):
     def __init__(self):
-        pass
+        self._forbidden = []
+        self._force     = []
+        
+        # adding some "basic" things to not tokenise across languages.
+        self._forbidden.append(obj.constants.url_re)
+        self._forbidden.append(obj.constants.email_re)
     
     def word_bounds(self, content):
         """
@@ -45,33 +52,49 @@ class Tokeniser(object):
             if c.isspace():
                 bounds.add_last(index)
                 bounds.add_last(index+1)
-            elif c in u",;:/\\!?.'\"()[]{}=+$£€":
-                bounds.add_last(index)
-                bounds.append(index+1)
         
         return bounds
     
-    def sentence_bounds(tokens):
+    def sentence_bounds(self, content, token_spans):
         """
         Returns a list of bounds matching sentences.
         
         Parameters
         ----------
-        tokens : list of str
-            the list of tokens to compute sentence bounds for
+        token_spans : list of Span
+            the list of tokens spans
         """
         sent_bounds = SpannedBounds()
         
-        sent_bounds.append(0)
+        sent_bounds.add(Span(0,0))
         for index, token in enumerate(tokens):
-            if rtoken == u".?!…":
-                sent_bounds.append(index+1)
-            elif token == u".":
-                if opening_counts[index] == 0:
-                    sent_bounds.append(index+1)
-        sent_bounds.append(len(tokens))
+            if token in u"\r\n":
+                sent_bounds.add_last(Span(index, index+1))
+        sent_bounds.add_last(Span(len(tokens), len(tokens)))
         
         return sent_bounds
+    
+    def paragraph_bounds(self, content, sentence_spans, token_spans):
+        """
+        Returns a list of bounds matching paragraphs.
+        
+        Parameters
+        ----------
+        sentence_spans : list of Span
+            the list of sentence spans
+        """
+        s_spans = [Span(token_spans[e.lb].lb, token_spans[e.ub-1].ub) for e in sentence_spans]
+        
+        paragraph_bounds = SpannedBounds()
+        
+        paragraph_bounds.add(Span(0, 0))
+        for index, sentence in enumerate(sentence_spans[1:], 1):
+            substring = content[s_spans[index-1].ub : s_spans[index].lb]
+            if substring.count(u"\n") > 1:
+                paragraph_bounds.append(Span(index, index))
+        paragraph_bounds.append(Span(len(sentence_spans), len(sentence_spans)))
+        
+        return paragraph_bounds
     
     def tokenise(self, sequence, bounds):
         """
@@ -89,3 +112,9 @@ class Tokeniser(object):
         for i in range(0, len(bounds)-1):
             tokens.append(sequence[bounds[i].ub : bounds[i+1].lb])
         return tokens
+    
+    def bounds2spans(self, bounds):
+        """
+        creates spans from bounds
+        """
+        return [Span(bounds[i].ub, bounds[i+1].lb) for i in range(0, len(bounds)-1)]

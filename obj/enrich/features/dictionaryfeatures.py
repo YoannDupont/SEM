@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 """
 file: dictionaryfeatures.py
 
-Description: 
+Description: features using dictionary matching.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

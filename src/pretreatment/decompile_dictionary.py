@@ -3,7 +3,11 @@
 """
 file: decompile_dictionary.py
 
-Description: 
+Description: creates a dictionary file from a serialized dictionary.
+A dictionary file is a file where every entry is on one line. There are
+two kinds of dictionaries: token and multiword. A token dictionary will
+apply itself on single tokens. A multiword dictionary will apply itself
+on sequences of tokens.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -24,9 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import codecs, cPickle, logging
 
-from obj.logger import logging_format
+from obj.logger import default_handler
 
-compile_dictionary_logger = logging.getLogger("sem.decompile_dictionary")
+decompile_dictionary_logger = logging.getLogger("sem.decompile_dictionary")
+decompile_dictionary_logger.addHandler(default_handler)
 
 # in token dictionaries, one entry = one token
 def _entry_token(token):
@@ -43,10 +48,9 @@ _choices = set(_entry.keys())
 def decompile_dictionary(infile, outfile, kind="token",
                          oenc="UTF-8",
                          log_level=logging.CRITICAL, log_file=None):
-    file_mode = u"a"
-    if type(log_file) in (str, unicode):
-        file_mode = u"w"
-    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
+    if log_file is not None:
+        decompile_dictionary_logger.addHandler(file_handler(log_file))
+    decompile_dictionary_logger.setLevel(log_level)
     
     if kind not in _choices:
         raise RuntimeError("Invalid kind: %s" %kind)

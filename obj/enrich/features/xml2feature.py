@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 """
 file: xml2feature.py
 
-Description: 
+Description: defines XML-to-object parsing procedure for each feature.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -29,7 +31,7 @@ from obj.enrich.features.getterfeatures     import IdentityFeature, DictGetterFe
 from obj.enrich.features.stringfeatures     import EqualFeature, EqualCaselessFeature
 from obj.enrich.features.matcherfeatures    import MatchFeature, CheckFeature, SubsequenceFeature, TokenFeature
 from obj.enrich.features.booleanfeatures    import OrFeature, AndFeature, NotFeature
-from obj.enrich.features.arityfeatures      import ArityFeature, UnaryFeature, BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstitutionFeature, SequencerFeature
+from obj.enrich.features.arityfeatures      import ArityFeature, UnaryFeature, BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstringFeature, SubstitutionFeature, SequencerFeature
 from obj.enrich.features.listfeatures       import ListFeature, SomeFeature, AllFeature, NoneFeature
 from obj.enrich.features.dictionaryfeatures import TokenDictionaryFeature, MultiwordDictionaryFeature
 
@@ -83,6 +85,8 @@ class XML2Feature(object):
                 return EOSFeature(**attrib)
             elif attrib["action"].lower() == "lower":
                 return LowerFeature(getter=getter, **attrib)
+            elif attrib["action"].lower() == "substring":
+                return SubstringFeature(getter=getter, **attrib)
             raise RuntimeError
         
         elif xml.tag == "unary":
@@ -91,9 +95,9 @@ class XML2Feature(object):
             raise RuntimeError
         
         elif xml.tag == "binary":
+            children = list(xml)
+            assert len(children) == 2
             if attrib["action"].lower() == "substitute":
-                children = list(xml)
-                assert len(children) == 2
                 assert children[0].tag == "pattern" and children[1].tag in ("replace", "replacement")
                 return SubstitutionFeature(children[0].text, children[1].text, re.U + re.M, getter=getter, **attrib)
             raise RuntimeError

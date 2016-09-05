@@ -1,0 +1,7 @@
+I,  I've tried to improve Bob's coolness by 1.2%.
+Test
+
+test2.
+
+I am
+just checking if a newline is considered as an end of sentence or not.

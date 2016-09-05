@@ -49,10 +49,10 @@ def textualise(inputfile, outputfile,
                ienc="utf-8", oenc="utf-8",
                log_level=logging.CRITICAL, log_file=None):
     start = time.time()
-    file_mode = u"a"
-    if type(log_file) in (str, unicode):
-        file_mode = u"w"
-    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
+    
+    if log_file is not None:
+        textualise_logger.addHandler(logging.FileHandler(log_file))
+    textualise_logger.setLevel(log_level)
     
     def join_space(s):
         return u" ".join(s)

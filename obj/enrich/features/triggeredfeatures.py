@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: triggeredfeatures.py
 
-Description: 
+Description: defines features that will only be extracted when
+a given condition is met (when it is triggered).
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

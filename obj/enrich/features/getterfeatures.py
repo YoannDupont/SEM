@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: getterfeatures.py
 
-Description: 
+Description: getter features are features whose sole purpose is to look
+for the right token and return it or one of its fields.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

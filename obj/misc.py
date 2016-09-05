@@ -1,3 +1,27 @@
+# -*- coding: utf-8 -*-
+
+"""
+file: misc.py
+
+Description: a file for miscellaneous operations.
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 def ranges_to_set(ranges, length, include_zero=False):
     """
     Returns a set of integers based of ranges over a reference list. Ranges are
@@ -33,47 +57,30 @@ def ranges_to_set(ranges, length, include_zero=False):
     
     return result
 
-def to_dhms(laps):
-    def add_time(s, laps, period, name):
-        if laps > period:
-            if period != 0:
-                rem = laps % period
-                if rem != 0:
-                    l = (laps - rem) / period
-                else:
-                    l = laps / period
-            else:
-                rem = 0
-                l   = laps
-            if s == "":
-                s = "%i %s%s" %(l, name, ("" if l == 1 else "s"))
-            else:
-                s += " %i %s%s" %(l, name, ("" if l == 1 else "s"))
-            laps = rem
-        elif laps == period:
-            if period != 0:
-                l = 1
-                if s == "":
-                    s = "%i %s%s" %(l, name, ("" if l == 1 else "s"))
-                else:
-                    s += " %i %s%s" %(l, name, ("" if l == 1 else "s"))
-                laps = 0
-        return (s, laps)
-    
-    sid = 86400 # seconds in a day
-    sih = 3600  # seconds in a hour
-    sim = 60    # seconds in a minute
-    s   = ""
-    
-    s, laps = add_time(s, laps, sid, "day")
-    s, laps = add_time(s, laps, sih, "hour")
-    s, laps = add_time(s, laps, sim, "minute")
-    s, laps = add_time(s, laps,   0, "second")
-    
-    return s
-
 def last_index(s, e):
     if e in s:
         return len(s) - s[::-1].index(e[::-1]) - 1
     else:
         return -1
+
+def correct_pos_tags(tags):
+    corrected   = [[level2 for level2 in level1] for level1 in tags]
+    corrections = 0
+    for i in range(len(corrected)):
+        value = ""
+        j     = len(corrected[i])-1
+        while j >= 0:
+            if value != "":
+                if corrected[i][j][0] == "_":
+                    if corrected[i][j][1:] != value:
+                        corrected[i][j] = u"_" + value
+                        corrections += 1
+                else:
+                    if corrected[i][j][0] != "_" and corrected[i][j] != value:
+                        corrected[i][j] = value
+                        corrections += 1
+                    value = ""
+            elif corrected[i][j][0] == "_":
+                value = corrected[i][j][1:]
+            j -= 1
+    return corrected

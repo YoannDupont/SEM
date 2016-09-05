@@ -25,8 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os.path
+import unittest
 
-from software import Software
+import software
 
 from obj.setup  import get_modules
 from obj.logger import logging_format
@@ -60,10 +61,15 @@ if __name__ == "__main__":
         print
         print "for SEM's current version: -v or --version\n"
         print "for informations about the last revision: -i or --informations"
+        print "for playing all tests: --test"
     elif operation in ["-v", "--version"]:
-        print Software.full_name()
+        print software.full_name()
     elif operation in ["-i", "--informations"]:
-        print Software.informations()
+        print software.informations()
+    elif operation == "--test":
+        for test in [test_module for test_module in os.listdir("tests") if test_module.startswith("test_") and test_module.endswith(".py")]:
+            testsuite = unittest.TestLoader().discover('tests')
+            unittest.TextTestRunner(verbosity=2).run(testsuite)
     else:
         print "Module not found: " + operation
         suggestions = find_suggestions(operation, ids)

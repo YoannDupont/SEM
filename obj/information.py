@@ -1,40 +1,95 @@
+# -*- coding: utf-8 -*-
+
+"""
+file: information.py
+
+Description: an object to represent which features to add and where to
+add them in a CoNLL corpus.
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import logging
 
 from xml.etree.ElementTree import ElementTree, tostring as element2string
 
 from obj.enrich.features.xml2feature import XML2Feature
-from obj.logger                      import logging_formatter
+from obj.logger                      import default_handler
 
 import os.path
 
 tmp                = os.path.normpath(__file__).split(os.sep)
 tmp                = u'.'.join(tmp[tmp.index("obj") : ]).rsplit(".",1)[0]
 xml2feature_logger = logging.getLogger("sem.%s" %tmp)
+xml2feature_logger.addHandler(default_handler)
 xml2feature_logger.setLevel("WARN")
-xml2feature_handler = logging.StreamHandler()
-xml2feature_handler.setFormatter(logging_formatter)
-xml2feature_logger.addHandler(xml2feature_handler)
 del tmp
 
+_train = set([u"train", u"eval", u"evaluate", u"evaluation"])
+_label = set([u"label", u"annotate", u"annotation"])
+_modes = _train | _label
+_equivalence = dict([[mode, _train] for mode in _train] + [[mode, _label] for mode in _label])
+
+class Entry(object):
+    """
+    The Entry object. It represents a field's identifier in a CoNLL corpus.
+    An Entry may be used only in certain circumstances: for example, the
+    output tag may only appear in train mode.
+    """
+    def __init__(self, name, mode=u"label"):
+        if mode not in _modes:
+            raise ValueError("Unallowed mode for entry: %s" %mode)
+        self._name = name
+        self._mode = mode
+    
+    def __eq__(self, other):
+        return self.name == other.name
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def mode(self):
+        return self._mode
+    
+    @staticmethod
+    def fromXML(xml_element):
+        return Entry(**xml_element.attrib)
+    
+    def has_mode(self, mode):
+        if len(_label & _equivalence[self._mode]) != 0: return True
+        return len(_equivalence[self._mode] & _equivalence[mode]) != 0
+
 class Informations(object):
-    def __init__(self, path=None):
+    def __init__(self, path=None, mode=u"label"):
+        self._mode     = mode
         self._bentries = [] # informations that are before newly added information
         self._aentries = [] # informations that are after ...
         self._features = [] # informations that are added
+        self._names    = set()
         self._x2f      = None # the feature parser, initialised in parse
         
         if path is not None:
             self.parse(path)
     
     def parse(self, filename):
-        def safe_add(set, entry):
-            if entry in set:
-                raise ValueError('Duplicated column name: "' + entry + '"')
-            set.add(entry)
-        
         parsing = ElementTree()
         parsing.parse(filename)
-        found = set() # set of found entries / names. They are nominative and SHOULD NOT be met twice
         
         children = parsing.getroot().getchildren()
         
@@ -60,13 +115,13 @@ class Informations(object):
         
         for entry in entries:
             for c in entry.getchildren():
-                name = c.attrib["name"]
-                safe_add(found, name)
-                if entry.tag == "before":
-                        self._bentries.append(name)
-                elif entry.tag == "after":
-                        self._aentries.append(name)
-    
+                current_entry = Entry.fromXML(c)
+                self.check_entry(current_entry.name)
+                if entry.tag == "before" and current_entry.has_mode(self._mode):
+                    self._bentries.append(current_entry.name)
+                elif entry.tag == "after" and current_entry.has_mode(self._mode):
+                    self._aentries.append(current_entry.name)
+        
         self._x2f = XML2Feature(self.aentries + self.bentries, path=filename)
         
         features = list(children[1])
@@ -80,7 +135,13 @@ class Informations(object):
                         xml2feature_logger.error(line.strip())
                     xml2feature_logger.exception(exc)
                     raise
-            safe_add(found, self._features[-1].name)
+            self.check_entry(self._features[-1].name)
+    
+    def check_entry(self, entry_name):
+        if entry_name in self._names:
+            raise ValueError('Duplicated column name: "' + entry + '"')
+        else:
+            self._names.add(entry_name)
     
     @property
     def bentries(self):

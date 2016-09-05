@@ -1,9 +1,42 @@
-#-*- encoding:utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+file: span.py
+
+Description: defines the Span object.
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 
 class Span(object):
-    def __init__(self, lb, ub):
-        self._lb = min(lb, ub)
-        self._ub = max(lb, ub)
+    """
+    The Span object.
+    
+    Attributes
+    ----------
+    _lb : int
+        the lower bound of a Span.
+    _ub : int
+        the upper bound of a Span.
+    """
+    
+    def __init__(self, lb, ub, length=-1):
+        self._lb = (min(lb, ub) if length<0 else lb)
+        self._ub = (max(lb, ub) if length<0 else lb+length)
     
     def __eq__(self, span):
         return self.lb == span.lb and self.ub == span.ub
@@ -32,6 +65,9 @@ class Span(object):
     @ub.setter
     def ub(self, ub):
         self._ub = max(ub, self._lb)
+    
+    def toXML(self):
+        return '<span s="%i" l="%s" />' %(self._lb, self._ub)
     
     def strictly_contains(self, i):
         return i > self._lb and i < self.ub

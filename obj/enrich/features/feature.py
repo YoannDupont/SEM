@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: feature.py
 
-Description: 
+Description: the top-level object for features. Defines basic attributes
+and functionalities.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

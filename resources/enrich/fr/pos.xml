@@ -5,6 +5,9 @@
         <before>
             <entry name="word" />
         </before>
+        <after>
+            <entry name="POS" mode="train" />
+        </after>
     </entries>
     
     <features>

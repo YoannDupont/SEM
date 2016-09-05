@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 """
 file: booleanfeatures.py
 
-Description: 
+Description: features for defining boolean expressions.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

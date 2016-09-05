@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: wapiti.py
 
 Description: a very simple wrapper for calling wapiti. Provides train
 and test procedures.
-TODO: use subprocess.PIPE to get wapiti's output
 TODO: add every option for train and test
 TODO: add support for other modes, such as dump and update (1.5.0+)
 
@@ -25,6 +26,13 @@ along with this program. If not, see GNU official website.
 """
 
 import subprocess
+import time
+import logging
+
+from obj.logger import default_handler
+
+wapiti_logger = logging.getLogger("sem.wapiti")
+wapiti_logger.addHandler(default_handler)
 
 def command_name():
     """
@@ -76,3 +84,66 @@ def label(input, model, output=None, only_labels=False, nbest=None):
     if exit_status != 0:
         if output is None: output = "*stdout"
         raise RuntimeError("Wapiti exited with status %i.\n\tmodel: %s\n\tinput: %s\n\toutput: %s" %(exit_status, model, input, output))
+
+def label_corpus(corpus, model, field, encoding):
+    corpus_unicode = unicode(corpus).encode(encoding)
+    
+    cmd = [command_name(), "label", "-m", model, "--label"]
+    
+    wapiti_process     = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    w_stdout, w_stderr = wapiti_process.communicate(input=corpus_unicode)
+    
+    i = 0
+    j = 0
+    corpus.fields.append(field)
+    for element in w_stdout.split("\n"):
+        element = element.strip()
+        if "" == element:
+            i += 1
+            j  = 0
+        else:
+            corpus.sentences[i][j][field] = element
+            j += 1
+
+def label_document(document, model, field, encoding, annotation_name=None, annotation_fields=None):
+    if annotation_fields is None:
+        fields = document.corpus.fields
+    else:
+        fields = annotation_fields
+    
+    if annotation_name is None:
+        annotation_name = unicode(field)
+    
+    corpus_unicode = document.corpus.unicode(fields).encode(encoding)
+    
+    cmd = [command_name(), "label", "-m", model, "--label"]
+    
+    wapiti_process     = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    w_stdout, w_stderr = wapiti_process.communicate(input=corpus_unicode)
+    
+    try:
+        if wapiti_process.returncode != 0:
+            raise RuntimeError("Wapiti exited with status %i" %wapiti_process.returncode)
+    except RuntimeError, re:
+        for error_part in [line for line in w_stderr.split(u"\n") if line.strip() != ""]:
+            wapiti_logger.error(error_part)
+        wapiti_logger.exception(re)
+        raise
+    
+    
+    i    = 0
+    j    = 0
+    tags = [[]]
+    document.corpus.fields.append(field)
+    for element in w_stdout.split("\n"):
+        element = element.strip()
+        if "" == element:
+            if len(tags[-1]) > 0:
+                tags.append([])
+                i += 1
+                j  = 0
+        else:
+            tags[-1].append(element)
+            j += 1
+    
+    document.add_annotation_from_tags(tags, field, annotation_name)

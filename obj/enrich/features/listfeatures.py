@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+
 """
 file: listfeatures.py
 
-Description: 
+Description: defines features based on lists. They are somewhat similar
+to token dictionaries, at the difference that one can explicitly choose
+of not matching a term, or all terms in a list.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

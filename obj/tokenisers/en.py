@@ -34,7 +34,7 @@ class Tokeniser(DefaultTokeniser):
     
     def word_bounds(self, s):
         bounds = SpannedBounds()
-        bounds.append(0)
+        bounds.append(Span(0,0))
         
         atomic     = set(u";:«»()[]{}=+*$£€/\\\"?!%€$£")
         apostrophe = set(u"'ʼ’")
@@ -43,33 +43,40 @@ class Tokeniser(DefaultTokeniser):
             is_first = index == 0
             is_last  = index == len(s)-1
             if c.isspace():
-                bounds.add_last(index)
-                bounds.add_last(index+1)
+                bounds.add_last(Span(index, index+1))
             elif c in atomic:
-                bounds.add_last(index)
-                bounds.append(index+1)
+                bounds.add_last(Span(index, index))
+                bounds.append(Span(index+1, index+1))
             elif c in apostrophe:
                 if is_first or is_last:
-                    bounds.add_last(index)
-                    bounds.append(index+1)
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
+                elif s[index+1] == s[index]:
+                    bounds.append(Span(index, index+1))
                 else:
                     if s[index-1] == u"n" and s[index+1] == u"t":
-                        bounds.append(index-1)
-                        bounds.append(index+2)
+                        bounds.append(Span(index-1, index-1))
+                        bounds.append(Span(index+2, index+2))
                     elif s[index+1] == u"s":
-                        bounds.append(index)
-                        bounds.append(index+2)
-            elif c == u'.':
-                if (is_first or not s[index-1].isdigit()) and (is_last or not s[index-1].isdigit()):
-                    bounds.add_last(index)
-                    bounds.append(index+1)
+                        bounds.append(Span(index, index))
+                        bounds.append(Span(index+2, index+2))
+                    else:
+                        bounds.add_last(Span(index, index))
+            elif c in u'.,':
+                if is_first or is_last:
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
+                elif (is_first or not s[index-1].isdigit()) and (is_last or not s[index-1].isdigit()):
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
         
-        bounds.add_last(len(s))
+        bounds.append(Span(len(s), len(s)))
         
         return bounds
     
-    def sentence_bounds(self, tokens):
+    def sentence_bounds(self, content, token_spans):
         sent_bounds    = SpannedBounds()
+        tokens         = [content[t.lb : t.ub] for t in token_spans]
         openings       = set([u"«",u"(",u"[",u"``"])
         closings       = set([u"»",u")",u"]",u"''"])
         opening_counts = [0 for i in tokens]
@@ -81,13 +88,13 @@ class Tokeniser(DefaultTokeniser):
                 count -= 1
             opening_counts[i] = count
         
-        sent_bounds.append(0)
+        sent_bounds.append(Span(0,0))
         for index, token in enumerate(tokens):
             if re.match(u"^[?!]+$", token) or token == u"…" or re.match(u"\.\.+", token):
-                sent_bounds.append(index+1)
+                sent_bounds.append(Span(index+1, index+1))
             elif token == u".":
                 if opening_counts[index] == 0:
-                    sent_bounds.append(index+1)
-        sent_bounds.append(len(tokens))
+                    sent_bounds.append(Span(index+1, index+1))
+        sent_bounds.append(Span(len(tokens), len(tokens)))
         
         return sent_bounds

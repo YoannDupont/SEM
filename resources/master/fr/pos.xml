@@ -3,9 +3,9 @@
     <pipeline>
         <segmentation name="fr" />
         <enrich config="../../enrich/fr/pos.xml" />
-        <label model="../../models/fr/POS/plain" />
-        <clean_info to-keep="0,-1" />
-        <export pos="1" lang="fr" lang_style="default.css" />
+        <label model="../../models/fr/POS/plain" field="POS" />
+        <clean_info to-keep="word,POS" />
+        <export format="html" pos="POS" lang="fr" lang_style="default.css" />
     </pipeline>
     
     <options>

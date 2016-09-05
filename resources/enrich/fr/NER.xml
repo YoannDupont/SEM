@@ -7,9 +7,9 @@
             <entry name="POS" />
             <entry name="chunking" />
         </before>
-        <!--<after>
-            <entry name="NE" />
-        </after>-->
+        <after>
+            <entry name="NE" mode="train" />
+        </after>
     </entries>
     
     <features>
@@ -17,9 +17,15 @@
         
         <nullary name="BOS" action="BOS" />
         
-        <unary name="isupper" action="isUpper">0</unary>
+        <unary name="starts-with-upper" action="isUpper">0</unary>
+        
+        <regexp name="ends-with-pedia" action="check" entry="lower">p[ée]dia$</regexp>
         
         <dictionary name="title-or-function" action="token" path="../../dictionaries/fr/misc/title-or-function.txt" entry="lower" />
+        
+        <dictionary name="organisation-trigger" action="token" path="../../dictionaries/fr/NER/token/organisation-trigger" entry="lower" />
+        
+        <dictionary name="company-trigger" action="token" path="../../dictionaries/fr/NER/token/company-trigger" entry="lower" />
         
         <nary name="WC" action="sequencer">
             <binary action="substitute">
@@ -75,18 +81,22 @@
             <regexp action="check">^N</regexp>
         </find>
         
-        <dictionary name="company-token"     action="token"     entry="lower" path="../../dictionaries/fr/NER/token/company" />
-        <dictionary name="company-multiword" action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/company" />
-        
         <dictionary name="city-token"        action="token"     entry="lower" path="../../dictionaries/fr/NER/token/city" />
         <dictionary name="city-multiword"    action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/city" />
+        
+        <dictionary name="departement"       action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/departement" />
+        <dictionary name="region"            action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/region" />
+        
+        <dictionary name="company-token"     action="token"     entry="lower" path="../../dictionaries/fr/NER/token/company" />
+        <dictionary name="company-multiword" action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/company" />
         
         <dictionary name="country-token"     action="token"     entry="lower" path="../../dictionaries/fr/NER/token/country" />
         <dictionary name="country-multiword" action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/country" />
         
+        <dictionary name="organisation-token"     action="token"     entry="lower" path="../../dictionaries/fr/NER/token/organisation" />
+        <dictionary name="organisation-multiword" action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/organisation" />
+        
         <dictionary name="person-token"      action="token"     entry="lower" path="../../dictionaries/fr/NER/token/person" />
         <dictionary name="person-multiword"  action="multiword" entry="lower" path="../../dictionaries/fr/NER/multiword/person" />
-        
-        <dictionary name="sigla-token"       action="token"     entry="lower" path="../../dictionaries/fr/NER/token/sigla" />
     </features>
 </information>

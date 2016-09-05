@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
+#-*- coding:utf-8 -*-
 
 """
 file: export.py
 
-Description: export annotated file to HTML
+Description: exports an input to a given format.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -22,240 +22,115 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import logging, os, os.path, sys, string, time, cgi, codecs
+import logging, codecs
 
-from software import Software
+# measuring time laps
+import time
+from datetime import timedelta
 
-from obj.IO.columnIO import Reader
-from obj.logger      import logging_format
-from obj.misc        import to_dhms
+from obj.IO.columnIO        import Reader
+from obj.storage.document   import Document
+from obj.exporters.dispatch import get_exporter
+from obj.logger             import default_handler, file_handler
 
-export_logger = logging.getLogger("sem.export")
+export_logger = logging.getLogger("sem.exportation")
+export_logger.addHandler(default_handler)
 
-def export(inputfile, outputfile,
-           document_name=None, lang="fr", lang_style="default.css",
+def export(infile, exporter_name, outfile,
            pos_column=0, chunk_column=0, ner_column=0,
+           lang="fr", lang_style="fr",
            ienc="utf-8", oenc="utf-8",
-           log_level=logging.CRITICAL, log_file=None):
+           log_level=logging.WARNING, log_file=None):
+    
     start = time.time()
     
-    file_mode = u"a"
-    if type(log_file) in (str, unicode):
-        file_mode = u"w"
-    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
+    if log_file is not None:
+        export_logger.addHandler(file_handler(log_file))
+    export_logger.setLevel(log_level)
     
-    if not document_name:
-        document_name = os.path.basename(outputfile)
+    infile_is_str = type(infile) in (str, unicode)
     
-    export_logger.info('exporting "%s"' %(inputfile))
+    export_logger.info('getting exporter %s' %(exporter_name))
     
-    if pos_column != 0:
-        export_logger.debug('POS column is %i' %pos_column)
-    if chunk_column != 0:
-        export_logger.debug('chunking column is %i' %chunk_column)
-    if ner_column != 0:
-        export_logger.debug('NER column is %i' %ner_column)
+    Exporter = get_exporter(exporter_name)
+    exporter = Exporter(lang=lang, lang_style=lang_style)
     
-    corpus = []
-    for element in Reader(inputfile, ienc):
-        corpus.append(element[:])
+    export_logger.debug('setting name/column couples for exportation')
     
-    escaped    = escape_tokens(corpus)
-    pos_html   = []
-    chunk_html = []
-    ner_html   = []
-    if pos_column != 0:
-        pos_html = add_pos(escaped, corpus, pos_column)
-    if chunk_column != 0:
-        chunk_html = add_chunking(escaped, corpus, chunk_column)
-    if ner_column != 0:
-        ner_html = add_chunking(escaped, corpus, ner_column)
+    corpus = None
+    if infile_is_str:
+        corpus = []
+        for element in Reader(infile, ienc):
+            corpus.append(element[:])
+        couples = {"word":0}
+    else:
+        couples = {}
+        if "word" in infile.corpus.fields:
+            couples["token"] = "word"
+        elif "token" in infile.corpus.fields:
+            couples["token"] = "token"
     
-    export_logger.info('Writing "%s"' %(outputfile))
+    if pos_column:
+        couples["pos"] = pos_column
+        export_logger.debug('POS column is %s' %pos_column)
+    if chunk_column:
+        couples["chunking"] = chunk_column
+        export_logger.debug('chunking column is %s' %chunk_column)
+    if ner_column:
+        couples["ner"] = ner_column
+        export_logger.debug('NER column is %s' %ner_column)
     
-    with codecs.open(outputfile, "w", oenc) as O:
-        O.write(makeHTML(pos_html, chunk_html, ner_html, lang, oenc, document_name=document_name, lang_style=lang_style))
+    if infile_is_str:
+        export_logger.debug('exporting corpus %s' %infile)
+        exporter.corpus_to_file(corpus, couples, outfile, encoding=oenc)
+    else:
+        export_logger.debug('exporting document %s' %infile.name)
+        exporter.document_to_file(infile, couples, outfile, encoding=oenc)
     
-    export_logger.info("done in %s", to_dhms(time.time() - start))
+    laps = time.time() - start
+    export_logger.info('done in %s' %(timedelta(seconds=laps)))
+    
 
-def escape_tokens(corpus):
-    escaped = []
-    for sentence in corpus:
-        escaped.append([])
-        for element in sentence:
-            escaped[-1].append(cgi.escape(element[0]))
-    return escaped
+if __name__ == "__main__":
+    import argparse, os.path, sys
 
-def add_pos(escaped, corpus, column):
-    to_return = [e[:] for e in escaped]
-    for i in range(len(to_return)):
-        for j in range(len(to_return[i])):
-            if corpus[i][j][column][0] == "_":
-                if (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "_"):
-                    to_return[i][j] = '%s</span>' %(to_return[i][j])
-            else:
-                to_return[i][j] = '<span id="%s" title="%s">%s' %(corpus[i][j][column], corpus[i][j][column], to_return[i][j])
-                if (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "_"):
-                    to_return[i][j] = '%s</span>' %(to_return[i][j])
-    return to_return
-
-def add_chunking(escaped, corpus, column):
-    to_return = [e[:] for e in escaped]
-    for i in range(len(to_return)):
-        for j in range(len(to_return[i])):
-            if corpus[i][j][column][0] == "O": continue
-            chunk_name = corpus[i][j][column][2:]
-            if corpus[i][j][column][0] == "B":
-                to_return[i][j] = '<span id="%s" title="%s">%s' %(chunk_name, chunk_name, escaped[i][j])
-            if corpus[i][j][column][0] in "BI" and (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "I"):
-                to_return[i][j] += '</span>'
-    return to_return
-
-def makeHTML(pos, chunk, ner, lang, output_encoding, document_name="", lang_style="default.css"):
-    def checked(number):
-        """ whether the tab is checked or not """
-        if 1 == number:
-            return " checked"
-        else:
-            return ""
+    parser = argparse.ArgumentParser(description="Segments the textual content of a sentence into tokens. They can either be outputted line per line or in a vectorised format")
     
-    css_tabs = os.path.join(Software.SEM_HOME, "resources", "css", "tabs.css")
-    css_lang = os.path.join(Software.SEM_HOME, "resources", "css", lang, lang_style)
-    
-    # header + div that will contain tabs
-    html_page = u"""<html>
-    <head>
-        <meta charset="%s" />
-        <title>%s</title>
-        <link rel="stylesheet" href="%s">
-        <link rel="stylesheet" href="%s">
-    </head>
-    <body>
-        <div class="wrapper">
-            <h1>%s</h1>
-            <div class="tab_container">""" %(output_encoding, document_name, css_tabs, css_lang, document_name)
-    
-    # the annotations that will be outputted
-    nth    = 1
-    annots = []
-    
-    #
-    # declaring tabs in HTML. TODO: refactor duped code
-    #
-    
-    if pos != []:
-        html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s>
-                <label for="tab%i">Part-Of-Speech</label>""" %(nth, checked(nth), nth))
-        annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(pos_tokens) for pos_tokens in pos])))
-        nth += 1
-    
-    if chunk != []:
-        html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s>
-                <label for="tab%i">Chunking</label>""" %(nth, checked(nth), nth))
-        annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(chunk_tokens) for chunk_tokens in chunk])))
-        nth += 1
-    
-    if ner != []:
-        html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s>
-                <label for="tab%i">Named Entity</label>""" %(nth, checked(nth), nth))
-        annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(ner_tokens) for ner_tokens in ner])))
-        nth += 1
-    
-    # annotations are put after the tab declarations
-    for annot in annots:
-        html_page += annot
-    
-    # closing everything that remains to be closed
-    html_page += u"""
-            </div>
-        </div>
-    </body>
-</html>
-"""
-    
-    return html_page
-    
-    return u"""<html>
-    <head>
-        <meta charset="%s" />
-        <title>%s</title>
-        <link rel="stylesheet" href="%s">
-        <link rel="stylesheet" href="%s">
-    </head>
-    <body>
-        <div class="wrapper">
-            <h1>%s</h1>
-            <div class="tab_container">
-                <input id="tab1" type="radio" name="tabs" checked>
-                <label for="tab1">Part-Of-Speech</label>
-                <input id="tab2" type="radio" name="tabs">
-                <label for="tab2">Chunking</label>
-                <input id="tab3" type="radio" name="tabs">
-                <label for="tab3">Named Entity</label>
-                <section id="content1" class="tab-content">
-%s
-                </section>
-                <section id="content2" class="tab-content">
-%s
-                </section>
-                <section id="content3" class="tab-content">
-%s
-                </section>
-            </div>
-        </div>
-    </body>
-</html>
-""" %(output_encoding, document_name, css_tab, css_lang, document_name, u"\n".join([u" ".join(pos_tokens) for pos_tokens in pos]), u"\n".join([u" ".join(chunk_tokens) for chunk_tokens in chunk]), u"\n".join([u" ".join(ner_tokens) for ner_tokens in ner]))
-
-if __name__ == '__main__':
-    import argparse, sys
-    parser = argparse.ArgumentParser(description="Takes a vectorized text (in a file) and outputs an linear text (in a file).")
-    
-    parser.add_argument("input",
-                        help="path/name of the out file. Overwritten if existing.")
-    parser.add_argument("output",
-                        help="path/name of the out file. Overwritten if existing.")
-    parser.add_argument("-d", "--document-name", dest="document_name",
-                        help="The column for POS. If 0, POS information is not added (default: %(default)s)")
-    parser.add_argument("--lang", dest="lang", default="fr",
-                        help="The language (default: %(default)s)")
-    parser.add_argument("--lang-style", dest="lang_style", default="default.css",
-                        help="The name of the CSS stylesheet for the given language (default: %(default)s)")
+    parser.add_argument("infile",
+                        help="The input file")
+    parser.add_argument("exporter_name",
+                        help="The name of the exporter to use")
+    parser.add_argument("outfile",
+                        help="The output file")
     parser.add_argument("-p", "--pos-column", dest="pos_column", type=int, default=0,
                         help="The column for POS. If 0, POS information is not added (default: %(default)s)")
     parser.add_argument("-c", "--chunk-column", dest="chunk_column", type=int, default=0,
                         help="The column for chunk. If 0, chunk information is not added (default: %(default)s)")
     parser.add_argument("-n", "--ner-column", dest="ner_column", type=int, default=0,
                         help="The column for NER. If 0, chunk information is not added (default: %(default)s)")
+    parser.add_argument("--lang", dest="lang", default="fr",
+                        help="The language of the text (default: %(default)s)")
+    parser.add_argument("-s", "--lang-style", dest="lang_style", default="default.css",
+                        help="The style to use, if applicable (default: %(default)s)")
     parser.add_argument("--input-encoding", dest="ienc",
                         help="Encoding of the input (default: UTF-8)")
     parser.add_argument("--output-encoding", dest="oenc",
                         help="Encoding of the input (default: UTF-8)")
     parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                        help="Encoding of both the input and the output (default: %(default)s)")
-    parser.add_argument("-l", "--log", dest="log_level", action="count",
-                        help="Increase log level (default: critical)")
+                        help="Encoding of both the input and the output (default: UTF-8)")
+    parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WARNING","ERROR","CRITICAL"), default="WARNING",
+                        help="Increase log level (default: %(default)s)")
     parser.add_argument("--log-file", dest="log_file",
                         help="The name of the log file")
+
+    if __package__:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args()
     
-    arguments = (sys.argv[2:] if __package__ else sys.argv)
-    args      = parser.parse_args(arguments)
-    
-    export(args.input, args.output,
-           document_name=args.document_name, lang=args.lang, lang_style=args.lang_style,
+    export(args.infile, args.exporter_name, args.outfile,
            pos_column=args.pos_column, chunk_column=args.chunk_column, ner_column=args.ner_column,
+           lang=args.lang, lang_style=args.lang_style,
            ienc=args.ienc or args.enc, oenc=args.oenc or args.enc,
            log_level=args.log_level, log_file=args.log_file)
     sys.exit(0)

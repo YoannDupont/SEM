@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+
 """
 file: matcherfeatures.py
 
-Description: 
+Description: features based on regex. Implements various regex
+functionalities. Does not implement substitution, as it is defined in
+arityfeatures.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

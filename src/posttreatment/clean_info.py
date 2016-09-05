@@ -3,7 +3,7 @@
 """
 file: clean_info.py
 
-Description: 
+Description: remove unwanted fields from a CoNLL-formatted input.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -24,18 +24,87 @@ along with this program. If not, see GNU official website.
 
 import logging, codecs
 
+# measuring time laps
+import time
+from datetime import timedelta
+
 from obj.misc   import ranges_to_set
-from obj.logger import logging_format
+from obj.logger import default_handler, file_handler
 
 clean_info_logger = logging.getLogger("sem.clean_info")
+clean_info_logger.addHandler(default_handler)
+
+def document_clean(document, ranges,
+                   log_level="CRITICAL", log_file=None):
+    """
+    Cleans the obj.storage.corpus of a document, removing unwanted fields.
+    
+    Parameters
+    ----------
+    document : obj.storage.Document
+        the document containing the corpus to clean.
+    ranges : str or list of int or list of str
+        if str: fields to remove will be induced
+        if list of int: each element in the list is the index of a field
+        to remove in corpus.fields
+        if list of string: the list of fields to remove
+    """
+    
+    start = time.time()
+    
+    if log_file is not None:
+        clean_info_logger.addHandler(file_handler(log_file))
+    clean_info_logger.setLevel(log_level)
+    
+    clean_info_logger.info(u'cleaning document')
+    
+    fields  = None
+    allowed = None
+    if type(ranges) in (str, unicode):
+        try:
+            allowed = sorted(ranges_to_set(ranges, len(document.corpus.fields), include_zero=True)) # comma-separated numbers or number ranges
+        except:
+            allowed = ranges.split(u",") # comma-separated named fields
+    else:
+        allowed = ranges
+    
+    if len(allowed) == 0:
+        raise RuntimeError("No more data after cleaning !")
+    
+    if type(allowed[0]) in (int, long):
+        fields = [document.corpus.fields[i] for i in allowed]
+    else:
+        fields = allowed
+    
+    to_remove = [field for field in document.corpus.fields if field not in fields]
+    document.corpus.fields = fields
+    
+    for i in range(len(document.corpus.sentences)):
+        for j in range(len(document.corpus.sentences[i])):
+            for field in to_remove:
+                del document.corpus.sentences[i][j][field]
+    
+    laps = time.time() - start
+    clean_info_logger.info(u'done in %s' %timedelta(seconds=laps))
 
 def clean_info(infile, outfile, ranges,
                ienc="utf-8", oenc="utf-8",
-               log_level=logging.CRITICAL, log_file=None):
-    file_mode = u"a"
-    if type(log_file) in (str, unicode):
-        file_mode = u"w"
-    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
+               log_level="CRITICAL", log_file=None):
+    """
+    Cleans a CoNLL-formatted file, removing fields at given indices.
+    
+    Parameters
+    ----------
+    infile : str
+        the name of the file to clean.
+    ranges : str
+        the fields to remove. Fields is a coma-separated list of indices
+        or ranges of indices using a python format (ie: "lo:hi").
+    """
+    
+    if log_file is not None:
+        clean_info_logger.addHandler(file_handler(log_file))
+    clean_info_logger.setLevel(log_level)
     
     allowed = ranges_to_set(ranges, len(codecs.open(infile, "rU", ienc).readline().strip().split()), include_zero=True)
     max_abs = 0
@@ -79,7 +148,7 @@ if __name__ == "__main__":
                         help="Encoding of the input (default: UTF-8)")
     parser.add_argument("--encoding", dest="enc", default="UTF-8",
                         help="Encoding of both the input and the output (default: UTF-8)")
-    parser.add_argument("-l", "--log", dest="log_level", action="count",
+    parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
                         help="Increase log level (default: critical)")
     parser.add_argument("--log-file", dest="log_file",
                         help="The name of the log file")

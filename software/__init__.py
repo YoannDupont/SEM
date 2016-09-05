@@ -4,78 +4,126 @@ import sys
 
 from os.path import dirname, abspath
 
-class Software(object):
-    u"""
-    This class has the purpose of describing the software's current state.
-    For example: current version, latest changes and planned changes.
-    """
-    
-    SEM_HOME = dirname(dirname(abspath(__file__))).decode(sys.getfilesystemencoding())
-    
-    _name          = u"SEM"
-    u"""
-    The name of the software. Obviously, it is SEM.
-    """
-    
-    _version_major = 2
-    u"""
-    The major version number.
-    Is only incremented when deep changes (that usually lead to a change of how the whole software is used) are made to the program.
-    Such changes include various feature additions / deletions / modifications, source code reorganisation and so on.
-    On a more NLP side, such changes could also include a change in corpora used in learning (if going from proprietary to free for example).
-    If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
-    """
-    
-    _version_minor = 3
-    u"""
-    The minor version number.
-    Is only incremented when medium changes are made to the program.
-    Such changes include feature addition / deletion, creation of a new language entry for manual.
-    If this number is incremented, _version_patch is to be reseted to 0.
-    """
-    
-    _version_patch = 4
-    u"""
-    The patch version number.
-    Is only incremented when shallow changes are made to the program.
-    Such changes include bug correction, typo correction and any modification to existing manual(s) are made.
-    On a more NLP side, such changes would also include model changes.
-    """
-    
-    _latest_changes = \
-u"""List of latest changes:
-    1/ Added the export module that exports file to HTML
-    2/ Added MinGW (Windows) support for wapiti (still requires pthreads)
-    2/ simplified feature generation XML file
-    3/ transformed the ugly "tree.py" where every feature was coded to a feature library
-    4/ added some first step to multiple languages handling
-    5/ changed french tokeniser
-    6/ no more triggered features and sequence features (for now)"""
-    
-    _planned_changes = \
-u"""List of planned changes (without any order of priority):
-    1/ redo triggered features and sequence features.
-    2/ add lemmatiser.
-    3/ add the possibility to work in memory rather than using files:
-        3.1/ existing proposition by lerela.
-        3.2/ use subprocess.Popen, subprocess.PIPE and subprocess.communicate to put wapiti output to a string.
-    4/ migration to python3 ? (already made for revision 39 by lerela).
-    5/ translate manual in English.
-    6/ add paragraph segmentation
-    7/ update manual"""
-    
-    @classmethod
-    def name(cls):
-        return cls._name
-    
-    @classmethod
-    def version(cls):
-        return u".".join([unicode(x) for x in [cls._version_major, cls._version_minor, cls._version_patch]])
-    
-    @classmethod
-    def full_name(cls):
-        return "%s v%s" %(cls.name(), cls.version())
-    
-    @classmethod
-    def informations(cls):
-        return "%s\n\n%s\n\n%s" %(cls.full_name(), cls._latest_changes, cls._planned_changes)
+SEM_HOME     = dirname(dirname(abspath(__file__))).decode(sys.getfilesystemencoding())
+SEM_HOMEPAGE = u"http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
+
+_name = u"SEM"
+u"""
+The name of the software. Obviously, it is SEM.
+"""
+
+_version_major = 2
+u"""
+The major version number.
+Is only incremented when deep changes (that usually lead to a change of how the whole software is used) are made to the program.
+Such changes include various feature additions / deletions / modifications, source code reorganisation and so on.
+On a more NLP side, such changes could also include a change in corpora used in learning (if going from proprietary to free for example).
+If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
+"""
+
+_version_minor = 3
+u"""
+The minor version number.
+Is only incremented when medium changes are made to the program.
+Such changes include feature addition / deletion, creation of a new language entry for manual.
+If this number is incremented, _version_patch is to be reseted to 0.
+"""
+
+_version_patch = 5
+u"""
+The patch version number.
+Is only incremented when shallow changes are made to the program.
+Such changes include bug correction, typo correction and any modification to existing manual(s) are made.
+On a more NLP side, such changes would also include model changes.
+"""
+
+_main_features = [
+                    
+                    [u"segmentation",
+                        [
+                            u"segmentation for: French, English",
+                            u"easy creation and integration of new tokenisers",
+                            u"add paragraph segmentation"
+                        ]
+                    ],
+                    [
+                        u"feature generation", 
+                        [
+                            u"XML file to write features without coding them",
+                            u"single-token and multi-token dictionary features",
+                            u"Regular expression features",
+                            u"sequenced features",
+                            u"train/label mode",
+                            u"display option for features that are useful for generation, but not needed in output"
+                        ]
+                    ],
+                    [u"exporting output",
+                        [
+                            u"supported export formats: CoNLL, text, HTML (from plain text)",
+                            u"easy creation and integration of new exporters"
+                        ]
+                    ]
+                  ]
+
+_latest_changes = [
+                    [
+                        u"export module changes", 
+                        [
+                            u"export now behaves like segmentation: different export modules are available in obj/exporters",
+                            u'export "flavours" are in obj/exporters'
+                        ]
+                    ],
+                    [u"tokeniser changes",
+                        [
+                            u"updated French tokeniser",
+                            u"updated English tokeniser",
+                            u"added support for urls and emails in obj/constants.py"
+                        ]
+                    ],
+                    [u"Software module changes",
+                        [
+                            u'removed object oriented "Software" object. Replaced by global variables and methods',
+                            u"SEM information now generated in MarkDown format."
+                        ]
+                    ]
+                  ]
+
+_planned_changes = [
+                        [u"redo triggered features and sequence features.", []],
+                        [u"add lemmatiser.", []],
+                        [u"migration to python3 ? (already made for revision 39 by lerela).", []],
+                        [u"translate manual in English.", []],
+                        [u"update manual.", []],
+                        [u'improve pipeline: allow calling a pipeline within a pipeline.', []],
+                        [u'make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.', []]
+                   ]
+
+def name():
+    return _name
+
+def version():
+    return u".".join([unicode(x) for x in [_version_major, _version_minor, _version_patch]])
+
+def full_name():
+    return "%s v%s" %(name(), version())
+
+def informations():
+    def make_md(element_list):
+        accumulator = []
+        for i_index, element in enumerate(element_list, 1):
+            accumulator.append("%s. %s" %(i_index, element[0]))
+            for ii_index, subelement in enumerate(element[1], 1):
+                accumulator.append("   %s. %s" %(ii_index, subelement))
+        return u"\n".join(accumulator)
+        
+    return u"""# %s
+[SEM (Segmenteur-Étiqueteur Markovien)](%s) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing.
+
+## Main SEM features
+%s
+
+## latest changes (2.3.4 > %s)
+%s
+
+## planned changes (no priority)
+%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), version(), make_md(_latest_changes), make_md(_planned_changes))

@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: arityfeatures.py
 
-Description: 
+Description: features that could not be categorized and are thus defined
+by the number of arguments they take (their arity).
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -58,6 +61,20 @@ class LowerFeature(NullaryFeature):
     
     def __call__(self, *args, **kwargs):
         return self._getter(*args, **kwargs).lower()
+    
+class SubstringFeature(NullaryFeature):
+    def __init__(self, from_index=0, to_index=2**31, *args, **kwargs):
+        super(SubstringFeature, self).__init__(from_index, to_index, *args, **kwargs)
+        self._default    = kwargs.pop("default", '""')
+        self._from_index = int(from_index)
+        self._to_index   = int(to_index)
+    
+    def __call__(self, *args, **kwargs):
+        s = self._getter(*args, **kwargs)[self._from_index : self._to_index]
+        if s:
+            return s
+        else:
+            return self._default
 
 
 

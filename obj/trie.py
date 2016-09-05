@@ -1,17 +1,44 @@
-#! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------------------
-#
-# file: trie.py
-#
-#-------------------------------------------------------------------------------
+"""
+file: trie.py
+
+Description: Trie object definition. A Trie is here a very convenient
+way to model multiword dictionaries. They are, here, the same thing
+as a Prefix Tree Automaton (PTA).
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 
 import codecs
 
 _NUL = u"" # end of sequence marker
 
 class Trie(object):
+    """
+    The Trie object.
+    
+    Attributes
+    ----------
+    _data : dict
+        the structure where all the entries of a multiword dictionary
+        are loaded.
+    """
+    
     def __init__(self, filename=None, encoding=None):
         self._data = {}
         

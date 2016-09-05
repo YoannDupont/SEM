@@ -3,7 +3,11 @@
 """
 file: compile_dictionary.py
 
-Description: 
+Description: serialize a dictionary written in a file. A dictionary file
+is a file where every entry is on one line. There are two kinds of
+dictionaries: token and multiword. A token dictionary will apply itself
+on single tokens. A multiword dictionary will apply itself on sequences
+of tokens.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved
@@ -24,10 +28,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import codecs, cPickle, logging
 
-from obj.logger       import logging_format
+from obj.logger       import default_handler, file_handler
 from obj.dictionaries import compile_token, compile_multiword
 
 compile_dictionary_logger = logging.getLogger("sem.compile_dictionary")
+compile_dictionary_logger.addHandler(default_handler)
 
 _compile = {"token"    :compile_token,
             "multiword":compile_multiword}
@@ -36,18 +41,22 @@ _choices = set(_compile.keys())
 def compile_dictionary(infile, outfile, kind="token",
                        ienc="UTF-8",
                        log_level=logging.CRITICAL, log_file=None):
-    file_mode = u"a"
-    if type(log_file) in (str, unicode):
-        file_mode = u"w"
-    logging.basicConfig(level=log_level, format=logging_format, filename=log_file, filemode=file_mode)
+    if log_file is not None:
+        compile_dictionary_logger.addHandler(file_handler(log_file))
+    compile_dictionary_logger.setLevel(log_level)
     
     if kind not in _choices:
         raise RuntimeError("Invalid kind: %s" %kind)
     
     compile_dictionary_logger.info(u'compiling %s dictionary from "%s" to "%s"' %(kind, infile, outfile))
     
-    compile = _compile[kind]
-    cPickle.dump(compile(infile, ienc), open(outfile, "w"))
+    try:
+        dictionary_compile = _compile[kind]
+    except KeyError: # invalid kind asked
+        compile_dictionary_logger.exception("Invalid kind: %s. Should be in: %s" %(kind, u", ".join(_compile.keys())))
+        raise
+    
+    cPickle.dump(dictionary_compile(infile, ienc), open(outfile, "w"))
     
     compile_dictionary_logger.info(u"done")
 

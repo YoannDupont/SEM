@@ -30,23 +30,23 @@ from obj.tokenisers.default import Tokeniser as DefaultTokeniser
 
 class Tokeniser(DefaultTokeniser):
     def __init__(self):
-        self._cls         = re.compile(u"(-je|-tu|-nous|-vous|(:?-t)?-on|(:?-t)?-ils?|(:?-t)?-elles?)", re.U + re.I)
-        self._is_abn      = re.compile(u"(dr|me?lles?|mmes?|mrs?|st)\.?", re.U + re.I)
-        self._abbrev      = re.compile(u"(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
-        self._digit_valid = set(u"0123456789,.")
+        super(Tokeniser, self).__init__()
         
-        self._forbidden = []
+        self._cls         = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-on|(:?-t)?-ils?|(:?-t)?-elles?)", re.U + re.I)
+        self._is_abn      = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\.?", re.U + re.I)
+        self._abbrev      = re.compile(r"\b(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
+        self._digit_valid = set(u"0123456789,.-")
+        
         self._forbidden.append(self._is_abn)
         self._forbidden.append(self._abbrev)
         
-        self._force = []
         self._force.append(self._cls)
     
     def word_bounds(self, s):
         bounds = SpannedBounds()
         bounds.append(Span(0,0))
         
-        atomic     = set(u";:«»()[]{}=+*$£€/\\\"?!%€$£")
+        atomic     = set(u";:«»()[]{}=+*$£€/\\\"?!…%€$£")
         apostrophe = set(u"'ʼ’")
         
         for forbidden in self._forbidden:
@@ -68,16 +68,27 @@ class Tokeniser(DefaultTokeniser):
             elif c in apostrophe:
                 bounds.append(Span(index+1, index+1))
             elif c.isdigit():
-                if previous not in self._digit_valid:
+                if is_first or not(previous.isupper() or previous in self._digit_valid):
                     bounds.append(Span(index, index))
-                if is_last or s[index+1] not in self._digit_valid:
+                if is_last or not (s[index+1].isupper() or s[index+1] in self._digit_valid):
                     bounds.append(Span(index+1, index+1))
             elif c == u',':
                 if is_first or is_last or not (previous.isdigit() and s[index+1].isdigit()):
                     bounds.add_last(Span(index, index))
                     bounds.append(Span(index+1, index+1))
             elif c == u".":
-                if is_first or is_last or not (previous.isdigit() and s[index+1].isdigit()):
+                no_dot_before = previous != u"."
+                no_dot_after  = is_last or s[index+1] != u"."
+                if is_first or is_last or s[index+1] in u"\r\n" or not (previous.isdigit() and s[index+1].isdigit()):
+                    if no_dot_before:
+                        bounds.add_last(Span(index, index))
+                    if no_dot_after:
+                        bounds.append(Span(index+1, index+1))
+            elif c == u'-':
+                if not(previous) or previous.isspace():
+                    bounds.add_last(Span(index, index))
+                    bounds.append(Span(index+1, index+1))
+                elif not is_last and s[index+1].isspace():
                     bounds.add_last(Span(index, index))
                     bounds.append(Span(index+1, index+1))
             previous = c
@@ -87,15 +98,12 @@ class Tokeniser(DefaultTokeniser):
         
         bounds.append(Span(len(s), len(s)))
         
-        for bd in bounds:
-            print bd
-        print
-        
         return bounds
     
-    def sentence_bounds(self, tokens):
+    def sentence_bounds(self, content, token_spans):
         sent_bounds    = SpannedBounds()
-        opening_counts = [0 for i in tokens]
+        tokens         = [content[t.lb : t.ub] for t in token_spans]
+        opening_counts = [0 for i in token_spans]
         count          = 0
         for i in range(len(opening_counts)):
             if tokens[i] in u"«([":
@@ -105,12 +113,15 @@ class Tokeniser(DefaultTokeniser):
             opening_counts[i] = count
         
         sent_bounds.append(Span(0,0))
-        for index, token in enumerate(tokens):
+        for index, span in enumerate(token_spans):
+            token = tokens[index]
             if re.match(u"^[?!]+$", token) or token == u"…" or re.match(u"\.\.+", token):
                 sent_bounds.append(Span(index+1, index+1))
             elif token == u".":
                 if opening_counts[index] == 0:
                     sent_bounds.append(Span(index+1, index+1))
+            elif index<len(token_spans)-1 and content[span.ub : token_spans[index+1].lb].count("\n") > 1:
+                sent_bounds.append(Span(index+1, index+1))
         sent_bounds.append(Span(len(tokens), len(tokens)))
         
         return sent_bounds

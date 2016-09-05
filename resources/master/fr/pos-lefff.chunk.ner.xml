@@ -3,13 +3,13 @@
     <pipeline>
         <segmentation name="fr" />
         <enrich config="../../enrich/fr/pos-lefff.xml" />
-        <label model="../../models/fr/POS/plain.lefff" />
-        <clean_info to-keep="0,-1" />
-        <label model="../../models/fr/chunk/plain_all" />
+        <label model="../../models/fr/POS/plain.lefff" field="POS" />
+        <clean_info to-keep="word,POS" />
+        <label model="../../models/fr/chunk/plain_all" field="chunking" />
         <enrich config="../../enrich/fr/NER.xml" />
-        <label model="../../models/fr/NER/plain_NER" />
-        <clean_info to-keep="0,1,2,-1" />
-        <export pos="1" chunk="2" ner="3" lang="fr" lang_style="default.css" />
+        <label model="../../models/fr/NER/plain_NER" field="NER" />
+        <clean_info to-keep="word,POS,chunking,NER" />
+        <export format="html" pos="POS" chunking="chunking" ner="NER" lang="fr" lang_style="default.css" />
     </pipeline>
     
     <options>
