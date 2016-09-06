@@ -24,9 +24,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class Corpus(object):
-    def __init__(self, fields=[], sentences=[]):
-        self.fields    = fields
-        self.sentences = sentences
+    def __init__(self, fields=None, sentences=None):
+        if fields:
+            self.fields = fields[:]
+        else:
+            self.fields = []
+        
+        if sentences:
+            self.sentences = sentences[:]
+        else:
+            self.sentences = []
     
     def __iter__(self):
         for element in self.iterate_on_sentences():
