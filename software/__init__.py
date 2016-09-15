@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 5
+_version_patch = 6
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -42,8 +42,7 @@ _main_features = [
                     [u"segmentation",
                         [
                             u"segmentation for: French, English",
-                            u"easy creation and integration of new tokenisers",
-                            u"add paragraph segmentation"
+                            u"easy creation and integration of new tokenisers"
                         ]
                     ],
                     [
@@ -61,6 +60,13 @@ _main_features = [
                         [
                             u"supported export formats: CoNLL, text, HTML (from plain text)",
                             u"easy creation and integration of new exporters"
+                        ]
+                    ],
+                    [u"extension of existing features",
+                        [
+                            u"automatic integration of new segmenters and exporters",
+                            u"semi automatic integration of new feature functions",
+                            u"easy creation of new CSS formats for HTML exports"
                         ]
                     ]
                   ]
@@ -85,6 +91,13 @@ _latest_changes = [
                             u'removed object oriented "Software" object. Replaced by global variables and methods',
                             u"SEM information now generated in MarkDown format."
                         ]
+                    ],
+                    [u"unit tests",
+                        [
+                            u'first unit tests added.'
+                        ]
+                    ],
+                    [u"correction: added is_boolean switch to list features.", []
                     ]
                   ]
 
@@ -95,7 +108,23 @@ _planned_changes = [
                         [u"translate manual in English.", []],
                         [u"update manual.", []],
                         [u'improve pipeline: allow calling a pipeline within a pipeline.', []],
-                        [u'make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.', []]
+                        [u'make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.', []],
+                        [u'have more unit tests', []],
+                        [u'handle CoNLL-formatted input files for tagger module', []],
+                        [u'handle HTML input files for tagger module',
+                            [
+                                "create specific tokeniser",
+                                "need to handles cases such as words cut by a HTML tag"
+                            ]
+                        ],
+                        [
+                            "improve segmentation",
+                            [
+                                'handle URLs starting with country indicator (ex: "en.wikipedia.org")',
+                                'handle URLs starting with subdomain (ex: "blog.[...]")',
+                            ]
+                        ],
+                        ["make module objects using the same principle as for tokenisers or exporters.", []]
                    ]
 
 def name():
