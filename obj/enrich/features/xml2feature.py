@@ -34,7 +34,6 @@ from obj.enrich.features.booleanfeatures    import OrFeature, AndFeature, NotFea
 from obj.enrich.features.arityfeatures      import ArityFeature, UnaryFeature, BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstringFeature, SubstitutionFeature, SequencerFeature
 from obj.enrich.features.listfeatures       import ListFeature, SomeFeature, AllFeature, NoneFeature
 from obj.enrich.features.dictionaryfeatures import TokenDictionaryFeature, MultiwordDictionaryFeature
-from obj.enrich.features.taxonomyfeatures   import TaxonomyFeature
 
 class XML2Feature(object):
     def __init__(self, entries, path=None):
@@ -155,10 +154,6 @@ class XML2Feature(object):
                     attrib["entry"] = "word"
                 return MultiwordDictionaryFeature(**attrib)
             raise RuntimeError
-        
-        if xml.tag == "taxonomy":
-            path = abspath(join(dirname(self._path), xml.attrib.pop("path")))
-            return TaxonomyFeature(path, self, **attrib)
         
         else:
             raise ValueError("unknown tag: %s" %(xml.tag))
