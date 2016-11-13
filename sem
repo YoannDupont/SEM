@@ -44,7 +44,7 @@ if __name__ == "__main__":
                 suggestions.append(name)
         return suggestions
     
-    import sys, runpy, os.path
+    import sys, runpy
     
     ids, pathes = get_modules("src")
     name        = os.path.basename(sys.argv[0])

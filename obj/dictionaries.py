@@ -31,12 +31,13 @@ from obj.trie import Trie
 NUL = u""
 
 def compile_token(infile, encoding):
-    tokens = set()
+    """tokens = set()
     for line in codecs.open(infile, "rU", encoding):
         line = line.strip()
         if line != "":
             tokens.add(line)
-    return tokens
+    return tokens"""
+    return set(codecs.open(infile, "rU", encoding).read().split(u"\n"))
 
 def compile_multiword(infile, encoding):
     trie = Trie()

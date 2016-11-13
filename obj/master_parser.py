@@ -43,7 +43,7 @@ class Master(object):
         the set of allowed option names
     """
     
-    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"textualise", u"export"])
+    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"export"])
     _allowed_options = set([u"encoding", u"log", u"clean"])
     
     class Process(object):
@@ -168,7 +168,7 @@ class Master(object):
                     self.options.set_ienc(child.attrib.get("input-encoding", "utf-8"))
                     self.options.set_oenc(child.attrib.get("output-encoding", "utf-8"))
                 elif option == "log":
-                    self.options.set_log_level(child.attrib.get("level", "CRITICAL"))
+                    self.options.set_log_level(child.attrib.get("level", "WARN"))
                     self.options.set_log_file(child.attrib.get("file", None))
                 elif option == "clean":
                     self.options.set_clean(True)

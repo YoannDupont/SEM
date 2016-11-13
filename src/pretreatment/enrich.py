@@ -103,7 +103,7 @@ def document_enrich(document, informations, log_level="WARNING", log_file=None):
     missing_fields = set(informations.bentries + informations.aentries) - set(document.corpus.fields)
     
     if len(missing_fields) > 0:
-        raise ValueError("Missing fields in input corpus: %s" u",".join([sorted(fields)]))
+        raise ValueError("Missing fields in input corpus: %s" u",".join([sorted(missing_fields)]))
     
     enrich_logger.debug('enriching file "%s"' %document.name)
     

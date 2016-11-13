@@ -69,7 +69,7 @@ def tagger(masterfile, file_name, directory="."):
     options  = MASTER.options
     
     if (options.log_file is not None):
-        segmentation_logger.addHandler(file_handler(log_file))
+        sem_tagger_logger.addHandler(file_handler(log_file))
     sem_tagger_logger.setLevel(options.log_level)
     
     exports           = {} # keeping track of already done exports
@@ -113,12 +113,6 @@ def tagger(masterfile, file_name, directory="."):
             wapiti.label_document(document, model, field, oenc)
             label_laps  = time.clock() - label_start
             sem_tagger_logger.info("labeled in %s" %(timedelta(seconds=label_laps)))
-            
-        elif process.identifier == u"textualise":
-            poscol   = int(process.args.get("pos", 0))
-            chunkcol = int(process.args.get("chunk", 0))
-            
-            textualise(current_input, current_output, pos_column=poscol, chunk_column=chunkcol, ienc=oenc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
             
         elif process.identifier == u"export":
             export_format = process.args.get("format", "conll")

@@ -139,7 +139,7 @@ class Informations(object):
     
     def check_entry(self, entry_name):
         if entry_name in self._names:
-            raise ValueError('Duplicated column name: "' + entry + '"')
+            raise ValueError('Duplicated column name: "' + entry_name + '"')
         else:
             self._names.add(entry_name)
     

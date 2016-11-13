@@ -36,7 +36,7 @@ class MatchFeature(Feature):
         self._getter = getter
     
     def __call__(self, *args, **kwargs):
-        return self._regexp.search(self._getter(*args, **kwargs))
+        return self._regexp.search(self._getter(*args, **kwargs) or "")
 
 class CheckFeature(MatchFeature):
     def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, *args, **kwargs):

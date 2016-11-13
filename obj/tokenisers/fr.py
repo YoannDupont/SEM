@@ -32,7 +32,7 @@ class Tokeniser(DefaultTokeniser):
     def __init__(self):
         super(Tokeniser, self).__init__()
         
-        self._cls         = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-on|(:?-t)?-ils?|(:?-t)?-elles?)", re.U + re.I)
+        self._cls         = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))\b", re.U + re.I)
         self._is_abn      = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\.?", re.U + re.I)
         self._abbrev      = re.compile(r"\b(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
         self._digit_valid = set(u"0123456789,.-")

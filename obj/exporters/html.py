@@ -183,81 +183,44 @@ class Exporter(DefaultExporter):
     # document-specific methods
     #
     
+    def make_escaped_content(self, document):
+        content           = document.content
+        tokens            = document.segmentation("tokens")
+        escaped_tokens    = [cgi.escape(content[token.lb : token.ub]) for token in tokens]
+        escaped_nontokens = [cgi.escape(content[tokens[i].ub : tokens[i+1].lb]) for i in range(len(tokens)-1)]
+        escaped_nontokens.insert(0, cgi.escape(content[0 : tokens[0].lb]))
+        escaped_nontokens.append(cgi.escape(content[tokens[-1].ub : len(content)]))
+        
+        return escaped_tokens, escaped_nontokens
+    
     def document_to_unicode(self, document, couples, encoding="utf-8", **kwargs):
         entry_names = {}
         for entry in couples:
             entry_names[entry.lower()] = couples[entry]
         
-        corpus     = document.corpus
-        escaped    = self.escape_tokens(corpus, entry_names["token"])
+        escaped_tokens, escaped_nontokens = self.make_escaped_content(document)
         pos_html   = []
         chunk_html = []
         ner_html   = []
         if entry_names.get("pos", None):
-            pos_html = self.add_pos_document(document, escaped, entry_names["pos"])
+            pos_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["pos"])
         if entry_names.get("chunk", entry_names.get("chunking", None)):
-            chunk_html = self.add_chunking_document(document, escaped, entry_names.get("chunk", entry_names["chunking"]))
+            chunk_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names.get("chunk", entry_names["chunking"]))
         if entry_names.get("ner", None):
-            ner_html = self.add_chunking_document(document, escaped, entry_names["ner"])
+            ner_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["ner"])
         
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
-
-    def add_pos_document(self, document, escaped, column):
-        content     = document.content
-        tokens      = document.segmentation("tokens")
-        sentences   = document.corpus.sentences
-        to_return   = []
-        enriched    = [e[:] for e in escaped]
-        token_index = 0
-        for i in range(len(enriched)):
-            for j in range(len(enriched[i])):
-                if sentences[i][j][column][0] == "_":
-                    if (j+1 == len(enriched[i]) or sentences[i][j+1][column][0] != "_"):
-                        enriched[i][j] = '%s</span>' %(enriched[i][j])
-                else:
-                    enriched[i][j] = '<span id="%s" title="%s">%s' %(sentences[i][j][column], sentences[i][j][column], enriched[i][j])
-                    if (j+1 == len(enriched[i]) or sentences[i][j+1][column][0] != "_"):
-                        enriched[i][j] = '%s</span>' %(enriched[i][j])
-        
-        
-        prev = 0
-        for i in range(len(enriched)):
-            for j in range(len(enriched[i])):
-                span         = tokens[token_index]
-                to_return   += [content[prev : span.lb], enriched[i][j]]
-                token_index += 1
-                prev         = span.ub
-        
-        new_content = u"".join(to_return)
-        new_content = new_content.replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r")
-        return new_content
-
-
-    def add_chunking_document(self, document, escaped, column):
-        content     = document.content
-        tokens      = document.segmentation("tokens")
-        sentences   = document.corpus.sentences
-        to_return   = []
-        enriched    = [e[:] for e in escaped]
-        token_index = 0
-        for i in range(len(enriched)):
-            for j in range(len(enriched[i])):
-                if sentences[i][j][column][0] == "O": continue
-                chunk_name = sentences[i][j][column][2:]
-                if sentences[i][j][column][0] == "B":
-                    enriched[i][j] = '<span id="%s" title="%s">%s' %(chunk_name, chunk_name, escaped[i][j])
-                if sentences[i][j][column][0] in "BI" and (j+1 == len(enriched[i]) or sentences[i][j+1][column][0] != "I"):
-                    enriched[i][j] += '</span>'
-        
-        prev = 0
-        for i in range(len(enriched)):
-            for j in range(len(enriched[i])):
-                span         = tokens[token_index]
-                to_return   += [content[prev : span.lb], enriched[i][j]]
-                token_index += 1
-                prev         = span.ub
     
-        new_content = u"".join(to_return)
+    def add_annotation_document(self, document, escaped_tokens, escaped_nontokens, column):
+        annot = document.annotation(column)
+        
+        for annotation in annot:
+            escaped_tokens[annotation.span.lb]    = '<span id="%s" title="%s">%s' %(annotation.value, annotation.value, escaped_tokens[annotation.span.lb])
+            escaped_tokens[annotation.span.ub-1] += '</span>'
+        for i in range(len(escaped_nontokens)):
+            escaped_tokens.insert(2*i, escaped_nontokens[i])
+        
+        new_content = u"".join(escaped_tokens)
         new_content = new_content.replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r")
         return new_content
 
@@ -269,8 +232,6 @@ class Exporter(DefaultExporter):
             else:
                 return ""
         
-        #css_tabs = os.path.join(software.SEM_HOME, "resources", "css", "tabs.css")
-        #css_lang = os.path.join(software.SEM_HOME, "resources", "css", self._lang, self._lang_style)
         css_tabs = "tabs.css"
         css_lang = self._lang_style
         

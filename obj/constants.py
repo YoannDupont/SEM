@@ -34,7 +34,7 @@ import re
 # kept to bare minimum, covering being more important.
 protocol = u"(?:http|ftp|news|nntp|telnet|gopher|wais|file|prospero)"
 mailto   = u"mailto"
-url_body = u"\S+[A-Za-z/]"
+url_body = u"\S+[0-9A-Za-z/]"
 url      = u"<?(?:%s://|%s:|www\.)%s>?" %(protocol, mailto, url_body)
 url_re   = re.compile(url)
 

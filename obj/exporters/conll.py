@@ -29,6 +29,7 @@ class Exporter(DefaultExporter):
         pass
     
     def document_to_unicode(self, document, couples, **kwargs):
+        return unicode(document.corpus)
         if not couples or (len(couples)==1 and (couples.keys()[0].lower() in ["word", "token"])):
             return unicode(document.corpus)
         else:

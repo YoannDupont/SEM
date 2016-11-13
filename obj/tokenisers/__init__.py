@@ -5,7 +5,7 @@
 # Description: an __init__ file to allow the use of python sources as modules
 #
 # author: Yoann Dupont
-# copyright (c) 2012 Yoann Dupont - all rights reserved
+# copyright (c) 2016 Yoann Dupont - all rights reserved
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

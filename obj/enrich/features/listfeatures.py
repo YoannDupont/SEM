@@ -32,8 +32,8 @@ from getterfeatures import DEFAULT_GETTER
 class ListFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(ListFeature, self).__init__(*args, **kwargs)
-        self._elements = args
-        self._boolean  = True
+        self._elements   = args
+        self._is_boolean = True
         
         for element in self._elements:
             if not element.is_boolean:

@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: columnIO.py
 
-Description: 
+Description: an IO module for CoNLL-formatted files when column
+identifiers are not available or not needed.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

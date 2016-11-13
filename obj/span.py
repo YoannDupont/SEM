@@ -22,6 +22,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+try:
+    from xml.etree.cElementTree import ElementTree as ET
+except ImportError:
+    from xml.etree.ElementTree import ElementTree as ET
+
 class Span(object):
     """
     The Span object.
@@ -67,7 +72,18 @@ class Span(object):
         self._ub = max(ub, self._lb)
     
     def toXML(self):
-        return '<span s="%i" l="%s" />' %(self._lb, self._ub)
+        return '<span s="%i" l="%s" />' %(self._lb, len(self))
+    
+    @classmethod
+    def fromXML(cls, xml):
+        if type(node) in (str, unicode):
+            node = ET.fromstring(xml)
+        else:
+            node = xml
+        start  = node.attrib.get(u"start", node.attrib[u"s"])
+        end    = node.attrib.get(u"end", node.attrib.get(u"e", start))
+        length = node.attrib.get(u"length", node.attrib.get(u"l", -1))
+        return Span(start, end, length=length)
     
     def strictly_contains(self, i):
         return i > self._lb and i < self.ub

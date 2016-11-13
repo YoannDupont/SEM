@@ -25,14 +25,19 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see GNU official website.
 """
 
+import logging
+import os.path
 import subprocess
 import time
-import logging
 
 from obj.logger import default_handler
 
+from software import SEM_HOME
+
 wapiti_logger = logging.getLogger("sem.wapiti")
 wapiti_logger.addHandler(default_handler)
+
+__command_name = os.path.join(SEM_HOME, "ext", "wapiti", "wapiti")
 
 def command_name():
     """
@@ -41,7 +46,7 @@ def command_name():
     This supposes that wapiti is installed on your computer.
     """
     
-    return "wapiti"
+    return __command_name
 
 def train(input, pattern=None, output=None, algorithm=None, nthreads=1, maxiter=None, rho1=None, rho2=None, model=None):
     """
@@ -146,4 +151,5 @@ def label_document(document, model, field, encoding, annotation_name=None, annot
             tags[-1].append(element)
             j += 1
     
+    tags = [t for t in tags if t]
     document.add_annotation_from_tags(tags, field, annotation_name)

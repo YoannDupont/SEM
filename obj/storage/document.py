@@ -28,7 +28,7 @@ from holder import Holder
 
 from obj.storage.segmentation import Segmentation
 from obj.storage.corpus       import Corpus
-from obj.storage.annotation   import SpannedTag, Annotation
+from obj.storage.annotation   import SpannedTag, Annotation, chunk_annotation_from_corpus
 from obj.span                 import Span
 from obj.misc                 import correct_pos_tags
 
@@ -129,6 +129,8 @@ class Document(Holder):
     
     def add_annotation_from_tags(self, tags, field, annotation_name):
         BIO = all([tag[0] in u"BIO" for tag in tags[0]])
+        if self._annotations.get(annotation_name, None):
+            del self._annotations[annotation_name]._annotations[:]
         if BIO:
             self.add_chunking(tags, field, annotation_name)
         else:
@@ -139,11 +141,32 @@ class Document(Holder):
         annotation = []
         
         for nth_sentence, tags in enumerate(sentence_tags):
-            i = 0
+            if tags[0][0] == u"_":
+                tags[0] = tags[0].lstrip(u"_")
+            
+            index = len(annotation)
+            i = len(tags)-1
             n = 0
-            while i < len(tags):
-                self.corpus.sentences[nth_sentence][i][field] = tags[i]
-                if i == len(tags)-1:
+            current = None # current tag value (for multiword tags)
+            while i >= 0:
+                change = not(current is None or tags[i].lstrip(u"_") == current)
+                
+                if tags[i][0] != u"_":
+                    if change:
+                        tags[i] = current
+                    
+                    annotation.insert(index, SpannedTag(tags[i], Span(nth_token+i, 0, length=n+1)))
+                    current = None
+                    n       = 0
+                else:
+                    if current is None:
+                        current = tags[i].lstrip(u"_")
+                        n = 0
+                    if change:
+                        tags[i] = u"_" + current
+                    n += 1
+                
+                """if i == len(tags)-1:
                     annotation.append(SpannedTag(tags[i].lstrip("_"), Span(nth_token, nth_token+n+1)))
                     nth_token = nth_token+n+1
                     n = 0
@@ -161,8 +184,10 @@ class Document(Holder):
                         else:
                             annotation.append(SpannedTag(tags[i].lstrip("_"), Span(nth_token, nth_token+1)))
                             nth_token = nth_token+1
-                            n = 0
-                i += 1
+                            n = 0"""
+                self.corpus.sentences[nth_sentence][i][field] = tags[i]
+                i -= 1
+            nth_token += len(tags)
         self._annotations[annotation_name] = Annotation(annotation_name, reference=self.segmentation("tokens"))
         self._annotations[annotation_name].annotations = annotation[:]
     
@@ -171,29 +196,7 @@ class Document(Holder):
         annotation = []
         
         for nth_sentence, tags in enumerate(sentence_tags):
-            i = 0
-            n = 0
-            while i < len(tags):
+            for i in range(len(tags)):
                 self.corpus.sentences[nth_sentence][i][field] = tags[i]
-                if tags[i] == "O":
-                    if n > 0:
-                        annotation.append(SpannedTag(tags[i-1][2:], Span(nth_token, nth_token+n)))
-                        nth_token = nth_token+n+1
-                        n = 0
-                    else:
-                        nth_token += 1
-                elif tags[i][0] == "B":
-                    if n > 0:
-                        annotation.append(SpannedTag(tags[i-1][2:], Span(nth_token, nth_token+n)))
-                        nth_token = nth_token+n
-                    n = 1
-                elif tags[i][0] == "I":
-                    n += 1
-                if i == len(tags)-1 and n > 0:
-                    add_one = int(tags[i] != "O")
-                    annotation.append(SpannedTag(tags[i-1][2:], Span(nth_token, nth_token+n+add_one)))
-                    nth_token = nth_token+n+add_one
-                    n = 0
-                i += 1
-        self._annotations[annotation_name] = Annotation(annotation_name, reference=self.segmentation("tokens"))
-        self._annotations[annotation_name].annotations = annotation[:]
+        self._annotations[annotation_name] = chunk_annotation_from_corpus(self.corpus, field, annotation_name, reference=self.segmentation("tokens"))
+        

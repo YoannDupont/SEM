@@ -47,7 +47,7 @@ class DictGetterFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
         super(DictGetterFeature, self).__init__(*args, **kwargs)
         self.entry = kwargs.get("entry", "word")
-        self.shift = kwargs.get("shift", 0)
+        self.shift = int(kwargs.get("shift", 0))
     
     def __call__(self, list2dict, position, *args, **kwargs):
         current_position = position + self.shift
@@ -61,7 +61,6 @@ class FindFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
         super(FindFeature, self).__init__(*args, **kwargs)
         self._matcher      = args[0]
-        self._search_entry = kwargs.get("search_entry", "word")
         self._return_entry = kwargs.get("return_entry", "word")
         assert self._matcher is not None and self._matcher.is_boolean, "Matcher field in FindFeature does not return a boolean."
 
@@ -71,7 +70,7 @@ class FindForwardFeature(FindFeature):
         
     def __call__(self, list2dict, position, *args, **kwargs):
         for X in range(position+1, len(list2dict)):
-            if self._matcher(list2dict[X][self._search_entry]):
+            if self._matcher(list2dict, X):
                 return list2dict[X][self._return_entry]
         return None
 
@@ -81,6 +80,6 @@ class FindBackwardFeature(FindFeature):
         
     def __call__(self, list2dict, position, *args, **kwargs):
         for X in reversed(range(0, position)):
-            if self._matcher(list2dict[X][self._search_entry]):
+            if self._matcher(list2dict, X):
                 return list2dict[X][self._return_entry]
         return None

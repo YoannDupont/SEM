@@ -21,7 +21,7 @@ On a more NLP side, such changes could also include a change in corpora used in 
 If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
 """
 
-_version_minor = 3
+_version_minor = 4
 u"""
 The minor version number.
 Is only incremented when medium changes are made to the program.
@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 6
+_version_patch = 0
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -72,8 +72,12 @@ _main_features = [
                   ]
 
 _latest_changes = [
-                    [
-                        u"export module changes", 
+                    [u"Wapiti changes", 
+                        [
+                            u'now SEM only uses a local version of Wapiti (available in ext) that needs to be compiled.'
+                        ]
+                    ],
+                    [u"export module changes", 
                         [
                             u"export now behaves like segmentation: different export modules are available in obj/exporters",
                             u'export "flavours" are in obj/exporters'

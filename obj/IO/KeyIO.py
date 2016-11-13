@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 file: KeyIO.py
 
-Description: 
+Description: an IO module for CoNLL-formatted files when column
+identifiers are available.
 
 author: Yoann Dupont
 copyright (c) 2016 Yoann Dupont - all rights reserved

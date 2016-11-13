@@ -97,6 +97,15 @@ ligne
 sans
 ponctuation
 
+St-Jean
+peut
+causer
+des
+soucis
+de
+segmentation
+.
+
 Vous
 pouvez
 m'

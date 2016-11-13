@@ -73,8 +73,8 @@ class MultiwordDictionaryFeature(DictionaryFeature):
         except (pickle.UnpicklingError, ImportError, EOFError):
             self._value = compile_multiword(self._path, "utf-8")
     
-    def __call__(self, list2dict, *args, **kwargs):
-        l         = ["O" for _ in range(len(list2dict))]
+    """def __call__(self, list2dict, *args, **kwargs):
+        l         = ["O"]*len(list2dict)
         tmp       = self._value._data
         length    = len(list2dict)
         fst       = 0
@@ -82,7 +82,7 @@ class MultiwordDictionaryFeature(DictionaryFeature):
         cur       = 0
         criterion = False # stop criterion
         ckey      = None  # Current KEY
-        entry    = self._entry
+        entry     = self._entry
         appendice = self._appendice
         while not criterion:
             cont = True
@@ -119,6 +119,45 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             tmp       = self._value._data
             lst       = -1
             criterion = fst >= length - 1
+        
+        if NUL in self._value._data.get(list2dict[-1][entry], []):
+            l[-1] = u'B' + appendice
+        
+        return l"""
+    
+    def __call__(self, list2dict, *args, **kwargs):
+        l         = ["O"]*len(list2dict)
+        tmp       = self._value._data
+        length    = len(list2dict)
+        fst       = 0
+        lst       = -1 # last match found
+        cur       = 0
+        ckey      = None  # Current KEY
+        entry     = self._entry
+        appendice = self._appendice
+        while fst < length - 1:
+            cont = True
+            while cont and (cur < length):
+                ckey  = list2dict[cur][entry]
+                if NUL in tmp: lst = cur
+                tmp   = tmp.get(ckey, {})
+                cont  = len(tmp) != 0
+                cur  += int(cont)
+            
+            if NUL in tmp: lst = cur
+            
+            if lst != -1:
+                l[fst] = u'B' + appendice
+                for i in xrange(fst+1, lst):
+                    l[i] = u'I' + appendice
+                fst = lst
+                cur = fst
+            else:
+                fst += 1
+                cur  = fst
+            
+            tmp = self._value._data
+            lst = -1
         
         if NUL in self._value._data.get(list2dict[-1][entry], []):
             l[-1] = u'B' + appendice
