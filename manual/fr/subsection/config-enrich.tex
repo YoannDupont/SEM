@@ -1,0 +1,64 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Le fichier de configuration du module enrich permet d'ajouter des informations à un fichier vectorisé. Il décrit d'abord les entrées présentes
+puis les informations à ajouter.\\
+
+Le fichier d'enrichissement est un fichier XML de type de document ``enrich''. Il a trois parties : une ``entries'' qui définit les entrées déjà
+présentes dans le fichier, une ``endogenous'' qui permet d'extraire des informations à partir des données présentes et une ``exogenous'' qui permet
+d'intégrer des dictionnaires.\\
+
+Chaque entrée (qu'elle soit déjà présente ou ajoutée) doit être nommée (via l'attribut \emph{``name''}) et deux entrées différentes ne peuvent pas
+avoir le même nom. En gras sont les différentes ``sections'', en italique les différentes informations.\\
+
+La liste des ``sections'' ainsi que les informations qu'il est possible d'ajouter est :
+
+\begin{itemize}
+	\item[] \textbf{entries}
+	\begin{itemize}
+		\item[] \textit{before}
+			\begin{itemize}
+				\item[] les entrées qui seront écrites avant les informations ajoutées
+			\end{itemize}
+		\item[] \textit{after}
+			\begin{itemize}
+				\item[] les entrées qui seront écrites après les informations ajoutées
+			\end{itemize}
+	\end{itemize}
+	\item[] \textbf{endogenous}
+	\begin{itemize}
+		\item[] \textit{\{nullary, nary\}}
+			\begin{itemize}
+				\item[] des opérations génériques définies par leur arité (-ary).
+			\end{itemize}
+		\item[] \textit{expression}
+			\begin{itemize}
+				\item[] une information extraite à partir d'une expression booléenne.
+			\end{itemize}
+		\item[] \textit{list}
+			\begin{itemize}
+				\item[] une information extraite à partir d'une liste de mots et / ou d'expressions régulières.
+			\end{itemize}
+		\item[] \textit{regexp}
+			\begin{itemize}
+				\item[] une information extraite à partir d'une unique expression régulière.
+			\end{itemize}
+		\item[] \textit{conditional}
+			\begin{itemize}
+				\item[] une information avec déclencheur.
+			\end{itemize}
+	\end{itemize}
+	\item[] \textbf{exogenous}
+	\begin{itemize}
+		\item[] \textit{token}
+			\begin{itemize}
+				\item[] un dictionnaire de mots.
+			\end{itemize}
+		\item[] \textit{multiword}
+			\begin{itemize}
+				\item[] un dictionnaire de séquences de mots.
+			\end{itemize}
+	\end{itemize}
+\end{itemize}
+
+\end{document}

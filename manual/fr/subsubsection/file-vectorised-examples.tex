@@ -1,0 +1,15 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+	\item[] exemple 1 : texte brut vectorisé\\
+	\begin{tabular}{l}Le \\ chat \\ dort \\ .\end{tabular}
+	\item[] exemple 2 : texte vectorisé enrichi avec l'information «\ le mot commence-t-il par une majuscule\ ?\ »\\
+	\begin{tabular}{ll}Le & oui \\ chat & non \\ dort & non \\ . & non\end{tabular}
+	\item[] exemple 3 : texte vectorisé annoté en PoS\\
+	\begin{tabular}{ll}Le & DET \\ chat & NC \\ dort & V \\ . & PONCT\end{tabular}
+	\item[] exemple 4 : texte vectorisé annoté en PoS et en chunks\\
+	\begin{tabular}{lll}Le & DET & B-NP\\ chat & NC & I-NP\\ dort & V & B-VN\\ . & PONCT & 0\end{tabular}
+\end{itemize}
+
+\end{document}

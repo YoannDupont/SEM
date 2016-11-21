@@ -1,0 +1,16 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+Il faut alors ajouter le dossier où se trouve l'exécutable wapiti à la
+variable PATH. Il est préférable de d'abord créer une copie de cette variable
+via la commande "PATH\_OLD=\$PATH". Il faut ensuite ajouter le dossier à la fin
+de la variable PATH via la commande :\\
+
+PATH=\$PATH:\~{}/foobar/stand-alone-tagger/ext/wapiti-X\\
+
+S'il y a eu une erreur dans la commande de rajout du dossier à la variable PATH, il suffit de
+restaurer sa valeur de base via la commande "PATH=\$PATH\_OLD".\\
+
+/!\textbackslash Les modifications faites à la variables PATH ne sont valables que dans le
+terminal où elles sont écrites et ne perdurent pas après la fermeture de ce
+dernier. Il faut donc refaire cette étape à chaque nouveau terminal ouvert.
+\end{document}

@@ -1,0 +1,26 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+\WapitiCite\ est un logiciel implémentant les CRF, il permet d'apprendre des annotateurs à partir de corpus annotés.\\
+
+La dernière version de \Wapiti\ compatible avec \SEM\ est disponible dans le
+dossier ext. Les consignes d'intallation sont disponibles avec. \SEM\ est prévu
+pour fonctionner avec le \Wapiti tel qu'il est fourni dans le dossier ext,
+il faut le compiler pour pouvoir appeler Wapiti avec \SEM.\\
+
+Supposons que stand-alone-tagger se trouve dans le dossier foobar dans le
+dossier utilisateur. Sous Linux, son chemin absolu est donc \$HOME/foobar
+ou \~{}/foobar. stand-alone-tagger se trouve donc à l'emplacement
+\~{}/foobar/stand-alone-tagger.\\
+
+Dans le dossier \~{}/foobar/stand-alone-tagger/ext se trouve une archive de la
+forme wapiti-X.tar.gz où X est un numéro de version. Il faut extraire cette
+archive dans le dossier même. Cela crééra un dossier nommé wapiti-X.\\
+
+dans le dossier \~{}/foobar/stand-alone-tagger/ext/wapiti-X, tapez la commande
+"make" pour créer l'exécutable wapiti. Si vous êtes sous Windows, utilisez
+la commande ".\\make.bat" (le \Wapiti disponible dans ext peut être compilé
+avec MinGW).
+
+\subsubsection{Erreurs de compilation}
+\subfile{fr/subsubsection/compilation-error}
+\end{document}

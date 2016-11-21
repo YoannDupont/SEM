@@ -1,0 +1,18 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+Wapiti est un logiciel ayant recours à certaines spécificités du matériel et
+du système d'exploitation pour améliorer ses performances. En conséquence, il
+est possible d'avoir des erreurs à l'étape I/3- étant dues à l'abscence de ces
+spécificités sur votre machine.\\
+
+La plus fréquente semble être dûe à la fonction "\_\_sync\_bool\_compare\_and\_swap"
+présente dans le fichier "gradient.c". Si la commande make provoque une erreur
+et vous affiche des messages relatifs à cette fonction, la procédure est très
+simple.\\
+
+Dans le fichier "wapiti.h", cherchez la ligne :\\
+//\#define ATM\_ANSI\\
+Et supprimez la chaîne "//" en début de ligne pour obtenir :\\
+\#define ATM\_ANSI\\
+Sauvegardez et reprenez la procédure d'installation.
+\end{document}

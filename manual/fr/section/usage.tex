@@ -1,0 +1,55 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+\SEM\ dispose de module indépendants les uns des autres, le programme principal faisant alors office d'aiguilleur vers le module à lancer.\\
+
+Pour obtenir la liste des modules disponibles et la syntaxe générale pour les lancer :
+
+./sem (--help ou -h)\\
+
+Pour connaître la version de \SEM\ :
+
+./sem (--version ou -v)\\
+
+Pour connaître les informations relatives à la dernière version de \SEM\ :
+
+./sem (--informations ou -i)\\
+
+Pour lancer un module, la syntaxe générale est :
+
+./sem $<$nom\_du\_module$>$ $<$arguments\_et\_options\_du\_module$>$\\
+
+Les différents modules seront détaillés un par un.
+
+%\begin{itemize}
+%    \item \textbf{clean\_info} permet de retirer des informations d'un fichier texte vectorisé qui ne sont plus nécessaires (en ne gardant que celles qui le sont).
+%    \item \textbf{enrich} permet d'enrichir d'informations un fichier vectorisé.
+%    \item \textbf{segmentation} permet de segmenter un fichier de texte brut.
+%    \item \textbf{tagger} le module "principal", permet d'enchaîner l'exécution des différents modules (de manière analogue à un tube) en plus de lancer des annotations.
+%    \item \textbf{textualise} prend un fichier vectoriel et le réécrit en format linéaire. Si une colonne pour le POS est donnée, chaque token prend la forme "mot/POS". Si une colonne pour un chunking (ou plus largement, tout étiquetage de séquences de tokens) est donnée, chaque séquence de mots comprise dans un chunk CHK est écrite de la façon suivante : (CHK mot1 mot2 mot3)
+%    \item \textbf{compile\_dictionary} permet de compiler un dictionnaire. Un dictionnaire peut être un dictionnaire de mots simples ou un de séquences de mots (ces dernières peuvent contenir également des mots simples).
+%    \item \textbf{decompile\_dictionary} permet de décompiler un dictionnaire. Chaque entrée du dictionnaire sera alors écrite sur une ligne du fichier de sortie.
+%    %\item \textbf{} 
+%\end{itemize}
+
+\subsection{clean\_info}
+\subfile{fr/subsection/module-clean_info}
+
+\subsection{enrich}
+\subfile{fr/subsection/module-enrich}
+
+\subsection{segmentation}
+\subfile{fr/subsection/module-segmentation}
+
+\subsection{tagger}
+\subfile{fr/subsection/module-tagger}
+
+\subsection{textualise}
+\subfile{fr/subsection/module-textualise}
+
+\subsection{compile}
+\subfile{fr/subsection/module-compile}
+
+\subsection{decompile}
+\subfile{fr/subsection/module-decompile}
+
+\end{document}

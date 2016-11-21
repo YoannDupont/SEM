@@ -1,0 +1,16 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+\SEMFull\ \cite{Tellier_demo2012} est un logiciel d'annotation syntaxique du français.\\
+
+Il permet la segmentation de texte brut en phrases, elles-même découpées en unités lexicales, mais il est tout-à-fait en mesure de traiter un texte
+pré-segmenté. Les unités multi-mots peuvent être gérées de deux manières différentes : soit comme une seule unité lexicale où chaque mot est relié
+par le caractère '\_', soit comme une suite de mots ayant une annotation particulière précisant que les mots sont reliés entre eux et possèdent
+globalement la même fonction syntaxique.\\
+
+SEM propose deux niveaux d'annotation syntaxique : le premier est une annotation morpho-syntaxique de chaque unité lexicale du texte selon le jeu
+d'étiquettes défini par Crabbé et Candito (TALN 2008). Le second est une annotation en chunks selon le modèle BIO (Begin In Out), le programme
+permettant d'obtenir un étiquetage selon un chunking complet ou bien partiel, auquel cas il ne reconnaîtra que les groupes nominaux (le chunking
+partiel étant soumis à des règles différentes que le chunking complet, l'un n'est donc pas un sous-ensemble de l'autre).\\
+
+Toutes les commandes du manuel sont mises entre guillemets pour les distinguer clairement du reste du texte, mais elle doit être écrite sans eux.
+\end{document}

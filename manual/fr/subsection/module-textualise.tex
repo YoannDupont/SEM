@@ -1,0 +1,59 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            \item[] Transforme un texte au format vectorisé en un texte au format linéaire. Il est possible d'ajouter des informations de
+				POS et / ou de chunking au texte linéaire.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] input : fichier vectorisé
+                \begin{itemize}
+                    \item[] le fichier d'entrée. Doit contenir au moins une annotation PoS ou une annotation en chunks.
+                \end{itemize}
+            \item[] output : fichier linéaire de sortie.
+                \begin{itemize}
+                    \item[] Ne contient que le texte ainsi que les informations PoS et / ou les informations de chunking.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h : switch
+                \begin{itemize}
+                    \item[] affiche l'aide
+                \end{itemize}
+            \item[] -p ou --pos-column : entier
+                \begin{itemize}
+                    \item[] l'index où les informations PoS se trouve.
+                \end{itemize}
+            \item[] -c ou --chunk-column : entier
+                \begin{itemize}
+                    \item[] l'index où se trouvent les informations de chunking.
+                \end{itemize}
+            \item[] --input-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --output-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier de sortie. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée et de sortie. Si un encodage est fourni pour un fichier,
+                        cette valeur est surchargée (défaut : UTF-8).
+                \end{itemize}
+            \item[] --log ou -l : string
+                \begin{itemize}
+                    \item[] définit le niveau de log : info, warn ou critical (défaut : critical).
+                \end{itemize}
+            \item[] --log-file : fichier
+                \begin{itemize}
+                    \item[] le fichier où écrire le log (défaut : sortie terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,29 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Le fichier de configuration du module tagger est appelé le fichier de configuration maître. Il permet de définir une séquence de traitements
+(modules) ainsi que des options globales aux différents modules qui seront lancés les uns après les autres.\\
+
+Le fichier maître est un fichier XML de type de document ``master''. Il a deux parties : une ``pipeline'' qui est une séquences de modules et
+une ``options'' qui permet de définir les options globales.\\
+
+Les mots en gras sont les différentes sections du fichier de configuration maître, celles entre crochets sont les attributs des balises XML.
+
+\begin{itemize}
+	\item[] \textbf{pipeline}
+	\begin{itemize}
+		\item[] segmentation (si présent : doit être le premier module)
+		\item[] enrich \textit{[config]}
+		\item[] tagger \textit{[model]}
+		\item[] clean\_info \textit{[to-keep]}
+		\item[] textualise \textit{[pos, chunk]}
+	\end{itemize}
+	\item[] \textbf{options}
+	\begin{itemize}
+		\item[] encoding \textit{[input-encoding, output-encoding]} : encodage de l'entrée et des sorties.
+		\item[] log \textit{[level, file]} : le niveau de log et le fichier de log (terminal si fichier non donné)
+		\item[] clean
+	\end{itemize}
+\end{itemize}
+
+\end{document}

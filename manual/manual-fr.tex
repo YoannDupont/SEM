@@ -1,0 +1,54 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[usenames,dvipsnames]{color}
+
+\usepackage[colorlinks=true, citecolor=blue, linkcolor=ForestGreen]{hyperref}
+
+\usepackage{macros}
+
+%\usepackage{pst-all}
+
+%\usepackage{multirow}
+
+%\usepackage{amsmath}
+%\usepackage{amssymb}
+
+%\usepackage[]{algorithm2e}
+
+\usepackage[top=1in, bottom=1.5in, left=1in, right=1in]{geometry}
+
+\usepackage{subfiles}
+
+\title{\SEMFull}
+\date{}
+
+\begin{document}
+    \maketitle
+    
+    \tableofcontents
+    \newpage
+    
+    \section{Préface}
+    \subfile{fr/section/preface}
+    
+    \section{Installation}
+    \subfile{fr/section/installation}
+    
+    \section{Corpus, annotations et ressources linguistiques}
+    \subfile{fr/section/corpus-annotation-resources}
+    
+    \section{Formats des fichiers}
+    \subfile{fr/section/file_formats}
+    
+    \section{Utilisation}
+    \subfile{fr/section/usage}
+    
+    \section{Fichiers de configuration}
+    \subfile{fr/section/configuration}
+    
+    \bibliographystyle{apa}
+    \bibliography{biblio}
+\end{document}

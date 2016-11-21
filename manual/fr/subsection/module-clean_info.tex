@@ -1,0 +1,56 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            \item[] clean\_info permet de supprimer des colonnes d'informations dans un fichier vectorisé.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] infile : fichier
+                \begin{itemize}
+                    \item[] le fichier d'entrée. Format vectorisé.
+                \end{itemize}
+            \item[] outfile : fichier
+                \begin{itemize}
+                    \item[] le fichier de sortie. S'il existe déjà, son contenu sera écrasé.
+                \end{itemize}
+            \item[] ranges : string
+                \begin{itemize}
+                    \item[] les colonnes à garder. Il est possible de donner soit un numéro de colonne soit une portée. Une portée
+                        se constitue de deux nombres séparés par le symbole «~:~». Il est possible de fournir plusieurs valeurs
+                        en les séparant par le symbole  «~,~».
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h : switch
+                \begin{itemize}
+                    \item[] affiche l'aide
+                \end{itemize}
+            \item[] --input-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --output-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier de sortie. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée et de sortie. Si un encodage est fourni pour un fichier,
+                        cette valeur est surchargée (défaut : UTF-8).
+                \end{itemize}
+            \item[] --log ou -l : string
+                \begin{itemize}
+                    \item[] définit le niveau de log : info, warn ou critical (défaut : critical).
+                \end{itemize}
+            \item[] --log-file : fichier
+                \begin{itemize}
+                    \item[] le fichier où écrire le log (défaut : sortie terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

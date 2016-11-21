@@ -1,0 +1,45 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            \item[] Compile (sérialise) un fichier dictionnaire qui pourra alors être utilisé en ressource dans \SEM.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] input : fichier dictionnaire
+                \begin{itemize}
+                    \item[] Le dictionnaire à compiler.
+                \end{itemize}
+            \item[] output : fichier compilé
+                \begin{itemize}
+                    \item[] Le dictionnaire compilé.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h : switch
+                \begin{itemize}
+                    \item[] affiche l'aide
+                \end{itemize}
+            \item[] -k ou --kind : énumération \{token, multiword\}
+                \begin{itemize}
+                    \item[] le type de dictionnaire en entrée. token : chaque entrée représente un mot. multiword : chaque entrée représente une suite de mots.
+                \end{itemize}
+            \item[] -i ou --input-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --log ou -l : string
+                \begin{itemize}
+                    \item[] définit le niveau de log : info, warn ou critical (défaut : critical).
+                \end{itemize}
+            \item[] --log-file : fichier
+                \begin{itemize}
+                    \item[] le fichier où écrire le log (défaut : sortie terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

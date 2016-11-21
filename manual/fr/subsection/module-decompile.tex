@@ -1,0 +1,54 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            \item[] Décompile (désérialise) un fichier dictionnaire. Cela permet alors de modifier la ressource (changement d'encodage, ajout / suppression / modification d'entrées).
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] input : fichier compilé
+                \begin{itemize}
+                    \item[] Le dictionnaire compilé.
+                \end{itemize}
+            \item[] output : fichier dictionnaire
+                \begin{itemize}
+                    \item[] Le dictionnaire décompilé.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h : switch
+                \begin{itemize}
+                    \item[] affiche l'aide
+                \end{itemize}
+            \item[] 
+                \begin{itemize}
+                    \item[] 
+                \end{itemize}
+            \item[] --input-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --output-encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier de sortie. Prioritaire sur la valeur de --encoding (défaut : --encoding).
+                \end{itemize}
+            \item[] --encoding : string
+                \begin{itemize}
+                    \item[] définit l'encodage du fichier d'entrée et de sortie. Si un encodage est fourni pour un fichier,
+                        cette valeur est surchargée (défaut : UTF-8).
+                \end{itemize}
+            \item[] --log ou -l : string
+                \begin{itemize}
+                    \item[] définit le niveau de log : info, warn ou critical (défaut : critical).
+                \end{itemize}
+            \item[] --log-file : fichier
+                \begin{itemize}
+                    \item[] le fichier où écrire le log (défaut : sortie terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}
