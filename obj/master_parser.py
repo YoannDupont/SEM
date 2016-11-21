@@ -44,7 +44,7 @@ class Master(object):
     """
     
     _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"export"])
-    _allowed_options = set([u"encoding", u"log", u"clean"])
+    _allowed_options = set([u"file", u"encoding", u"log", u"clean"])
     
     class Process(object):
         """
@@ -91,12 +91,30 @@ class Master(object):
             Are temporary files cleaned up at the end of the process ?
         """
         
-        def __init__(self, ienc="utf-8", oenc="utf-8", log_level=logging.CRITICAL, log_file=None, clean=False):
-            self._ienc      = ienc
-            self._oenc      = oenc
-            self._log_level = log_level
-            self._log_file  = log_file
-            self._clean     = clean
+        def __init__(self, file_format="text", fields=None, word_field=None, ienc="utf-8", oenc="utf-8", log_level=logging.CRITICAL, log_file=None, clean=False):
+            self._format     = file_format.lower()
+            self._fields     = fields or []
+            self._word_field = word_field
+            self._ienc       = ienc
+            self._oenc       = oenc
+            self._log_level  = log_level
+            self._log_file   = log_file
+            self._clean      = clean
+            
+            if self._fields and not self._word_field:
+                self._word_field = self._fields[0]
+        
+        @property
+        def format(self):
+            return self._format
+        
+        @property
+        def fields(self):
+            return self._fields
+        
+        @property
+        def word_field(self):
+            return self._word_field
         
         @property
         def ienc(self):
@@ -164,7 +182,12 @@ class Master(object):
                     raise ValueError('"%s" is not a valid option.' %(child.tag))
                 
                 option = child.tag
-                if option == "encoding":
+                if option == "file":
+                    self.options._format = child.attrib.get("format", "text").lower()
+                    if self.options._format == "conll":
+                        self.options._fields     = child.attrib.get("fields", "word").split(u",")
+                        self.options._word_field = child.attrib.get("word-field", self.options._fields[0])
+                elif option == "encoding":
                     self.options.set_ienc(child.attrib.get("input-encoding", "utf-8"))
                     self.options.set_oenc(child.attrib.get("output-encoding", "utf-8"))
                 elif option == "log":

@@ -65,20 +65,20 @@
             </binary>
         </nary>
         
-        <find name="VerbForward" action="forward" search_entry="POS" return_entry="word">
-            <regexp action="check">^V</regexp>
+        <find name="VerbForward" action="forward" return_entry="word">
+            <regexp action="check" entry="POS">^V</regexp>
         </find>
         
-        <find name="VerbBackward" action="backward" search_entry="POS" return_entry="word">
-            <regexp action="check">^V</regexp>
+        <find name="VerbBackward" action="backward" return_entry="word">
+            <regexp action="check" entry="POS">^V</regexp>
         </find>
         
-        <find name="NounForward" action="forward" search_entry="POS" return_entry="word">
-            <regexp action="check">^N</regexp>
+        <find name="NounForward" action="forward" return_entry="word">
+            <regexp action="check" entry="POS">^N</regexp>
         </find>
         
-        <find name="NounBackward" action="backward" search_entry="POS" return_entry="word">
-            <regexp action="check">^N</regexp>
+        <find name="NounBackward" action="backward" return_entry="word">
+            <regexp action="check" entry="POS">^N</regexp>
         </find>
         
         <dictionary name="city-token"        action="token"     entry="lower" path="../../dictionaries/fr/NER/token/city" />

@@ -37,7 +37,7 @@ class KeyReader(object):
         if not self._keys:
             raise ValueError("Cannot give empty key set to KeyReader object.")
         if None == self._cleaner:
-            self._cleaner = Reader.identity
+            self._cleaner = unicode.strip
         if None == self._splitter:
             self._splitter = unicode.split
         

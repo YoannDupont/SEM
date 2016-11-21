@@ -82,11 +82,18 @@ def tagger(masterfile, file_name, directory="."):
     
     sem_tagger_logger.info("Reading %s" %(file_name))
     
-    document = Document(basename(file_name), content=codecs.open(file_name, "rU", ienc).read())
+    if options.format == "text":
+        document = Document(basename(file_name), content=codecs.open(file_name, "rU", ienc).read())
+    elif options.format == "conll":
+        document = Document.from_conll(file_name, options.fields, options.word_field)
+    else:
+        raise ValueError(u"unknown format: %s" %options.format)
     
     if pipeline[0].identifier == u"segmentation":
-        document_segmentation(document, pipeline[0].args["name"], log_level=options.log_level, log_file=options.log_file)
-        
+        if len(document.corpus.sentences) == 0:
+            document_segmentation(document, pipeline[0].args["name"], log_level=options.log_level, log_file=options.log_file)
+        else:
+            sem_tagger_logger.warn("segmentation asked for already segmented input, skipping...")
         nth      += 1
         pipeline  = pipeline[1:]
     

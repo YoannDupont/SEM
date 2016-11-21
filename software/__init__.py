@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 1
+_version_patch = 2
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -38,7 +38,6 @@ On a more NLP side, such changes would also include model changes.
 """
 
 _main_features = [
-                    
                     [u"segmentation",
                         [
                             u"segmentation for: French, English",
@@ -71,37 +70,46 @@ _main_features = [
                     ]
                   ]
 
+_first_steps = [
+                    [u"make Wapiti",
+                        [
+                            u"open a terminal in ext/",
+                            u'type "make" (".\\make.bat" on Windows) without quotes',
+                            u"note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h"
+                        ],
+                    ],
+                    [u"uncompress models in resources/models/*", []],
+                    [u"run tests",
+                        ["python sem --test"]
+                    ]
+                ]
+
+_external_resources = [
+                        [u"[French Treebank](http://www.llf.cnrs.fr/fr/Gens/Abeille/French-Treebank-fr.php) by [Abeillé et al. (2003)](http://link.springer.com/chapter/10.1007%2F978-94-010-0201-1_10): corpus used for POS and chunking.", []],
+                        [u"NER annotated French Treebank by [Sagot et al. (2012)](https://halshs.archives-ouvertes.fr/file/index/docid/703108/filename/taln12ftbne.pdf): corpus used for NER.", []],
+                        [u"[Lexique des Formes Fléchies du Français (LeFFF)](http://alpage.inria.fr/~sagot/lefff.html) by [Clément et al. (2004)](http://www.labri.fr/perso/clement/lefff/public/lrec04ClementLangSagot-1.0.pdf): french lexicon of inflected forms with various informations, such as their POS tag and lemmatization.", []],
+                        [u"[Wapiti](http://wapiti.limsi.fr) by [Lavergne et al. (2010)](http://www.aclweb.org/anthology/P10-1052): linear-chain CRF library.", []],
+                        [u"Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.", []],
+                        [u"Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.", []]
+                      ]
+
 _latest_changes = [
+                    [u"Added sources for manual", []],
+                    [u"Improved readme.md", 
+                        [
+                            u"added first steps and external resources",
+                            u"added link to online version"
+                        ]
+                    ],
+                    [u"tagger module now handles CoNLL-like files again! Hooray!",
+                        [
+                            u'in master file, within the options section: <file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">'
+                        ]
+                    ],
                     [u"Wapiti changes", 
                         [
                             u'now SEM only uses a local version of Wapiti (available in ext) that needs to be compiled.'
                         ]
-                    ],
-                    [u"export module changes", 
-                        [
-                            u"export now behaves like segmentation: different export modules are available in obj/exporters",
-                            u'export "flavours" are in obj/exporters'
-                        ]
-                    ],
-                    [u"tokeniser changes",
-                        [
-                            u"updated French tokeniser",
-                            u"updated English tokeniser",
-                            u"added support for urls and emails in obj/constants.py"
-                        ]
-                    ],
-                    [u"Software module changes",
-                        [
-                            u'removed object oriented "Software" object. Replaced by global variables and methods',
-                            u"SEM information now generated in MarkDown format."
-                        ]
-                    ],
-                    [u"unit tests",
-                        [
-                            u'first unit tests added.'
-                        ]
-                    ],
-                    [u"correction: added is_boolean switch to list features.", []
                     ]
                   ]
 
@@ -114,7 +122,6 @@ _planned_changes = [
                         [u'improve pipeline: allow calling a pipeline within a pipeline.', []],
                         [u'make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.', []],
                         [u'have more unit tests', []],
-                        [u'handle CoNLL-formatted input files for tagger module', []],
                         [u'handle HTML input files for tagger module',
                             [
                                 "create specific tokeniser",
@@ -127,8 +134,7 @@ _planned_changes = [
                                 'handle URLs starting with country indicator (ex: "en.wikipedia.org")',
                                 'handle URLs starting with subdomain (ex: "blog.[...]")',
                             ]
-                        ],
-                        ["make module objects using the same principle as for tokenisers or exporters.", []]
+                        ]
                    ]
 
 def name():
@@ -150,13 +156,19 @@ def informations():
         return u"\n".join(accumulator)
         
     return u"""# %s
-[SEM (Segmenteur-Étiqueteur Markovien)](%s) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing.
+[SEM (Segmenteur-Étiqueteur Markovien)](%s) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
 %s
 
-## latest changes (2.3.4 > %s)
+## first steps before using SEM
+%s
+
+## External resources used by SEM
+%s
+
+## latest changes (2.4.0 > %s)
 %s
 
 ## planned changes (no priority)
-%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), version(), make_md(_latest_changes), make_md(_planned_changes))
+%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), version(), make_md(_latest_changes), make_md(_planned_changes))

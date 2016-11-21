@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from holder import Holder
 
+from os.path import basename
+
 from obj.storage.segmentation import Segmentation
 from obj.storage.corpus       import Corpus
 from obj.storage.annotation   import SpannedTag, Annotation, chunk_annotation_from_corpus
@@ -68,6 +70,29 @@ class Document(Holder):
     @classmethod
     def from_file(cls, filename, encoding="utf-8"):
         return Document(basename(filename), content=codecs.open(filename, "rU", encoding).read())
+    
+    @classmethod
+    def from_conll(cls, filename, fields, word_field, encoding="utf-8"):
+        document         = Document(basename(filename))
+        document._corpus = Corpus.from_conll(filename, fields, encoding=encoding)
+        character_index  = 0
+        sentence_index   = 0
+        contents         = []
+        word_spans       = []
+        sentence_spans   = []
+        for sentence in document._corpus.sentences:
+            contents.append([])
+            for token in sentence:
+                word = token[word_field]
+                contents[-1].append(word)
+                word_spans.append(Span(character_index, character_index+len(word)))
+                character_index += len(word) + 1
+            sentence_spans.append(Span(sentence_index, sentence_index+len(sentence)))
+            sentence_index += len(sentence)
+        document._content = u"\n".join([u" ".join(content) for content in contents])
+        document.add_segmentation(Segmentation("tokens", spans=word_spans))
+        document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
+        return document
     
     def get_tokens(self):
         tokens  = []

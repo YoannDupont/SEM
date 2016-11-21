@@ -22,6 +22,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from obj.IO.KeyIO import KeyReader
 
 class Corpus(object):
     def __init__(self, fields=None, sentences=None):
@@ -41,6 +42,13 @@ class Corpus(object):
     
     def __unicode__(self):
         return self.unicode(self.fields)
+    
+    @classmethod
+    def from_conll(cls, filename, fields, encoding="utf-8"):
+        corpus = Corpus(fields)
+        for sentence in KeyReader(filename, encoding, fields):
+            corpus.append_sentence([token.copy() for token in sentence])
+        return corpus
     
     def unicode(self, fields, separator=u"\t"):
         fmt       = u"\t".join([u"%%(%s)s" %field for field in fields])
