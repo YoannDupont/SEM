@@ -37,6 +37,7 @@ def get_modules(path, root):
             if '__init__.py' in filenames:
                 modules_path = (f for f in filenames
                                 if os.path.splitext(f)[1] == '.py' and not os.path.basename(f).startswith('_'))
+
                 for m in modules_path:
                     m_name, m_path = os.path.splitext(os.path.basename(m))[0], os.path.join(dirpath, m)
                     if m_name in res:
