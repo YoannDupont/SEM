@@ -37,7 +37,12 @@ def get_modules(path, root):
             if '__init__.py' in filenames:
                 modules_path = (f for f in filenames
                                 if os.path.splitext(f)[1] == '.py' and not os.path.basename(f).startswith('_'))
-                res.update({os.path.splitext(os.path.basename(m))[0]: os.path.join(dirpath, m) for m in modules_path})
+
+                for m in modules_path:
+                    m_name, m_path = os.path.splitext(os.path.basename(m))[0], os.path.join(dirpath, m)
+                    if m_name in res:
+                        raise ValueError('Module indexation crash, module "{m_name}" found twice:\n\t{m_path}\n\t{res_m_name}'.format(m_name=m_name, m_path=m_path, res_m_name=res[m_name]))
+                    res[m_name] = m_path
 
         return res
     modules = get(os.path.join(root, path))
