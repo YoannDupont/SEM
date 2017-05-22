@@ -31,7 +31,9 @@ import software
 
 from obj.setup  import get_modules
 from obj.logger import logging_format
- 
+
+sem_dir = os.path.dirname(os.path.abspath(__file__))
+
 sem_logger = logging.getLogger("sem")
 
 if __name__ == "__main__":
@@ -43,20 +45,19 @@ if __name__ == "__main__":
             if shortest in longest:
                 suggestions.append(name)
         return suggestions
-    
+
     import sys, runpy
-    
-    ids, pathes = get_modules("src")
-    name        = os.path.basename(sys.argv[0])
-    operation   = (sys.argv[1] if len(sys.argv) > 1 else "-h")
-    
-    if operation in ids:
-        n = ids.index(operation)
-        runpy.run_module(pathes[n], run_name="__main__", alter_sys=True)
+
+    modules   = get_modules("src", sem_dir)
+    name      = os.path.basename(sys.argv[0])
+    operation = (sys.argv[1] if len(sys.argv) > 1 else "-h")
+
+    if operation in modules:
+        runpy.run_module(modules[operation], run_name="__main__", alter_sys=True)
     elif operation in ["-h", "--help"]:
         print "Usage: %s <module> [module arguments]\n" %name
         print "Module list:"
-        for i in ids:
+        for i in modules:
             print "\t"+i
         print
         print "for SEM's current version: -v or --version\n"
