@@ -29,6 +29,7 @@ import logging
 import os.path
 import subprocess
 import time
+import tarfile
 
 from obj.logger import default_handler
 
@@ -36,6 +37,7 @@ from software import SEM_HOME
 
 wapiti_logger = logging.getLogger("sem.wapiti")
 wapiti_logger.addHandler(default_handler)
+wapiti_logger.setLevel("INFO")
 
 __command_name = os.path.join(SEM_HOME, "ext", "wapiti", "wapiti")
 
@@ -118,6 +120,14 @@ def label_document(document, model, field, encoding, annotation_name=None, annot
     
     if annotation_name is None:
         annotation_name = unicode(field)
+    
+    if not os.path.exists(model):
+        if os.path.exists(model + ".tar.gz"):
+            wapiti_logger.info("Model not extracted, extracting %s" %(os.path.normpath(model + ".tar.gz")))
+            with tarfile.open(model + ".tar.gz", "r:gz") as tar:
+                tar.extractall(os.path.dirname(model))
+        else:
+            raise IOError("Cannot find wapiti model file: %s" %model)
     
     corpus_unicode = document.corpus.unicode(fields).encode(encoding)
     

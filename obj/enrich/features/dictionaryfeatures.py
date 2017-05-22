@@ -29,21 +29,24 @@ from getterfeatures import DEFAULT_GETTER
 
 from obj.dictionaries import NUL
 
+from obj.trie import Trie
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
-from obj.dictionaries import compile_token, compile_multiword
+from obj.dictionaries import compile_token, compile_multiword , compile_map
 
 class DictionaryFeature(Feature):
-    def __init__(self, path=None, value=None, getter=DEFAULT_GETTER, *args, **kwargs):
+    def __init__(self, path=None, value=None, entries=None, getter=DEFAULT_GETTER, *args, **kwargs):
         super(DictionaryFeature, self).__init__(self, *args, **kwargs)
         self._path = path
         if path is not None:
             self._path = os.path.abspath(os.path.expanduser(path))
         self._value  = value
         self._getter = getter
+        self._entries = entries
 
 class TokenDictionaryFeature(DictionaryFeature):
     def __init__(self, getter=DEFAULT_GETTER, *args, **kwargs):
@@ -55,6 +58,13 @@ class TokenDictionaryFeature(DictionaryFeature):
                 self._value = pickle.load(open(self._path))
             except (pickle.UnpicklingError, ImportError, EOFError):
                 self._value = compile_token(self._path, "utf-8")
+            self._entries = None
+        elif self._entries is not None:
+            self._value = set()
+            for entry in self._entries:
+                entry = entry.strip()
+                if entry:
+                    self._value.add(entry)
         
         assert self._value is not None
     
@@ -68,10 +78,22 @@ class MultiwordDictionaryFeature(DictionaryFeature):
         self._entry       = kwargs["entry"]
         self._appendice   = kwargs.get("appendice", "")
         
-        try:
-            self._value = pickle.load(open(self._path))
-        except (pickle.UnpicklingError, ImportError, EOFError):
-            self._value = compile_multiword(self._path, "utf-8")
+        if self._path is not None:
+            try:
+                self._value = pickle.load(open(self._path))
+            except (pickle.UnpicklingError, ImportError, EOFError):
+                self._value = compile_multiword(self._path, "utf-8")
+            self._entries = None
+        elif self._entries:
+            self._value = Trie()
+            for entry in self._entries:
+                entry = entry.strip()
+                if entry:
+                    self._value.add(entry.split())
+        else:
+            self._value = Trie()
+        
+        #assert len(self._value) > 0
     
     """def __call__(self, list2dict, *args, **kwargs):
         l         = ["O"]*len(list2dict)
@@ -163,4 +185,26 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             l[-1] = u'B' + appendice
         
         return l
+
+class MapperFeature(DictionaryFeature):
+    def __init__(self, getter=DEFAULT_GETTER, default="O", *args, **kwargs):
+        super(MapperFeature, self).__init__(getter=getter, *args, **kwargs)
+        
+        self._default = default
+        
+        if self._path is not None:
+            self._value = compile_map(self._path, "utf-8")
+            self._entries = None
+        elif self._entries is not None:
+            self._value = {}
+            for entry in self._entries:
+                entry = entry.strip()
+                if entry:
+                    key,value = entry.split(u"\t")
+                    self._value[key] = value
+        
+        assert self._value is not None
+    
+    def __call__(self, *args, **kwargs):
+        return self._value.get(self._getter(*args, **kwargs), self._default)
 

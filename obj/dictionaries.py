@@ -31,13 +31,12 @@ from obj.trie import Trie
 NUL = u""
 
 def compile_token(infile, encoding):
-    """tokens = set()
+    tokens = set()
     for line in codecs.open(infile, "rU", encoding):
         line = line.strip()
         if line != "":
             tokens.add(line)
-    return tokens"""
-    return set(codecs.open(infile, "rU", encoding).read().split(u"\n"))
+    return tokens
 
 def compile_multiword(infile, encoding):
     trie = Trie()
@@ -45,3 +44,10 @@ def compile_multiword(infile, encoding):
         seq = line.strip().split()
         trie.add(seq)
     return trie
+
+def compile_map(infile, encoding):
+    out_map = {}
+    for line in codecs.open(infile, "rU", encoding):
+        key,value = line.strip().split(u"\t")
+        out_map[key] = value
+    return out_map

@@ -1,33 +1,39 @@
-# SEM v2.4.2
+# SEM v2.5.0
 [SEM (Segmenteur-Étiqueteur Markovien)](http://www.lattice.cnrs.fr/sites/itellier/SEM.html) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
-1. segmentation
+1. A GUI for easier use (requires TkInter)
+   1. On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)
+   2. On Windows: double-clic on sem_gui.bat (or launch ".\sem_gui.bat" in a terminal)
+2. segmentation
    1. segmentation for: French, English
    2. easy creation and integration of new tokenisers
-2. feature generation
+3. feature generation
    1. XML file to write features without coding them
    2. single-token and multi-token dictionary features
    3. Regular expression features
    4. sequenced features
    5. train/label mode
    6. display option for features that are useful for generation, but not needed in output
-3. exporting output
-   1. supported export formats: CoNLL, text, HTML (from plain text)
+4. exporting output
+   1. supported export formats: CoNLL, text, HTML (from plain text), two XML-TEI (one specific to NP-chunks and another one for the rest)
    2. easy creation and integration of new exporters
-4. extension of existing features
+5. extension of existing features
    1. automatic integration of new segmenters and exporters
    2. semi automatic integration of new feature functions
    3. easy creation of new CSS formats for HTML exports
 
-## first steps before using SEM
+## First steps before using SEM
 1. make Wapiti
-   1. open a terminal in ext/
-   2. type "make" (".\make.bat" on Windows) without quotes
-   3. note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h
-2. uncompress models in resources/models/*
-3. run tests
+   1. uncompress ext/wapitiXXX.tar.gz (where XXX is an optional version number)
+   2. open a terminal in ext/wapiti
+   3. type "make" (".\make.bat wapiti" on Windows) without quotes. Note for Windows: if compilation fails, check you use the right gcc (see in make.bat)
+   4. note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h
+2. run tests
    1. python sem --test
+3. run SEM
+   1. run GUI (see "main features" above) and annotate "non-regression/fr/in/segmentation.txt"
+   2. OR: run ```python sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output```
 
 ## External resources used by SEM
 1. [French Treebank](http://www.llf.cnrs.fr/fr/Gens/Abeille/French-Treebank-fr.php) by [Abeillé et al. (2003)](http://link.springer.com/chapter/10.1007%2F978-94-010-0201-1_10): corpus used for POS and chunking.
@@ -36,29 +42,46 @@
 4. [Wapiti](http://wapiti.limsi.fr) by [Lavergne et al. (2010)](http://www.aclweb.org/anthology/P10-1052): linear-chain CRF library.
 5. Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.
 6. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
+7. GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.
 
-## latest changes (2.4.0 > 2.4.2)
-1. Added sources for manual
-2. Improved readme.md
-   1. added first steps and external resources
-   2. added link to online version
-3. tagger module now handles CoNLL-like files again! Hooray!
-   1. in master file, within the options section: <file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">
-4. Wapiti changes
-   1. now SEM only uses a local version of Wapiti (available in ext) that needs to be compiled.
+## Latest changes (2.4.0 > 2.5.0)
+1. Added a GUI
+   1. On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)
+   2. On Windows: double-clic on sem_gui.bat (or launch ".\sem_gui.bat" in a terminal)
+2. Improved model for NER
+3. Models are now automatically extracted using tagger module
+4. Output directory now automatically created for tagger module
+5. Added "ontology" feature
+   1. an ontology is just a set of dictionaries that will all be matched on the same column.
+6. Improved readme.md
+   1. more details left and right.
+7. tagger module now handles CoNLL-like files again! Hooray!
+   1. in master file, within the options section: ```<file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">```
+8. chunking_fscore module created to evaluate tasks like named entities.
+   1. only works for IOB tagging scheme for now.
 
-## planned changes (no priority)
-1. redo triggered features and sequence features.
-2. add lemmatiser.
-3. migration to python3 ? (already made for revision 39 by lerela).
-4. translate manual in English.
-5. update manual.
-6. improve pipeline: allow calling a pipeline within a pipeline.
-7. make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.
-8. have more unit tests
-9. handle HTML input files for tagger module
+## Planned changes (no priority)
+1. Add a tutorial.
+2. redo triggered features and sequence features.
+3. add lemmatiser.
+4. migration to python3 ? (already made for revision 39 by lerela).
+5. translate manual in English.
+6. update manual.
+7. improve pipeline: allow calling a pipeline within a pipeline.
+8. make SEM callable modules the same way segmenters and exporters. This would allow better integration in a pipeline.
+9. have more unit tests
+10. handle HTML input files for tagger module
    1. create specific tokeniser
    2. need to handles cases such as words cut by a HTML tag
-10. improve segmentation
+11. improve segmentation
    1. handle URLs starting with country indicator (ex: "en.wikipedia.org")
    2. handle URLs starting with subdomain (ex: "blog.[...]")
+
+## SEM references (with task[s] of interest)
+1. [TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)
+   1. Chunking
+2. [TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)
+   1. Part-Of-Speech Tagging
+   2. chunking
+3. [DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)
+   1. Named Entity Recognition

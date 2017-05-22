@@ -43,7 +43,7 @@ class Master(object):
         the set of allowed option names
     """
     
-    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"export"])
+    _allowed_pipes   = set([u"segmentation", u"enrich", u"label", u"clean_info", u"label_consistency", u"export"])
     _allowed_options = set([u"file", u"encoding", u"log", u"clean"])
     
     class Process(object):

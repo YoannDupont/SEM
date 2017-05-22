@@ -34,6 +34,8 @@ from obj.exporters.exporter import Exporter as DefaultExporter
 import software
 
 class Exporter(DefaultExporter):
+    __ext = "html"
+    
     def __init__(self, lang="fr", lang_style="default.css", *args, **kwargs):
         self._lang       = lang
         self._lang_style = lang_style
@@ -67,12 +69,18 @@ class Exporter(DefaultExporter):
         pos_html   = []
         chunk_html = []
         ner_html   = []
-        if entry_names.get("pos", None):
-            pos_html = self.add_pos_corpus(escaped, data, entry_names["pos"])
-        if entry_names.get("chunking", None):
-            chunk_html = self.add_chunking_corpus(escaped, data, entry_names["chunking"])
-        if entry_names.get("ner", None):
-            ner_html = self.add_chunking_corpus(escaped, data, entry_names["ner"])
+        
+        current_key = entry_names.get("pos", None)
+        if current_key and corpus.has_key(current_key):
+            pos_html = self.add_pos_corpus(escaped, data, current_key)
+        
+        current_key = entry_names.get("chunking", None)
+        if current_key and corpus.has_key(current_key):
+            chunk_html = self.add_chunking_corpus(escaped, data, current_key)
+        
+        current_key = entry_names.get("ner", None)
+        if current_key and corpus.has_key(current_key):
+            ner_html = self.add_chunking_corpus(escaped, data, current_key)
         
         return self.makeHTML_corpus(pos_html, chunk_html, ner_html, self._lang, encoding, document_name=document_name, lang_style=self._lang_style)
 
@@ -202,11 +210,15 @@ class Exporter(DefaultExporter):
         pos_html   = []
         chunk_html = []
         ner_html   = []
-        if entry_names.get("pos", None):
+        
+        current_key = entry_names.get("pos", None)
+        if current_key and document.corpus.has_key(current_key):
             pos_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["pos"])
-        if entry_names.get("chunk", entry_names.get("chunking", None)):
+        current_key = entry_names.get("chunking", None)
+        if current_key and document.corpus.has_key(current_key):
             chunk_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names.get("chunk", entry_names["chunking"]))
-        if entry_names.get("ner", None):
+        current_key = entry_names.get("ner", None)
+        if current_key and document.corpus.has_key(current_key):
             ner_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["ner"])
         
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
@@ -215,8 +227,8 @@ class Exporter(DefaultExporter):
         annot = document.annotation(column)
         
         for annotation in annot:
-            escaped_tokens[annotation.span.lb]    = '<span id="%s" title="%s">%s' %(annotation.value, annotation.value, escaped_tokens[annotation.span.lb])
-            escaped_tokens[annotation.span.ub-1] += '</span>'
+            escaped_tokens[annotation.lb]    = '<span id="%s" title="%s">%s' %(annotation.value, annotation.value, escaped_tokens[annotation.lb])
+            escaped_tokens[annotation.ub-1] += '</span>'
         for i in range(len(escaped_nontokens)):
             escaped_tokens.insert(2*i, escaped_nontokens[i])
         

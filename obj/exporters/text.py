@@ -26,6 +26,8 @@ from obj.exporters.exporter import Exporter as DefaultExporter
 from obj.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
 
 class Exporter(DefaultExporter):
+    __ext = "txt"
+    
     def __init__(self, *args, **kwargs):
         pass
     
@@ -49,20 +51,20 @@ class Exporter(DefaultExporter):
             if "pos" in lower:
                 pos = [u"" for _ in range(len(tokens))]
                 for annotation in get_pos(sentence, lower["pos"]):
-                    tokens[annotation.end-1] += u"/" + annotation.value
-                    for i in range(annotation.start, annotation.end-1): # regrouping tokens for tags spanning over >2 tokens
+                    tokens[annotation.ub-1] += u"/" + annotation.value
+                    for i in range(annotation.lb, annotation.ub-1): # regrouping tokens for tags spanning over >2 tokens
                         tokens[i+1] = tokens[i] + u"_" + tokens[i+1]
                         tokens[i]   = u""
             
             if "chunking" in lower:
                 for annotation in get_chunks(sentence, lower["chunking"]):
-                    tokens[annotation.start] = "(%s %s" %(annotation.value, tokens[annotation.start])
-                    tokens[annotation.end-1] = "%s )" %(tokens[annotation.end-1])
+                    tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
+                    tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])
             
             if "ner" in lower:
                 for annotation in get_chunks(sentence, lower["ner"]):
-                    tokens[annotation.start] = "(%s %s" %(annotation.value, tokens[annotation.start])
-                    tokens[annotation.end-1] = "%s )" %(tokens[annotation.end-1])
+                    tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
+                    tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])
             
             tokens = [token for token in tokens if token != ""] # if regrouping tokens, some are empty and would generate superfluous spaces
             data.append(u" ".join(tokens[:]))

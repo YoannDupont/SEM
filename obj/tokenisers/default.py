@@ -67,10 +67,11 @@ class Tokeniser(object):
         sent_bounds = SpannedBounds()
         
         sent_bounds.add(Span(0,0))
-        for index, token in enumerate(tokens):
+        for index, span in enumerate(token_spans):
+            token = content[span.lb : span.ub]
             if token in u"\r\n":
                 sent_bounds.add_last(Span(index, index+1))
-        sent_bounds.add_last(Span(len(tokens), len(tokens)))
+        sent_bounds.add_last(Span(len(token_spans), len(token_spans)))
         
         return sent_bounds
     

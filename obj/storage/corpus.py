@@ -64,7 +64,10 @@ class Corpus(object):
             yield element
     
     def is_empty(self):
-        return 0 == len(sentences)
+        return 0 == len(self.sentences)
+    
+    def has_key(self, key):
+        return key in self.fields
     
     def append_sentence(self, sentence):
         self.sentences.append(sentence)

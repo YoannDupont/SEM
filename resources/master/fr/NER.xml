@@ -4,8 +4,12 @@
         <segmentation name="fr" />
         <enrich config="../../enrich/fr/pos.xml" />
         <label model="../../models/fr/POS/plain" field="POS" />
-        <!-- <clean_info to-keep="word,POS" /> -->
-        <export format="html" pos="POS" lang="fr" lang_style="default.css" />
+        <clean_info to-keep="word,POS" />
+        <enrich config="../../enrich/fr/NER-ontology.xml" />
+        <label model="../../models/fr/NER/plain_NER" field="NER" />
+        <clean_info to-keep="word,POS,NER" />
+        <label_consistency field="NER" />
+        <export format="html" pos="POS" ner="NER" lang="fr" lang_style="default.css" />
     </pipeline>
     
     <options>

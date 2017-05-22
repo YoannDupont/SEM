@@ -71,7 +71,7 @@ def enrich(keycorpus, informations):
                         p[i][feature.name] = int(p[i][feature.name])
         yield p
 
-def document_enrich(document, informations, log_level="WARNING", log_file=None):
+def document_enrich(document, informations, mode=u"train", log_level="WARNING", log_file=None):
     """
     Updates the CoNLL-formatted corpus inside a document with various
     features.
@@ -98,17 +98,17 @@ def document_enrich(document, informations, log_level="WARNING", log_file=None):
     
     if type(informations) in (str, unicode):
         enrich_logger.info('loading %s' %informations)
-        informations = Informations(informations)
+        informations = Informations(informations, mode=mode)
     
-    missing_fields = set(informations.bentries + informations.aentries) - set(document.corpus.fields)
+    missing_fields = set([I.name for I in informations.bentries + informations.aentries]) - set(document.corpus.fields)
     
     if len(missing_fields) > 0:
-        raise ValueError("Missing fields in input corpus: %s" u",".join([sorted(missing_fields)]))
+        raise ValueError("Missing fields in input corpus: %s" u",".join(sorted(missing_fields)))
     
     enrich_logger.debug('enriching file "%s"' %document.name)
     
     new_fields             = [feature.name for feature in informations.features if feature.display]
-    document.corpus.fields = informations.bentries + new_fields + informations.aentries
+    document.corpus.fields += new_fields
     nth                    = 0
     for i, sentence in enumerate(enrich(document.corpus, informations)):
         for j, token in enumerate(sentence):
@@ -158,9 +158,12 @@ def enrich_file(infile, infofile, outfile,
     
     enrich_logger.debug('enriching file "%s"' %infile)
     
-    with KeyWriter(outfile, oenc, informations.bentries + [feature.name for feature in informations.features if feature.display] + informations.aentries) as O:
+    bentries = [entry.name for entry in informations.bentries]
+    aentries = [entry.name for entry in informations.aentries]
+    features = [feature.name for feature in informations.features if feature.display]
+    with KeyWriter(outfile, oenc, bentries + features + aentries) as O:
         nth = 0
-        for p in enrich(KeyReader(infile, ienc, informations.bentries + informations.aentries), informations):
+        for p in enrich(KeyReader(infile, ienc, bentries + aentries), informations):
             O.write_p(p)
             nth += 1
             if (0 == nth % 1000):
@@ -183,7 +186,7 @@ if __name__ == "__main__":
                         help="The information file (XML format)")
     parser.add_argument("outfile",
                         help="The output file (CoNLL format)")
-    parser.add_argument("-m", "--mode", dest="mode", default=u"label", choices=(u"train", u"label", u"annotate", u"annotation"),
+    parser.add_argument("-m", "--mode", dest="mode", default=u"train", choices=(u"train", u"label", u"annotate", u"annotation"),
                         help="The mode for enrichment. May make entries vary (default: %(default)s)")
     parser.add_argument("--input-encoding", dest="ienc",
                         help="Encoding of the input (default: UTF-8)")

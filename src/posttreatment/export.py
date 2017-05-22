@@ -50,10 +50,13 @@ def export(infile, exporter_name, outfile,
     
     infile_is_str = type(infile) in (str, unicode)
     
-    export_logger.info('getting exporter %s' %(exporter_name))
-    
-    Exporter = get_exporter(exporter_name)
-    exporter = Exporter(lang=lang, lang_style=lang_style)
+    if exporter_name in (str, unicode):
+        export_logger.info('getting exporter %s' %(exporter_name))
+        Exporter = get_exporter(exporter_name)
+        exporter = Exporter(lang=lang, lang_style=lang_style)
+    else:
+        export_logger.info('using loaded exporter')
+        exporter = exporter_name
     
     export_logger.debug('setting name/column couples for exportation')
     

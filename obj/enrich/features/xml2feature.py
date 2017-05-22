@@ -26,6 +26,8 @@ import re
 
 from os.path import abspath, dirname, join
 
+import obj.information
+
 from obj.enrich.features.feature            import Feature
 from obj.enrich.features.getterfeatures     import IdentityFeature, DictGetterFeature, FindForwardFeature, FindBackwardFeature, DEFAULT_GETTER
 from obj.enrich.features.stringfeatures     import EqualFeature, EqualCaselessFeature
@@ -33,19 +35,26 @@ from obj.enrich.features.matcherfeatures    import MatchFeature, CheckFeature, S
 from obj.enrich.features.booleanfeatures    import OrFeature, AndFeature, NotFeature
 from obj.enrich.features.arityfeatures      import ArityFeature, UnaryFeature, BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstringFeature, SubstitutionFeature, SequencerFeature
 from obj.enrich.features.listfeatures       import ListFeature, SomeFeature, AllFeature, NoneFeature
-from obj.enrich.features.dictionaryfeatures import TokenDictionaryFeature, MultiwordDictionaryFeature
+from obj.enrich.features.dictionaryfeatures import TokenDictionaryFeature, MultiwordDictionaryFeature , MapperFeature
+from obj.enrich.features.ontologyfeatures   import OntologyFeature, FillerFeature
+
+from obj.enrich.features.triggeredfeatures   import TriggeredFeature
 
 class XML2Feature(object):
     def __init__(self, entries, path=None):
         self._default_shift = 0
         
         self._default_entry = None
+        self._entries = {}
         for entry in entries:
-            if entry.lower() == "word":
-                self._default_entry = entry
+            if entry.name.lower() == "word":
+                self._default_entry = entry.name
+            self._entries[entry._name] = entry
+        
+        self._features = {}
         
         if self._default_entry is None:
-            self._default_entry = entries[0]
+            self._default_entry = entries[0].name
         
         self._path = path
     
@@ -54,6 +63,11 @@ class XML2Feature(object):
         
         if getter is None:
             getter = DictGetterFeature(entry=attrib.get("entry", self._default_entry), shift=attrib.get("shift", self._default_shift))
+        if isinstance(getter, DictGetterFeature):
+            self.check_entry(getter.entry, attrib)
+        
+        if attrib.get("name", None):
+            self._features[attrib["name"]] = obj.information.Entry(attrib["name"], mode="label")
         
         if xml.tag == "boolean":
             if attrib["action"] == "and":
@@ -138,6 +152,8 @@ class XML2Feature(object):
         
         elif xml.tag == "find":
             action = attrib["action"].lower()
+            if attrib.get("return_entry", None):
+                self.check_entry(attrib["return_entry"], attrib)
             if action == "forward":
                 return FindForwardFeature(self.parse(list(xml)[0], getter=None), **attrib)
             elif action == "backward":
@@ -145,7 +161,13 @@ class XML2Feature(object):
             raise RuntimeError
         
         elif xml.tag == "dictionary":
-            attrib["path"] = abspath(join(dirname(self._path), xml.attrib["path"]))
+            if "path" in attrib:
+                attrib["path"] = abspath(join(dirname(self._path), xml.attrib["path"]))
+            elif xml.text:
+                attrib["entries"] = xml.text.split("\n")
+            else:
+                raise ValueError("Dictionary feature should have either a path attribute or text !")
+            
             action = attrib["action"].lower()
             if action == "token":
                 return TokenDictionaryFeature(getter=getter, **attrib)
@@ -153,7 +175,35 @@ class XML2Feature(object):
                 if attrib.get("entry", None) is None:
                     attrib["entry"] = "word"
                 return MultiwordDictionaryFeature(**attrib)
+            elif action == "map":
+                return MapperFeature(getter=getter, **attrib)
             raise RuntimeError
+        
+        elif xml.tag == "ontology":
+            path = abspath(join(dirname(self._path), attrib.pop("path")))
+            ambiguous = {"true":True,"false":False}[attrib.pop("ambiguous", "false").lower()]
+            return OntologyFeature(path, self, order=attrib.pop("order",".order"), ambiguous=ambiguous, **attrib)
+        
+        elif xml.tag == "fill":
+            entry = attrib.pop("entry")
+            filler_entry = attrib.get("filler-entry", self._default_entry)
+            if "filler-entry" in attrib:
+                del attrib["filler-entry"]
+            self.check_entry(filler_entry, attrib)
+            return FillerFeature(entry, filler_entry, self.parse(list(xml)[0]), **attrib)
+        
+        elif xml.tag == "trigger":
+            trigger, operation = list(xml)
+            return TriggeredFeature(self.parse(trigger), self.parse(operation), **attrib)
         
         else:
             raise ValueError("unknown tag: %s" %(xml.tag))
+    
+    def check_entry(self, entry, attrib):
+        used_entry = self._entries.get(entry, None)
+        if not used_entry:
+            used_entry = self._features.get(entry, None)
+        if not used_entry:
+            raise ValueError(u'Node "%s", entry not found: "%s"' %(attrib.get("name", "unnamed"), entry))
+        elif used_entry.is_train:
+            raise ValueError(u'Node "%s" uses train-only entry: "%s"' %(attrib.get("name", "unnamed"), used_entry.name))

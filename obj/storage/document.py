@@ -27,10 +27,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from holder import Holder
 
 from os.path import basename
+import cgi
+
+try:
+    from xml.etree import cElementTree as ET
+except ImportError:
+    from xml.etree import ElementTree as ET
+
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    from html.parser import HTMLParser
 
 from obj.storage.segmentation import Segmentation
 from obj.storage.corpus       import Corpus
-from obj.storage.annotation   import SpannedTag, Annotation, chunk_annotation_from_corpus
+from obj.storage.annotation   import Tag, Annotation, chunk_annotation_from_corpus
 from obj.span                 import Span
 from obj.misc                 import correct_pos_tags
 
@@ -94,6 +105,40 @@ class Document(Holder):
         document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
         return document
     
+    @classmethod
+    def from_xml(cls, xml):
+        if type(xml) in (str, unicode):
+            data = ET.parse(xml)
+        elif isinstance(xml, ET.Tree):
+            data = xml
+        else:
+            raise TypeError("Invalid type for loading XML-SEM document: %s" %(type(xml)))
+        
+        htmlparser = HTMLParser()
+        root = data.getroot()
+        document = Document(root.attrib.get("name", u"_DOCUMENT_"))
+        for element in list(root):
+            if element.tag == "content":
+                document.content = htmlparser.unescape(element.text)
+            elif element.tag == "segmentations":
+                for segmentation in list(element):
+                    spans = [Span(lb=int(span.attrib.get("start", span.attrib["s"])), ub=0, length=int(span.attrib.get("length", span.attrib["l"]))) for span in list(segmentation)]
+                    reference = segmentation.get(u"reference", None)
+                    if reference:
+                        reference = document.segmentation(reference)
+                    document.add_segmentation(Segmentation(segmentation.attrib[u"name"], spans=spans, reference=reference))
+            elif element.tag == "annotations":
+                for annotation in list(element):
+                    tags = [Tag(lb=int(tag.attrib.get("start", tag.attrib["s"])), ub=0, length=int(tag.attrib.get("length", tag.attrib["l"])), value=tag.attrib.get(u"value",tag.attrib[u"v"])) for tag in list(annotation)]
+                    reference = annotation.get(u"reference", None)
+                    if reference:
+                        reference = document.segmentation(reference)
+                    annotation = Annotation(annotation.attrib[u"name"], reference=reference)
+                    annotation.annotations = tags
+                    document.add_annotation(annotation)
+        
+        return document
+    
     def get_tokens(self):
         tokens  = []
         content = self.content
@@ -109,7 +154,7 @@ class Document(Holder):
         self._segmentations[segmentation.name]._document = self
     
     def segmentation(self, name):
-        return self._segmentations[name]
+        return self._segmentations.get(name, None)
     
     def add_annotation(self, annotation):
         self._annotations[annotation.name]           = annotation
@@ -118,20 +163,26 @@ class Document(Holder):
     def annotation(self, name):
         return self._annotations[name]
     
-    def write(self, f, depth=0, indent=4):
+    def write(self, f, depth=0, indent=4, add_header=False):
+        if add_header:
+            f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or "ASCII"))
         f.write(u'%s<document name="%s">\n' %(depth*indent*" ", self.name))
         depth += 1
-        f.write(u'%s<content>%s</content>\n' %(depth*indent*" ", self.content))
+        f.write(u'%s<content>%s</content>\n' %(depth*indent*" ", cgi.escape(self.content)))
         f.write(u'%s<segmentations>\n' %(depth*indent*" "))
         refs = [seg.reference for seg in self.segmentations.values() if seg.reference]
         for seg in sorted(self.segmentations.values(), key=lambda x: (x.reference and x.reference.reference in refs, x.name)): # TODO: create a sort_segmentations method to order them in terms of reference.
             depth += 1
             ref     = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
             ref_str = ("" if ref is None else ' reference="%s"'%ref)
-            f.write(u'%s<segmentation name="%s"%s>\n' %(depth*indent*" ", seg.name, ref_str))
+            f.write(u'%s<segmentation name="%s"%s>' %(depth*indent*" ", seg.name, ref_str))
             depth += 1
-            for element in seg:
-                f.write(u'%s<s s="%i" l="%i" />\n' %(depth*indent*" ", element.lb, len(element)))
+            for i, element in enumerate(seg):
+                lf = i == 0 or (i % 5 == 0)
+                if lf:
+                    f.write(u'\n%s' %(depth*indent*" "))
+                f.write(u'%s<s s="%i" l="%i" />' %(("" if lf else " "), element.lb, len(element)))
+            f.write(u"\n")
             depth -= 1
             f.write(u'%s</segmentation>\n' %(depth*indent*" "))
             depth -= 1
@@ -140,10 +191,11 @@ class Document(Holder):
         f.write(u'%s<annotations>\n' %(depth*indent*" "))
         for annotation in self.annotations.values():
             depth += 1
-            f.write(u'%s<annotation name="%s" reference="%s">\n' %(depth*indent*" ", annotation.name, (annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name)))
+            reference = ("" if not annotation.reference else u' reference="%s"' %(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+            f.write(u'%s<annotation name="%s"%s>\n' %(depth*indent*" ", annotation.name, reference))
             depth += 1
             for tag in annotation:
-                f.write(u'%s<tag v="%s" s="%i" l="%i"/>\n' %(depth*indent*" ", tag.value, tag.start, len(tag)))
+                f.write(u'%s<tag v="%s" s="%i" l="%i"/>\n' %(depth*indent*" ", tag.value, tag.lb, len(tag)))
             depth -= 1
             f.write(u'%s</annotation>\n' %(depth*indent*" "))
             depth -= 1
@@ -180,7 +232,7 @@ class Document(Holder):
                     if change:
                         tags[i] = current
                     
-                    annotation.insert(index, SpannedTag(tags[i], Span(nth_token+i, 0, length=n+1)))
+                    annotation.insert(index, Tag(nth_token+i, 0, tags[i], length=n+1))
                     current = None
                     n       = 0
                 else:

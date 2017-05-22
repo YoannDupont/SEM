@@ -34,20 +34,22 @@ import software
 
 from obj import wapiti
 
-from obj.master_parser    import Master
-from obj.logger           import logging_format, default_handler
-from obj.storage.document import Document
-from obj.information      import Informations
+from obj.master_parser      import Master
+from obj.logger             import logging_format, default_handler
+from obj.storage.document   import Document
+from obj.information        import Informations
+from obj.exporters.dispatch import get_exporter
 
-from src.pretreatment.segmentation import segmentation, document_segmentation
-from src.pretreatment.enrich       import enrich_file, document_enrich
-from src.posttreatment.clean_info  import clean_info, document_clean
-from src.posttreatment.export      import export
+from src.pretreatment.segmentation       import segmentation, document_segmentation
+from src.pretreatment.enrich             import enrich_file, document_enrich
+from src.posttreatment.clean_info        import clean_info, document_clean
+from src.posttreatment.export            import export
+from src.posttreatment.label_consistency import process_document
 
 sem_tagger_logger = logging.getLogger("sem.tagger")
 sem_tagger_logger.addHandler(default_handler)
 
-def tagger(masterfile, file_name, directory="."):
+def tagger(masterfile, file_name, directory=".", force_format="default"):
     """
     Return a document after it passed through a pipeline.
     
@@ -64,13 +66,17 @@ def tagger(masterfile, file_name, directory="."):
     
     start = time.time()
     
-    MASTER   = Master(masterfile)
+    MASTER = Master(masterfile)
+    
     pipeline = MASTER.pipeline
     options  = MASTER.options
     
     if (options.log_file is not None):
         sem_tagger_logger.addHandler(file_handler(log_file))
     sem_tagger_logger.setLevel(options.log_level)
+    
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     
     exports           = {} # keeping track of already done exports
     file_shortname, _ = os.path.splitext(basename(file_name))
@@ -80,10 +86,14 @@ def tagger(masterfile, file_name, directory="."):
     ienc = options.ienc
     oenc = options.oenc
     
+    current_fields = None
+    # the fields at the current state (depends on enrichments and
+    # info cleaning). They will be used for wapiti
+    
     sem_tagger_logger.info("Reading %s" %(file_name))
     
     if options.format == "text":
-        document = Document(basename(file_name), content=codecs.open(file_name, "rU", ienc).read())
+        document = Document(basename(file_name), content=codecs.open(file_name, "rU", ienc).read().replace(u"\r", u""))
     elif options.format == "conll":
         document = Document.from_conll(file_name, options.fields, options.word_field)
     else:
@@ -96,6 +106,7 @@ def tagger(masterfile, file_name, directory="."):
             sem_tagger_logger.warn("segmentation asked for already segmented input, skipping...")
         nth      += 1
         pipeline  = pipeline[1:]
+        
     
     for process in pipeline:
         # segmentation may only be first. If we are in this loop, a segmentation
@@ -104,22 +115,41 @@ def tagger(masterfile, file_name, directory="."):
             raise RuntimeError(u"Segmentation can only be performed first. Asked as process number %d" %nth)
             
         elif process.identifier == u"clean_info":
-            document_clean(document, process.args["to-keep"], log_level=options.log_level, log_file=options.log_file)
+            current_fields = process.args["to-keep"].split(",")
+            document_clean(document, current_fields, log_level=options.log_level, log_file=options.log_file)
             
         elif process.identifier == u"enrich":
-            information = join(dirname(masterfile), process.args["config"])
+            information = Informations(join(dirname(masterfile), process.args["config"]), mode=u"label")
+            current_fields = [info.name for info in information.bentries + [feature for feature in information.features if feature.display] + information.aentries]
             
             document_enrich(document, information, log_level=options.log_level, log_file=options.log_file)
             
         elif process.identifier == u"label":
             model = join(dirname(masterfile), process.args["model"])
-            field = process.args["field"]
+            field = process.args["field"] # output field
+            fields = process.args.get("fields", None) # input fields
+            fields = (fields.split(u",") if fields else current_fields)
             
             sem_tagger_logger.info("labeling %s with wapiti" %(field))
             label_start = time.clock()
-            wapiti.label_document(document, model, field, oenc)
+            wapiti.label_document(document, model, field, oenc, annotation_fields=fields)
             label_laps  = time.clock() - label_start
             sem_tagger_logger.info("labeled in %s" %(timedelta(seconds=label_laps)))
+            current_fields = fields + [field]
+            
+        elif process.identifier == u"label_consistency":
+            field             = process.args[u"field"]
+            label_consistency = process.args.get(u"label_consistency", u"overriding")
+            token_column      = process.args.get(u"token-column", None)
+            if not token_column:
+                if "word" in current_fields:
+                    token_column = u"word"
+                elif "token" in current_fields:
+                    token_column = u"token"
+                else:
+                    token_column = current_fields[0]
+            
+            process_document(document, field, token_column=token_column, label_consistency=label_consistency)
             
         elif process.identifier == u"export":
             export_format = process.args.get("format", "conll")
@@ -129,16 +159,22 @@ def tagger(masterfile, file_name, directory="."):
             lang          = process.args.get("lang", "fr")
             lang_style    = process.args.get("lang_style", "default.css")
             
-            if export_format not in exports:
-                exports[export_format] = 0
-            exports[export_format] += 1
-            current_output = export_name + ".export-%i.%s" %(exports[export_format], export_format)
+            if force_format is not None and force_format != "default":
+                export_format = force_format
             
-            export(document, export_format, current_output, lang=lang, lang_style=lang_style, pos_column=poscol, chunk_column=chunkcol, ner_column=nercol, ienc=oenc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
+            Exporter = get_exporter(export_format)
+            exporter = Exporter(lang=lang, lang_style=lang_style)
+            extension = exporter.extension()
             
-            if export_format in ("html"):
+            exports[extension] = exports.get(extension,0) + 1
+            current_output = export_name + ".export-%i.%s" %(exports[extension], extension)
+            
+            export(document, exporter, current_output, lang=lang, lang_style=lang_style, pos_column=poscol, chunk_column=chunkcol, ner_column=nercol, ienc=oenc, oenc=oenc, log_level=options.log_level, log_file=options.log_file)
+            
+            if extension in ("html"):
                 shutil.copy(os.path.join(software.SEM_HOME, "resources", "css", "tabs.css"), directory)
                 shutil.copy(os.path.join(software.SEM_HOME, "resources", "css", lang, lang_style), directory)
+        
         else:
             sem_tagger_logger.error(u'unknown process: "%s"' %process.identifier)
             raise RuntimeError(u'unknown process: "%s"' %process.identifier)
@@ -168,7 +204,9 @@ if __name__ == '__main__':
     parser.add_argument("input_file",
                         help="The input file for the tagger.")
     parser.add_argument("-o", "--output-directory", dest="output_directory", default=".",
-                        help="The output directory (default: '.')")
+                        help='The output directory (default: "%(default)s").')
+    parser.add_argument("-f", "--output-format", dest="output_format", default="default",
+                        help='Force the output format given in "master", default otherwise (default: "%(default)s").')
     
     if not __package__:
         args = parser.parse_args()
@@ -176,5 +214,6 @@ if __name__ == '__main__':
         args = parser.parse_args(sys.argv[2:])
     
     tagger(args.master, args.input_file,
-           directory=args.output_directory)
+           directory=args.output_directory,
+           force_format=args.output_format)
     sys.exit(0)

@@ -27,12 +27,17 @@ from feature        import Feature
 from getterfeatures import DEFAULT_GETTER
 
 class TriggeredFeature(Feature):
-    def __init__(self, trigger, operation, default="_untriggered_", **kwargs):
+    def __init__(self, trigger, operation, default="_untriggered_", *args, **kwargs):
         super(TriggeredFeature, self).__init__(self, *args, **kwargs)
         
         self.trigger   = trigger
         self.operation = operation
         self.default   = default
+        
+        if not self.trigger.is_boolean:
+            raise ValueError("Trigger for %s is not boolean." %self.name)
+        
+        self._is_boolean = self.operation._is_boolean
     
     def __call__(self, *args, **kwargs):
         if self.trigger(*args, **kwargs):

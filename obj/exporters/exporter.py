@@ -23,10 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import codecs
+import os.path
 
 class Exporter(object):
+    __ext = None
+    
     def __init__(self, *args, **kwargs):
         pass
+    
+    @classmethod
+    def extension(cls):
+        return cls.__ext
     
     def corpus_to_unicode(self, corpus, couples, **kwargs):
         """
@@ -43,7 +50,7 @@ class Exporter(object):
                 retrieve information to export.
                 ex: couples = {u"chunking":u"C", u"NER":u"N"}
         """
-        raise RuntimeError("export_to_string not implemented for class " + self.__class__)
+        raise NotImplementedError("export_to_string not implemented for class " + self.__class__)
     
     def corpus_to_file(self, corpus, couples, output, encoding="utf-8", **kwargs):
         """
@@ -77,7 +84,7 @@ class Exporter(object):
                 retrieve information to export.
                 ex: couples = {u"chunking":u"C", u"NER":u"N"}
         """
-        raise RuntimeError("export_to_string not implemented for class " + self.__class__)
+        raise NotImplementedError("export_to_string not implemented for class " + self.__class__)
     
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         """
@@ -111,4 +118,4 @@ class Exporter(object):
                 retrieve information to export.
                 ex: couples = {u"chunking":u"C", u"NER":u"N"}
         """
-        raise RuntimeError("export_to_data not implemented for class " + self.__class__)
+        raise NotImplementedError("export_to_data not implemented for class " + self.__class__)

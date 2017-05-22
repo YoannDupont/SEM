@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<information>
+    
+    <entries>
+        <before>
+            <entry name="word" />
+            <entry name="POS" />
+            <!--entry name="chunking" /-->
+        </before>
+        <after>
+            <entry name="NE" mode="train" />
+        </after>
+    </entries>
+    
+    <features>
+        <nullary name="lower" action="lower" display="no" />
+        
+        <ontology name="NER-ontology" path="../../dictionaries/fr/NER-ontology" display="no" />
+        
+        <fill name="NER-ontology-POS" entry="NER-ontology" filler-entry="POS">
+            <string action="equal">O</string>
+        </fill>
+        
+        <find name="NounBackward" action="backward" return_entry="word">
+            <regexp action="check" entry="POS">^N</regexp>
+        </find>
+        
+        <find name="NounForward" action="forward" return_entry="word">
+            <regexp action="check" entry="POS">^N</regexp>
+        </find>
+    </features>
+</information>

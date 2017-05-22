@@ -77,7 +77,7 @@ class SpannedBounds(object):
                 return (nth, False)
             elif i > span.ub:
                 continue
-            elif i in span:
+            elif (i in span):
                 return (nth, True)
         return (-1, False)
     
@@ -107,7 +107,9 @@ class SpannedBounds(object):
         if found:
             return
         else:
-            if index == -1:
+            if (index > 0 and self[index-1].lb == self[index].ub):
+                None
+            elif index == -1:
                 self._bounds.append(span)
             else:
                 self._bounds.insert(index, span)

@@ -47,7 +47,7 @@ class Span(object):
         return self.lb == span.lb and self.ub == span.ub
     
     def __contains__(self, i):
-        return i >= self._lb and i <= self.ub
+        return self._lb <= i and i < self.ub
     
     def __len__(self):
         return self._ub - self._lb

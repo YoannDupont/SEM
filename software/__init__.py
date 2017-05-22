@@ -21,7 +21,7 @@ On a more NLP side, such changes could also include a change in corpora used in 
 If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
 """
 
-_version_minor = 4
+_version_minor = 5
 u"""
 The minor version number.
 Is only incremented when medium changes are made to the program.
@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 2
+_version_patch = 0
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -38,6 +38,12 @@ On a more NLP side, such changes would also include model changes.
 """
 
 _main_features = [
+                    [u"A GUI for easier use (requires TkInter)",
+                        [
+                            u'On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)',
+                            u'On Windows: double-clic on sem_gui.bat (or launch ".\\sem_gui.bat" in a terminal)'
+                        ]
+                    ],
                     [u"segmentation",
                         [
                             u"segmentation for: French, English",
@@ -57,7 +63,7 @@ _main_features = [
                     ],
                     [u"exporting output",
                         [
-                            u"supported export formats: CoNLL, text, HTML (from plain text)",
+                            u"supported export formats: CoNLL, text, HTML (from plain text), two XML-TEI (one specific to NP-chunks and another one for the rest)",
                             u"easy creation and integration of new exporters"
                         ]
                     ],
@@ -73,14 +79,20 @@ _main_features = [
 _first_steps = [
                     [u"make Wapiti",
                         [
-                            u"open a terminal in ext/",
-                            u'type "make" (".\\make.bat" on Windows) without quotes',
+                            u"uncompress ext/wapitiXXX.tar.gz (where XXX is an optional version number)",
+                            u"open a terminal in ext/wapiti",
+                            u'type "make" (".\\make.bat wapiti" on Windows) without quotes. Note for Windows: if compilation fails, check you use the right gcc (see in make.bat)',
                             u"note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h"
                         ],
                     ],
-                    [u"uncompress models in resources/models/*", []],
                     [u"run tests",
                         ["python sem --test"]
+                    ],
+                    [u"run SEM",
+                        [
+                            'run GUI (see "main features" above) and annotate "non-regression/fr/in/segmentation.txt"',
+                            'OR: run ```python sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output```'
+                        ]
                     ]
                 ]
 
@@ -90,30 +102,44 @@ _external_resources = [
                         [u"[Lexique des Formes Fléchies du Français (LeFFF)](http://alpage.inria.fr/~sagot/lefff.html) by [Clément et al. (2004)](http://www.labri.fr/perso/clement/lefff/public/lrec04ClementLangSagot-1.0.pdf): french lexicon of inflected forms with various informations, such as their POS tag and lemmatization.", []],
                         [u"[Wapiti](http://wapiti.limsi.fr) by [Lavergne et al. (2010)](http://www.aclweb.org/anthology/P10-1052): linear-chain CRF library.", []],
                         [u"Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.", []],
-                        [u"Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.", []]
+                        [u"Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.", []],
+                        [u"GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.", []]
                       ]
 
 _latest_changes = [
-                    [u"Added sources for manual", []],
+                    [u"Added a GUI",
+                        [
+                            u'On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)',
+                            u'On Windows: double-clic on sem_gui.bat (or launch ".\\sem_gui.bat" in a terminal)'
+                        ]
+                    ],
+                    [u"Improved model for NER",[]],
+                    [u"Models are now automatically extracted using tagger module", []],
+                    [u"Output directory now automatically created for tagger module", []],
+                    [u'Added "ontology" feature',
+                        [
+                            u'an ontology is just a set of dictionaries that will all be matched on the same column.'
+                        ]
+                    ],
                     [u"Improved readme.md", 
                         [
-                            u"added first steps and external resources",
-                            u"added link to online version"
+                            u"more details left and right."
                         ]
                     ],
                     [u"tagger module now handles CoNLL-like files again! Hooray!",
                         [
-                            u'in master file, within the options section: <file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">'
+                            u'in master file, within the options section: ```<file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">```'
                         ]
                     ],
-                    [u"Wapiti changes", 
+                    [u"chunking_fscore module created to evaluate tasks like named entities.",
                         [
-                            u'now SEM only uses a local version of Wapiti (available in ext) that needs to be compiled.'
+                            u'only works for IOB tagging scheme for now.'
                         ]
                     ]
                   ]
 
 _planned_changes = [
+                        [u"Add a tutorial.", []],
                         [u"redo triggered features and sequence features.", []],
                         [u"add lemmatiser.", []],
                         [u"migration to python3 ? (already made for revision 39 by lerela).", []],
@@ -136,6 +162,18 @@ _planned_changes = [
                             ]
                         ]
                    ]
+
+_references = [
+                [u"[TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)", ["Chunking"]],
+                [u"[TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)",
+                    [
+                        u"Part-Of-Speech Tagging",
+                        u"chunking"
+                    ]
+                ],
+                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)", ["Named Entity Recognition"]]
+                #[u"[]()", [""]],
+              ]
 
 def name():
     return _name
@@ -161,14 +199,17 @@ def informations():
 ## Main SEM features
 %s
 
-## first steps before using SEM
+## First steps before using SEM
 %s
 
 ## External resources used by SEM
 %s
 
-## latest changes (2.4.0 > %s)
+## Latest changes (2.4.0 > %s)
 %s
 
-## planned changes (no priority)
-%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), version(), make_md(_latest_changes), make_md(_planned_changes))
+## Planned changes (no priority)
+%s
+
+## SEM references (with task[s] of interest)
+%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), version(), make_md(_latest_changes), make_md(_planned_changes), make_md(_references))

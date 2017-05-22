@@ -67,6 +67,14 @@ class Entry(object):
     def mode(self):
         return self._mode
     
+    @property
+    def is_train(self):
+        return self._mode in _train
+    
+    @property
+    def is_label(self):
+        return self._mode in _label
+    
     @staticmethod
     def fromXML(xml_element):
         return Entry(**xml_element.attrib)
@@ -118,11 +126,11 @@ class Informations(object):
                 current_entry = Entry.fromXML(c)
                 self.check_entry(current_entry.name)
                 if entry.tag == "before" and current_entry.has_mode(self._mode):
-                    self._bentries.append(current_entry.name)
+                    self._bentries.append(current_entry)
                 elif entry.tag == "after" and current_entry.has_mode(self._mode):
-                    self._aentries.append(current_entry.name)
+                    self._aentries.append(current_entry)
         
-        self._x2f = XML2Feature(self.aentries + self.bentries, path=filename)
+        self._x2f = XML2Feature(self.bentries + self.aentries, path=filename)
         
         features = list(children[1])
         for feature in features:

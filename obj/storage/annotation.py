@@ -25,39 +25,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from obj.span import Span
 
-class Tag(object):
-    def __init__(self, value):
+class Tag(Span):
+    def __init__(self, lb, ub, value, length=-1):
+        super(Tag, self).__init__(lb, ub, length=length)
         self._value = value
     
     @property
     def value(self):
         return self._value
     
-    def kind(self):
-        return u"tagging"
-
-class SpannedTag(Tag):
-    def __init__(self, value, span):
-        super(SpannedTag, self).__init__(value)
-        self._span = span
-    
-    def __len__(self):
-        return len(self._span)
+    def __eq__(self, tag):
+        return self.value == tag.value and self.lb == span.lb and self.ub == span.ub
     
     def __str__(self):
-        return self.value+","+str(self.span)
-    
-    @property
-    def span(self):
-        return self._span
-    
-    @property
-    def start(self):
-        return self._span.lb
-    
-    @property
-    def end(self):
-        return self._span.ub
+        return self.value+","+super(Tag,self).__str__()
     
     def toXML(self):
         return '<tag v="%s" s="%i" l="%s" />' %(self.value, self.lb, self.ub)
@@ -108,7 +89,7 @@ class Annotation(object):
             return self.annotations
         else:
             reference_spans = self.reference.get_reference_spans()
-            return [SpannedTag(element.value, Span(reference_spans[element.start].lb, reference_spans[element.end-1].ub)) for element in self.annotations]
+            return [Tag(element.value, reference_spans[element.start].lb, reference_spans[element.end-1].ub) for element in self.annotations]
     
 
 def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
@@ -129,37 +110,37 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
         
         if tag in OUT:
             if value != "": # we just got out of a chunk
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
             value  = ""
             length = 0
         
         elif flag in BEGIN:
             if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
             value  = tag[2:]
             start  = index
             length = 1
             if index == last: # last token ==> add annotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
         
         elif flag in IN:
             if value != tag[2:] and strict:
                 raise ValueError('Got different values for same chunk: "%s" <> "%s"' %(tag[2:], value))
             length += 1
             if index == last: # last token ==> add annotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
         
         elif flag in LAST:
-            annotation.append(SpannedTag(value, Span(start+shift, 0, length=length+1)))
+            annotation.append(Tag(start+shift, 0, value, length=length+1))
             value  = ""
             length = 0
         
         elif flag in SINGLE:
             if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(value, start+shift, 0, length=length))
                 value  = ""
                 length = 0
-            annotation.append(SpannedTag(tag[2:], Span(index+shift, 0, length=1)))
+            annotation.append(Tag(index+shift, 0, tag[2:], length=1))
     return annotation
 
 def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
@@ -201,12 +182,12 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
         
         if is_begin(tag):
             if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
             value  = tag
             start  = index
             length = 1
             if index == last: # last token ==> add annotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
         
         else:
             if value != tag[1:]:
@@ -216,7 +197,7 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
                     value = tag[1:] # most probable tag at the end.
             length += 1
             if index == last: # last token ==> add annotation
-                annotation.append(SpannedTag(value, Span(start+shift, 0, length=length)))
+                annotation.append(Tag(start+shift, 0, value, length=length))
     return annotation
 
 def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
