@@ -50,7 +50,7 @@ def export(infile, exporter_name, outfile,
     
     infile_is_str = type(infile) in (str, unicode)
     
-    if exporter_name in (str, unicode):
+    if type(exporter_name) in (str, unicode):
         export_logger.info('getting exporter %s' %(exporter_name))
         Exporter = get_exporter(exporter_name)
         exporter = Exporter(lang=lang, lang_style=lang_style)

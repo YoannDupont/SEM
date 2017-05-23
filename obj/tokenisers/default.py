@@ -118,4 +118,6 @@ class Tokeniser(object):
         """
         creates spans from bounds
         """
-        return [Span(bounds[i].ub, bounds[i+1].lb) for i in range(0, len(bounds)-1)]
+        spans = [Span(bounds[i].ub, bounds[i+1].lb) for i in range(0, len(bounds)-1)]
+        spans = [span for span in spans if span.lb != span.ub]
+        return spans
