@@ -1,4 +1,4 @@
-# SEM v2.5.0
+# SEM v2.5.2
 [SEM (Segmenteur-Étiqueteur Markovien)](http://www.lattice.cnrs.fr/sites/itellier/SEM.html) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
@@ -44,20 +44,21 @@
 6. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
 7. GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.
 
-## Latest changes (2.4.0 > 2.5.0)
-1. Added a GUI
+## Latest changes (2.4.0 > 2.5.2)
+1. Corrected bug in text exporter. It required all POS, chunking and NER fields. It is no longer the case
+2. Added a GUI
    1. On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)
    2. On Windows: double-clic on sem_gui.bat (or launch ".\sem_gui.bat" in a terminal)
-2. Improved model for NER
-3. Models are now automatically extracted using tagger module
-4. Output directory now automatically created for tagger module
-5. Added "ontology" feature
+3. Improved model for NER
+4. Models are now automatically extracted using tagger module
+5. Output directory now automatically created for tagger module
+6. Added "ontology" feature
    1. an ontology is just a set of dictionaries that will all be matched on the same column.
-6. Improved readme.md
+7. Improved readme.md
    1. more details left and right.
-7. tagger module now handles CoNLL-like files again! Hooray!
+8. tagger module now handles CoNLL-like files again! Hooray!
    1. in master file, within the options section: ```<file format="conll" fields="your,fields,separated,by,commas,the_field_where_words_are_supposed_to_be" word_field="the_field_where_words_are_supposed_to_be">```
-8. chunking_fscore module created to evaluate tasks like named entities.
+9. chunking_fscore module created to evaluate tasks like named entities.
    1. only works for IOB tagging scheme for now.
 
 ## Planned changes (no priority)

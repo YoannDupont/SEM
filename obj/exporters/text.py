@@ -45,10 +45,11 @@ class Exporter(DefaultExporter):
             token_field = lower["token"]
         
         data = []
+        keys = corpus[0][0].keys()
         for sentence in corpus:
             tokens = [token[token_field] for token in sentence]
             
-            if "pos" in lower:
+            if lower.get("pos", None) in keys:
                 pos = [u"" for _ in range(len(tokens))]
                 for annotation in get_pos(sentence, lower["pos"]):
                     tokens[annotation.ub-1] += u"/" + annotation.value
@@ -56,12 +57,12 @@ class Exporter(DefaultExporter):
                         tokens[i+1] = tokens[i] + u"_" + tokens[i+1]
                         tokens[i]   = u""
             
-            if "chunking" in lower:
+            if lower.get("chunking", None) in keys:
                 for annotation in get_chunks(sentence, lower["chunking"]):
                     tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])
             
-            if "ner" in lower:
+            if lower.get("ner", None) in keys:
                 for annotation in get_chunks(sentence, lower["ner"]):
                     tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])

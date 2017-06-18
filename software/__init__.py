@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 0
+_version_patch = 2
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -107,6 +107,7 @@ _external_resources = [
                       ]
 
 _latest_changes = [
+                    [u"Corrected bug in text exporter. It required all POS, chunking and NER fields. It is no longer the case",[]],
                     [u"Added a GUI",
                         [
                             u'On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)',
