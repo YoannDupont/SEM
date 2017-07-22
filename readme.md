@@ -1,4 +1,4 @@
-# SEM v2.5.2
+# SEM v2.5.3
 [SEM (Segmenteur-Étiqueteur Markovien)](http://www.lattice.cnrs.fr/sites/itellier/SEM.html) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
@@ -44,7 +44,7 @@
 6. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
 7. GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.
 
-## Latest changes (2.4.0 > 2.5.2)
+## Latest changes (2.4.0 > 2.5.3)
 1. Corrected bug in text exporter. It required all POS, chunking and NER fields. It is no longer the case
 2. Added a GUI
    1. On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)
@@ -77,6 +77,9 @@
 11. improve segmentation
    1. handle URLs starting with country indicator (ex: "en.wikipedia.org")
    2. handle URLs starting with subdomain (ex: "blog.[...]")
+12. create tagger modules
+   1. Translate wapiti tagging part to python. No call to executable, no api, no make.
+13. use real python package architecture
 
 ## SEM references (with task[s] of interest)
 1. [TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)
@@ -84,5 +87,9 @@
 2. [TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)
    1. Part-Of-Speech Tagging
    2. chunking
-3. [DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)
-   1. Named Entity Recognition
+3. (best RECITAL paper award) [DUPONT, Yoann. Exploration de traits pour la reconnaissance d’entités nommées du Français par apprentissage automatique. RECITAL, 2017, p. 42.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)
+   1. Named Entity Recognition (new, please use this one)
+4. [DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)
+   1. Online interface
+5. [DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)
+   1. Named Entity Recognition (old, please do not use)

@@ -65,6 +65,11 @@ class Segmentation(object):
         for element in self.spans:
             yield element
     
+    def append(self, span):
+        if self._spans is None:
+            self._spans = []
+        self._spans.append(span)
+    
     @property
     def name(self):
         return self._name

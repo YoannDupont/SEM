@@ -169,38 +169,41 @@ class Document(Holder):
         f.write(u'%s<document name="%s">\n' %(depth*indent*" ", self.name))
         depth += 1
         f.write(u'%s<content>%s</content>\n' %(depth*indent*" ", cgi.escape(self.content)))
-        f.write(u'%s<segmentations>\n' %(depth*indent*" "))
-        refs = [seg.reference for seg in self.segmentations.values() if seg.reference]
-        for seg in sorted(self.segmentations.values(), key=lambda x: (x.reference and x.reference.reference in refs, x.name)): # TODO: create a sort_segmentations method to order them in terms of reference.
-            depth += 1
-            ref     = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
-            ref_str = ("" if ref is None else ' reference="%s"'%ref)
-            f.write(u'%s<segmentation name="%s"%s>' %(depth*indent*" ", seg.name, ref_str))
-            depth += 1
-            for i, element in enumerate(seg):
-                lf = i == 0 or (i % 5 == 0)
-                if lf:
-                    f.write(u'\n%s' %(depth*indent*" "))
-                f.write(u'%s<s s="%i" l="%i" />' %(("" if lf else " "), element.lb, len(element)))
-            f.write(u"\n")
-            depth -= 1
-            f.write(u'%s</segmentation>\n' %(depth*indent*" "))
-            depth -= 1
-        f.write(u'%s</segmentations>\n' %(depth*indent*" "))
         
-        f.write(u'%s<annotations>\n' %(depth*indent*" "))
-        for annotation in self.annotations.values():
-            depth += 1
-            reference = ("" if not annotation.reference else u' reference="%s"' %(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
-            f.write(u'%s<annotation name="%s"%s>\n' %(depth*indent*" ", annotation.name, reference))
-            depth += 1
-            for tag in annotation:
-                f.write(u'%s<tag v="%s" s="%i" l="%i"/>\n' %(depth*indent*" ", tag.value, tag.lb, len(tag)))
+        if len(self.segmentations) > 0:
+            f.write(u'%s<segmentations>\n' %(depth*indent*" "))
+            refs = [seg.reference for seg in self.segmentations.values() if seg.reference]
+            for seg in sorted(self.segmentations.values(), key=lambda x: (x.reference and x.reference.reference in refs, x.name)): # TODO: create a sort_segmentations method to order them in terms of reference.
+                depth += 1
+                ref     = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
+                ref_str = ("" if ref is None else ' reference="%s"'%ref)
+                f.write(u'%s<segmentation name="%s"%s>' %(depth*indent*" ", seg.name, ref_str))
+                depth += 1
+                for i, element in enumerate(seg):
+                    lf = i == 0 or (i % 5 == 0)
+                    if lf:
+                        f.write(u'\n%s' %(depth*indent*" "))
+                    f.write(u'%s<s s="%i" l="%i" />' %(("" if lf else " "), element.lb, len(element)))
+                f.write(u"\n")
+                depth -= 1
+                f.write(u'%s</segmentation>\n' %(depth*indent*" "))
+                depth -= 1
+            f.write(u'%s</segmentations>\n' %(depth*indent*" "))
+        
+        if len(self.annotations) > 0:
+            f.write(u'%s<annotations>\n' %(depth*indent*" "))
+            for annotation in self.annotations.values():
+                depth += 1
+                reference = ("" if not annotation.reference else u' reference="%s"' %(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+                f.write(u'%s<annotation name="%s"%s>\n' %(depth*indent*" ", annotation.name, reference))
+                depth += 1
+                for tag in annotation:
+                    f.write(u'%s<tag v="%s" s="%i" l="%i"/>\n' %(depth*indent*" ", tag.value, tag.lb, len(tag)))
+                depth -= 1
+                f.write(u'%s</annotation>\n' %(depth*indent*" "))
+                depth -= 1
+            f.write(u'%s</annotations>\n' %(depth*indent*" "))
             depth -= 1
-            f.write(u'%s</annotation>\n' %(depth*indent*" "))
-            depth -= 1
-        f.write(u'%s</annotations>\n' %(depth*indent*" "))
-        depth -= 1
         
         f.write(u'%s</document>\n' %(depth*indent*" "))
     

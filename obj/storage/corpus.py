@@ -45,8 +45,10 @@ class Corpus(object):
     
     @classmethod
     def from_conll(cls, filename, fields, encoding="utf-8"):
+        def tab_split(s):
+            return s.split(u"\t")
         corpus = Corpus(fields)
-        for sentence in KeyReader(filename, encoding, fields):
+        for sentence in KeyReader(filename, encoding, fields, splitter=tab_split):
             corpus.append_sentence([token.copy() for token in sentence])
         return corpus
     

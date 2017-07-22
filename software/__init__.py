@@ -1,4 +1,4 @@
-#-*- encoding: utf-8-*-
+#-*- encoding: utf-8 -*-
 
 import sys
 
@@ -29,7 +29,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 2
+_version_patch = 3
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
@@ -161,7 +161,16 @@ _planned_changes = [
                                 'handle URLs starting with country indicator (ex: "en.wikipedia.org")',
                                 'handle URLs starting with subdomain (ex: "blog.[...]")',
                             ]
-                        ]
+                        ],
+                        [
+                            "create tagger modules",
+                            [
+                                'Translate wapiti tagging part to python. No call to executable, no api, no make.',
+                            ]
+                        ],
+                        [
+                            "use real python package architecture",[]
+                        ],
                    ]
 
 _references = [
@@ -172,8 +181,22 @@ _references = [
                         u"chunking"
                     ]
                 ],
-                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)", ["Named Entity Recognition"]]
-                #[u"[]()", [""]],
+                [u'(best RECITAL paper award) [DUPONT, Yoann. Exploration de traits pour la reconnaissance d’entités nommées du Français par apprentissage automatique. RECITAL, 2017, p. 42.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)',
+                    [
+                        u"Named Entity Recognition (new, please use this one)"
+                    ]
+                ],
+                [u'[DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)',
+                    [
+                        u"Online interface"
+                    ]
+                ],
+                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)",
+                    [
+                        u"Named Entity Recognition (old, please do not use)"
+                    ]
+                ],
+                #[u'[]()', ['']],
               ]
 
 def name():

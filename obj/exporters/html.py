@@ -117,8 +117,6 @@ class Exporter(DefaultExporter):
             else:
                 return ""
         
-        #css_tabs = os.path.join(software.SEM_HOME, "resources", "css", "tabs.css")
-        #css_lang = os.path.join(software.SEM_HOME, "resources", "css", lang, lang_style)
         css_tabs = "tabs.css"
         css_lang = lang_style
         
@@ -206,33 +204,37 @@ class Exporter(DefaultExporter):
         for entry in couples:
             entry_names[entry.lower()] = couples[entry]
         
-        escaped_tokens, escaped_nontokens = self.make_escaped_content(document)
         pos_html   = []
         chunk_html = []
         ner_html   = []
         
         current_key = entry_names.get("pos", None)
-        if current_key and document.corpus.has_key(current_key):
-            pos_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["pos"])
+        if current_key and document.annotations.has_key(current_key):
+            pos_html = self.add_annotation_document(document, entry_names["pos"])
         current_key = entry_names.get("chunking", None)
-        if current_key and document.corpus.has_key(current_key):
-            chunk_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names.get("chunk", entry_names["chunking"]))
+        if current_key and document.annotations.has_key(current_key):
+            chunk_html = self.add_annotation_document(document, entry_names.get("chunk", entry_names["chunking"]))
         current_key = entry_names.get("ner", None)
-        if current_key and document.corpus.has_key(current_key):
-            ner_html = self.add_annotation_document(document, escaped_tokens[:], escaped_nontokens, entry_names["ner"])
+        if current_key and document.annotations.has_key(current_key):
+            ner_html = self.add_annotation_document(document, entry_names["ner"])
         
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
     
-    def add_annotation_document(self, document, escaped_tokens, escaped_nontokens, column):
-        annot = document.annotation(column)
+    def add_annotation_document(self, document, column):
+        annotations = document.annotation(column).get_reference_annotations()[::-1]
+        content = document.content
         
-        for annotation in annot:
-            escaped_tokens[annotation.lb]    = '<span id="%s" title="%s">%s' %(annotation.value, annotation.value, escaped_tokens[annotation.lb])
-            escaped_tokens[annotation.ub-1] += '</span>'
-        for i in range(len(escaped_nontokens)):
-            escaped_tokens.insert(2*i, escaped_nontokens[i])
+        parts = []
+        last = len(content)
+        for annotation in annotations:
+            parts.insert(0, cgi.escape(content[annotation.ub : last]))
+            parts.insert(0, u'</span>')
+            parts.insert(0, cgi.escape(content[annotation.lb : annotation.ub]))
+            parts.insert(0, u'<span id="%s" title="%s">' %(annotation.value, annotation.value))
+            last = annotation.lb
+        parts.insert(0, cgi.escape(content[0:last]))
         
-        new_content = u"".join(escaped_tokens)
+        new_content = u"".join(parts)
         new_content = new_content.replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r")
         return new_content
 

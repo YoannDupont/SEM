@@ -38,7 +38,7 @@ export_logger.addHandler(default_handler)
 
 def export(infile, exporter_name, outfile,
            pos_column=0, chunk_column=0, ner_column=0,
-           lang="fr", lang_style="fr",
+           lang="fr", lang_style="default.css",
            ienc="utf-8", oenc="utf-8",
            log_level=logging.WARNING, log_file=None):
     

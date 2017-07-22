@@ -156,7 +156,7 @@ class TkSemMainWindow(tk.Frame):
             tkMessageBox.showerror("launching SEM", "Error: " + e.message)
             raise
             return
-        tkMessageBox.showinfo("launching SEM", "Everyhing went ok! files are located in: " + output_dir)
+        tkMessageBox.showinfo("launching SEM", "Everything went ok! files are located in: " + output_dir)
         return
 
 class SemTkMasterSelector(tk.Frame):
@@ -166,7 +166,7 @@ class SemTkMasterSelector(tk.Frame):
         self._lang = lang
         items = os.listdir(os.path.join(SEM_HOME, "resources", "master", self._lang))
         max_length = max([len(item) for item in items])
-        self.masters = tk.Listbox(root, width=max_length-1, height=len(items))
+        self.masters = tk.Listbox(root, width=max_length+1, height=len(items))
         self.masters.pack()
 
         for item in items:

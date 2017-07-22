@@ -47,10 +47,13 @@ class Tag(Span):
         return u"chunking"
     
 class Annotation(object):
-    def __init__(self, name, reference=None):
+    def __init__(self, name, reference=None, annotations=None):
         self._name        = name
         self._reference   = reference
-        self._annotations = []
+        if annotations is None:
+            self._annotations = []
+        else:
+            self._annotations = annotations
     
     def __len__(self):
         return len(self._annotations)
@@ -89,7 +92,7 @@ class Annotation(object):
             return self.annotations
         else:
             reference_spans = self.reference.get_reference_spans()
-            return [Tag(element.value, reference_spans[element.start].lb, reference_spans[element.end-1].ub) for element in self.annotations]
+            return [Tag(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub, element.value) for element in self.annotations]
     
 
 def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
@@ -209,9 +212,9 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
         and "I-" by "_".
     """
     
-    annotation = Annotation(name, reference=reference, strict=strict)
+    annotation = Annotation(name, reference=reference)
     shift      = 0
     for nth, sentence in enumerate(corpus): # enumerate for better exception message
-        annotation.extend(tag_annotation_from_sentence(sentence, column, shift=shift).annotations)
+        annotation.extend(tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations)
         shift += len(sentence)
     return annotation
