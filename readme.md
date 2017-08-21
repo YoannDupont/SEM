@@ -1,4 +1,4 @@
-# SEM v2.5.3
+# SEM v2.5.4
 [SEM (Segmenteur-Étiqueteur Markovien)](http://www.lattice.cnrs.fr/sites/itellier/SEM.html) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
@@ -44,7 +44,7 @@
 6. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
 7. GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.
 
-## Latest changes (2.4.0 > 2.5.3)
+## Latest changes (2.4.0 > 2.5.4)
 1. Corrected bug in text exporter. It required all POS, chunking and NER fields. It is no longer the case
 2. Added a GUI
    1. On Linux: double-clic on sem_gui.sh (or launch "bash ./sem_gui.sh" in a terminal)

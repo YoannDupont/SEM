@@ -32,7 +32,7 @@ class Exporter(DefaultExporter):
         pass
     
     def document_to_unicode(self, document, couples, **kwargs):
-        return self.corpus_to_unicode(document.corpus.sentences, couples, **kwargs)
+        return self.corpus_to_unicode(document.corpus, couples, **kwargs)
     
     def corpus_to_unicode(self, corpus, couples, **kwargs):
         lower  = {}
