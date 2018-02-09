@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <master>
     <pipeline>
-        <segmentation name="fr" />
-        <enrich config="../../enrich/fr/pos.xml" />
-        <label model="../../models/fr/POS/plain" field="POS" />
-        <!-- <clean_info to-keep="word,POS" /> -->
-        <export format="html" pos="POS" lang="fr" lang_style="default.css" />
+        <segmentation tokeniser="fr" />
+        <enrich informations="../../enrich/fr/pos.xml" mode="label" />
+        <annotate model="../../models/fr/POS/plain" field="POS" />
     </pipeline>
     
     <options>
         <encoding input-encoding="utf-8" output-encoding="utf-8" />
-        <log level="INFO"/>
-        <clean />
+        <log log_level="INFO"/>
+        <export format="html" pos="POS" lang="fr" lang_style="default.css" />
     </options>
 </master>

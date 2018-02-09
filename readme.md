@@ -26,7 +26,7 @@
 
 ## First steps with SEM
 1. install SEM
-   1. run ```python ./setup.py install``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```
+   1. run ```python setup.py install --user``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```
    2. on Windows, Wapiti compilation may fail. Check you use the right gcc (see in make.bat)
    3. note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h
 2. run tests
@@ -47,7 +47,7 @@
 ## Latest changes (2.5.4 > 3.0.0)
 1. improved SEM architecture.
 2. SEM can now be installed.
-   1. run ```python setup.py install```
+   1. run ```python setup.py install --user```
    2. will compile Wapiti
    3. will create a sem_data folder in current user
 3. imrpoved GUI

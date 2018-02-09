@@ -166,7 +166,7 @@ class SemTkFileSelector(ttk.Frame):
         return (x,y)
 
     def filenames(self, event=None):
-        self.current_files = tkFileDialog.askopenfilenames(**self.file_opt)
+        self.current_files = list(tkFileDialog.askopenfilenames(**self.file_opt))
         self.current_files.sort(key=lambda x:x.lower())
         self.selected_files.delete(0, tk.END)
         if self.current_files:

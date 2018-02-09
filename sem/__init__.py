@@ -87,7 +87,7 @@ _main_features = [
 _first_steps = [
                     [u"install SEM",
                         [
-                            u"run ```python ./setup.py install``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```",
+                            u"run ```python setup.py install --user``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```",
                             u'on Windows, Wapiti compilation may fail. Check you use the right gcc (see in make.bat)',
                             u"note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h"
                         ],
@@ -117,7 +117,7 @@ _latest_changes = [
                     [u"improved SEM architecture.",[]],
                     [u"SEM can now be installed.",
                         [
-                            u"run ```python setup.py install```",
+                            u"run ```python setup.py install --user```",
                             u"will compile Wapiti",
                             u"will create a sem_data folder in current user"
                         ],

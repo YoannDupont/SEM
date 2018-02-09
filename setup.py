@@ -66,11 +66,20 @@ else:
     print
 
 try:
+    suhtil.rmtree(os.path.join(os.path.expanduser(u"~"), "sem_data"))
+except: # does not exists
+    pass
+
+try:
     os.makedirs(os.path.join(os.path.expanduser(u"~"), "sem_data"))
 except: #already exists
     pass
 try:
     shutil.copytree("./resources", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources"))
+except:
+    pass
+try:
+    shutil.copytree("./images", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources", "images"))
 except:
     pass
 try:
