@@ -1,0 +1,246 @@
+# -*- coding: utf-8 -*-
+
+"""
+file: xml2feature.py
+
+Description: defines XML-to-object parsing procedure for each feature.
+
+author: Yoann Dupont
+copyright (c) 2016 Yoann Dupont - all rights reserved
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see GNU official website.
+"""
+
+import re
+
+from os.path import abspath, dirname, join
+
+import sem.information
+
+from . import Feature
+from . import IdentityFeature, DictGetterFeature, FindForwardFeature, FindBackwardFeature, DEFAULT_GETTER
+from . import EqualFeature, EqualCaselessFeature
+from . import MatchFeature, CheckFeature, SubsequenceFeature, TokenFeature
+from . import OrFeature, AndFeature, NotFeature
+from . import ArityFeature, UnaryFeature, BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstringFeature, SubstitutionFeature, SequencerFeature
+from . import ListFeature, SomeFeature, AllFeature, NoneFeature
+from . import TokenDictionaryFeature, MultiwordDictionaryFeature , MapperFeature
+from . import OntologyFeature, FillerFeature
+from . import RuleFeature, OrRuleFeature
+
+from . import TriggeredFeature
+
+class XML2Feature(object):
+    def __init__(self, entries, path=None):
+        self._default_shift = 0
+        
+        self._default_entry = None
+        self._entries = {}
+        for entry in entries:
+            if entry.name.lower() == "word":
+                self._default_entry = entry.name
+            self._entries[entry._name] = entry
+        
+        self._features = {}
+        
+        if self._default_entry is None:
+            self._default_entry = entries[0].name
+        
+        self._path = path
+    
+    def parse(self, xml, getter=None):
+        attrib = xml.attrib
+        
+        if getter is None:
+            getter = DictGetterFeature(entry=attrib.get("entry", self._default_entry), shift=attrib.get("shift", self._default_shift))
+        if isinstance(getter, DictGetterFeature):
+            self.check_entry(getter.entry, attrib)
+        
+        if attrib.get("name", None):
+            self._features[attrib["name"]] = sem.information.Entry(attrib["name"], mode="label")
+        
+        if xml.tag == "boolean":
+            if attrib["action"] == "and":
+                children = list(xml)
+                assert len(children) == 2
+                left  = self.parse(children[0])
+                right = self.parse(children[1])
+                assert left.is_boolean and right.is_boolean
+                return AndFeature(left, right, **attrib)
+            elif attrib["action"] == "or":
+                children = list(xml)
+                assert len(children) == 2
+                left  = self.parse(children[0])
+                right = self.parse(children[1])
+                assert left.is_boolean and right.is_boolean
+                return OrFeature(left, right, **attrib)
+            elif attrib["action"] == "not":
+                children = list(xml)
+                assert len(children) == 1
+                element = self.parse(children[0])
+                assert element.is_boolean
+                return NotFeature(element, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "nullary":
+            if attrib["action"].lower() == "bos":
+                return BOSFeature(**attrib)
+            elif attrib["action"].lower() == "eos":
+                return EOSFeature(**attrib)
+            elif attrib["action"].lower() == "lower":
+                return LowerFeature(getter=getter, **attrib)
+            elif attrib["action"].lower() == "substring":
+                return SubstringFeature(getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "unary":
+            if attrib["action"].lower() == "isupper":
+                return IsUpperFeature(int(xml.text), getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "binary":
+            children = list(xml)
+            assert len(children) == 2
+            if attrib["action"].lower() == "substitute":
+                assert children[0].tag == "pattern" and children[1].tag in ("replace", "replacement")
+                flags = attrib.pop("flags", re.U + re.M)
+                return SubstitutionFeature(children[0].text, children[1].text, flags, getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "nary":
+            if attrib["action"].lower() == "sequencer":
+                return SequencerFeature(*[self.parse(list(xml)[0])]+[self.parse(child, getter=DEFAULT_GETTER) for child in list(xml)[1:]], getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "regexp":
+            flags = re.U + re.M + (re.I * int("i" == xml.attrib.get("casing", "s")))
+            if attrib["action"].lower() == "check":
+                return CheckFeature(xml.text, flags=flags, getter=getter, **attrib)
+            elif attrib["action"].lower() == "subsequence":
+                return SubsequenceFeature(xml.text, flags=flags, getter=getter, **attrib)
+            elif attrib["action"].lower() == "token":
+                return TokenFeature(xml.text, flags=flags, getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "string":
+            if attrib["action"].lower() == "equal":
+                casing = attrib.get("casing", "s").lower()
+                if casing in ("s", "sensitive"):
+                    return EqualFeature(xml.text, getter=getter, **attrib)
+                elif casing in ("i", "insensitive"):
+                    return EqualCaselessFeature(xml.text, getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "list":
+            action = attrib["action"].lower()
+            if action == "some":
+                return SomeFeature(*[self.parse(element) for element in list(xml)], **attrib)
+            elif action == "all":
+                return AllFeature(*[self.parse(element) for element in list(xml)], **attrib)
+            elif action == "none":
+                return NoneFeature(*[self.parse(element) for element in list(xml)], **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "find":
+            action = attrib["action"].lower()
+            if attrib.get("return_entry", None):
+                self.check_entry(attrib["return_entry"], attrib)
+            if action == "forward":
+                return FindForwardFeature(self.parse(list(xml)[0], getter=None), **attrib)
+            elif action == "backward":
+                return FindBackwardFeature(self.parse(list(xml)[0], getter=None), **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "dictionary":
+            if "path" in attrib:
+                attrib["path"] = abspath(join(dirname(self._path), xml.attrib["path"]))
+            elif xml.text:
+                attrib["entries"] = xml.text.split("\n")
+            else:
+                raise ValueError("Dictionary feature should have either a path attribute or text !")
+            
+            action = attrib["action"].lower()
+            if action == "token":
+                return TokenDictionaryFeature(getter=getter, **attrib)
+            elif action == "multiword":
+                if attrib.get("entry", None) is None:
+                    attrib["entry"] = "word"
+                return MultiwordDictionaryFeature(**attrib)
+            elif action == "map":
+                return MapperFeature(getter=getter, **attrib)
+            raise RuntimeError
+        
+        elif xml.tag == "ontology":
+            path = abspath(join(dirname(self._path), attrib.pop("path")))
+            ambiguous = {"true":True,"false":False}[attrib.pop("ambiguous", "false").lower()]
+            return OntologyFeature(path, self, order=attrib.pop("order",".order"), ambiguous=ambiguous, **attrib)
+        
+        elif xml.tag == "fill":
+            entry = attrib.pop("entry")
+            filler_entry = attrib.get("filler-entry", self._default_entry)
+            if "filler-entry" in attrib:
+                del attrib["filler-entry"]
+            self.check_entry(filler_entry, attrib)
+            return FillerFeature(entry, filler_entry, self.parse(list(xml)[0]), **attrib)
+        
+        elif xml.tag == "trigger":
+            trigger, operation = list(xml)
+            return TriggeredFeature(self.parse(trigger), self.parse(operation), **attrib)
+        
+        elif xml.tag in ("rule","orrule"):
+            elements = list(xml)
+            for e in elements:
+                e.attrib["x"] = 0 # forcing current element
+            
+            features = [self.parse(e, getter=None) for e in elements]
+            for e, f in zip(elements,features):
+                card = e.attrib.get("card", "1")
+                f.min_match = 0
+                f.max_match = 0
+                if card == "?":
+                    f.min_match = 0
+                    f.max_match = 1
+                elif card == "*":
+                    f.min_match = 0
+                    f.max_match = 2**30 # should be long enough
+                elif card == "+":
+                    f.min_match = 1
+                    f.max_match = 2**30 # should be long enough
+                elif "," in card:
+                    mi,ma = card.split(",")
+                    f.min_match = int(mi)
+                    f.max_match = int(ma)
+                try:
+                    f.min_match = int(card)
+                    f.max_match = f.min_match
+                except:
+                    pass
+                if f.min_match < 0 or f.max_match <= 0:
+                    raise ValueError('Invalid cardinality for %s feature: "%s"' %(e.tag, card))
+            if xml.tag == "rule":
+                return RuleFeature(features, **xml.attrib)
+            elif xml.tag == "orrule":
+                return OrRuleFeature(features, **xml.attrib)
+        
+        else:
+            raise ValueError("unknown tag: %s" %(xml.tag))
+    
+    def check_entry(self, entry, attrib):
+        used_entry = self._entries.get(entry, None)
+        if not used_entry:
+            used_entry = self._features.get(entry, None)
+        if not used_entry:
+            raise ValueError(u'Node "%s", entry not found: "%s"' %(attrib.get("name", "unnamed"), entry))
+        elif used_entry.is_train:
+            raise ValueError(u'Node "%s" uses train-only entry: "%s"' %(attrib.get("name", "unnamed"), used_entry.name))

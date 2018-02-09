@@ -3,6 +3,11 @@
 \ProvidesPackage{macros}[2014/10/29 provides a set of useful macros for SEM manual]
 
 \RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+
+\RequirePackage[french]{babel}
+
+\RequirePackage{subfiles}
 
 \newcommand{\SEM}[0]{SEM}
 \newcommand{\SEMLong}[0]{Segmenteur Étiqueteur Markovien}
@@ -20,3 +25,28 @@
 
 \newcommand{\Wapiti}[0]{Wapiti}
 \newcommand{\WapitiCite}[0]{\Wapiti\ \cite{lavergne2010practical}}
+
+%
+% XML macros
+%
+
+\newsavebox\spacewd
+\savebox\spacewd{\texttt{ }}
+\newenvironment{xml}{\par\catcode32=\active \setlength{\parindent}{0pt}\sffamily}{\par}
+{
+\catcode32=\active %
+\gdef {\makebox[\wd\spacewd][l]{%
+\textcolor{white}{\fontfamily{ppl}\selectfont\large\smash{\char32}}}}% 
+}
+
+\newcommand{\xmlheader}[2]{\textcolor{#1}{$<$? #2 ?$>$}}
+\newcommand{\xmlcomment}[2]{\textcolor{#1}{$<$!-- #2 --$>$}}
+\newcommand{\xmlunit}[3]{\textcolor{#1}{$<$#2} #3 \textcolor{#1}{/$>$}}
+\newcommand{\xmlmarker}[4]{\textcolor{#1}{$<$#2#3$>$}#4\textcolor{#1}{$<$/#2$>$}}
+\newcommand{\xmlfield}[4]{\textcolor{#1}{#2=}\textcolor{#3}{"#4"}}
+
+\newcommand{\xheader}[1]{\xmlheader{green!60!black}{#1}}
+\newcommand{\xcomment}[1]{\xmlcomment{green!60!black}{#1}}
+\newcommand{\xunit}[2]{\xmlunit{brown}{#1}{#2}}
+\newcommand{\xmarker}[3]{\xmlmarker{brown}{#1}{#2}{#3}}
+\newcommand{\xfield}[2]{\xmlfield{red}{#1}{blue}{#2}}

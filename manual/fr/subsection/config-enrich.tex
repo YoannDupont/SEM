@@ -9,56 +9,34 @@ présentes dans le fichier, une ``endogenous'' qui permet d'extraire des informa
 d'intégrer des dictionnaires.\\
 
 Chaque entrée (qu'elle soit déjà présente ou ajoutée) doit être nommée (via l'attribut \emph{``name''}) et deux entrées différentes ne peuvent pas
-avoir le même nom. En gras sont les différentes ``sections'', en italique les différentes informations.\\
+avoir le même nom. En gras sont les différentes ``sections'', en italique les différentes informations. Un exemple de fichier de configuration pour le module enrich est illustré dans la figure \ref{fig:sem-features}.\\
 
-La liste des ``sections'' ainsi que les informations qu'il est possible d'ajouter est :
-
-\begin{itemize}
-	\item[] \textbf{entries}
-	\begin{itemize}
-		\item[] \textit{before}
-			\begin{itemize}
-				\item[] les entrées qui seront écrites avant les informations ajoutées
-			\end{itemize}
-		\item[] \textit{after}
-			\begin{itemize}
-				\item[] les entrées qui seront écrites après les informations ajoutées
-			\end{itemize}
-	\end{itemize}
-	\item[] \textbf{endogenous}
-	\begin{itemize}
-		\item[] \textit{\{nullary, nary\}}
-			\begin{itemize}
-				\item[] des opérations génériques définies par leur arité (-ary).
-			\end{itemize}
-		\item[] \textit{expression}
-			\begin{itemize}
-				\item[] une information extraite à partir d'une expression booléenne.
-			\end{itemize}
-		\item[] \textit{list}
-			\begin{itemize}
-				\item[] une information extraite à partir d'une liste de mots et / ou d'expressions régulières.
-			\end{itemize}
-		\item[] \textit{regexp}
-			\begin{itemize}
-				\item[] une information extraite à partir d'une unique expression régulière.
-			\end{itemize}
-		\item[] \textit{conditional}
-			\begin{itemize}
-				\item[] une information avec déclencheur.
-			\end{itemize}
-	\end{itemize}
-	\item[] \textbf{exogenous}
-	\begin{itemize}
-		\item[] \textit{token}
-			\begin{itemize}
-				\item[] un dictionnaire de mots.
-			\end{itemize}
-		\item[] \textit{multiword}
-			\begin{itemize}
-				\item[] un dictionnaire de séquences de mots.
-			\end{itemize}
-	\end{itemize}
-\end{itemize}
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xheader{xml version="1.0" encoding="UTF-8"}\\
+\xmarker{information}{}{\\
+  \xmarker{entries}{}{\\
+    \xmarker{before}{}{\\
+      \xunit{entry}{\xfield{name}{word}}\\
+      \xunit{entry}{\xfield{name}{POS}}\\
+    }\\
+    \xmarker{after}{}{\\
+      \xunit{entry}{\xfield{name}{NE} \xfield{mode}{train}}\\
+    }\\
+  }\\
+  \xmarker{features}{}{\\
+    \xunit{nullary}{\xfield{name}{lower} \xfield{action}{lower} \xfield{display}{no}}\\
+    \xmarker{unary}{ \xfield{name}{starts-with-upper} \xfield{action}{isUpper}}{0}\\
+    \xunit{dictionary}{\xfield{name}{title} \xfield{action}{token} \xfield{path}{title.txt} \xfield{entry}{lower}}\\
+    \xmarker{find}{ \xfield{name}{VerbForward} \xfield{action}{forward} \xfield{return\_entry}{word}}{\\
+      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}V}\\
+    }\\
+  }\\
+}
+\end{xml}
+\caption{exemples de fichier de génération de features de SEM, il est utilisé par le module enrich. Il permet de rajouter des descripteurs qui seront alors utilisés par les algorithmes par apprentissage automatique.}
+\label{fig:sem-features}
+\end{figure}
 
 \end{document}
