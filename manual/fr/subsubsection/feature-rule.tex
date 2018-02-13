@@ -1,0 +1,35 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+La \textit{sequence feature} rule permet d'intégrer des règles en tant que features. Les arguments d'une feature rule sont systématiquement des \textit{boolean features} ont tous un champ "card" qui indique la cardinalité de la feature. Les différentes valeurs pour "card" sont :
+\begin{itemize}
+    \item ? : 0 ou 1 fois
+    \item * : 0 ou un nombre illimité de fois
+    \item + : 1 ou un nombre illimité de fois
+    \item [entier] : exactement [entier] fois
+    \item "min,max" : au moins min fois et au maximum max fois.
+\end{itemize}
+
+Un argument spécifique des features rule est "orrule" qui permet de reconnaitre une règle parmi plusieurs au choix. Un exemple de feature rule est illustré dans la figure \ref{fig:feature-rule}.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{rule}{ \xfield{name}{amount}}{\\
+    \xmarker{list}{ \xfield{action}{some}}{\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{word}}{\^{}[0-9]+\$}\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{lower}}{\^{}(une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix
+|onze|douze|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt|trente|quarante|cinquante|soixante
+|soixante-dix|quatre-vingt|quatre-vingt-dix|cents?|mille|millions?|milliards?)\$}\\
+    }\\
+    \xmarker{orrule}{}{\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{chunking} \xfield{card}{+}}{-NP\$}\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{chunking} \xfield{card}{+}}{-PP\$}\\
+    }\\
+}
+\end{xml}
+\caption{exemple de la feature \textit{rule}.}
+\label{fig:feature-rule}
+\end{figure}
+
+\end{document}

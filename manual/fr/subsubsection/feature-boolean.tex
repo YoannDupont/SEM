@@ -1,0 +1,25 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Les \textit{boolean features} \textit{boolean} définissent des expressions booléennes. Un exemple de feature \textit{boolean} est donné dans la figure \ref{fig:feature-boolean}. Trois actions sont disponibles :
+\begin{itemize}
+    \item and : "et" logique. Prend deux \textit{boolean features} en argument.
+    \item or : "ou" logique. Prend deux \textit{boolean features} en argument.
+    \item not : "non" logique. Prend une \textit{boolean feature} en argument.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{boolean}{ \xfield{name}{StartsWithUpper-AndNot-FirstWordOfSentence} \xfield{action}{and}}{\\
+    \xmarker{unary}{ \xfield{action}{isUpper}}{0}\\
+    \xmarker{boolean}{ \xfield{action}{not}}{\\
+        \xunit{nullary}{\xfield{action}{BOS}}\\
+    }\\
+}
+\end{xml}
+\caption{exemple de la feature \textit{boolean}.}
+\label{fig:feature-boolean}
+\end{figure}
+
+\end{document}

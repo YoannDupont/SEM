@@ -4,13 +4,13 @@
 \begin{itemize}
     \item[] \textbf{description}
         \begin{itemize}
-            \item[] 
+            \item[] Calcule la f-mesure sur des données étiquetées selon un schéma BIO. Fournit une f-mesure par classe, une micro f-mesure globale et une macro f-mesure globale.
         \end{itemize}
     \item[] \textbf{arguments}
         \begin{itemize}
-            \item[] 
+            \item[] infile
                 \begin{itemize}
-                    \item[] 
+                    \item[] Le fichier contenant les données étiquetées à évaluer. Ce fichier est au format tabulaire type CoNLL 2003. Ce script est similaire à conlleval.
                 \end{itemize}
         \end{itemize}
     \item[] \textbf{options}
@@ -19,9 +19,13 @@
                 \begin{itemize}
                     \item[] affiche l'aide
                 \end{itemize}
-            \item[] 
+            \item[] --reference-column ou -r : int
                 \begin{itemize}
-                    \item[] 
+                    \item[] l'indice de la colonne où se trouvent les étiquettes de références (défaut : -2).
+                \end{itemize}
+            \item[] --tagging-column ou -t : int
+                \begin{itemize}
+                    \item[] l'indice de la colonne où se trouvent les étiquettes hypothèses fournies par le système (défaut : -1).
                 \end{itemize}
             \item[] --input-encoding : string
                 \begin{itemize}

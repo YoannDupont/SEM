@@ -4,12 +4,28 @@
 Le fichier de configuration du module enrich permet d'ajouter des informations à un fichier vectorisé. Il décrit d'abord les entrées présentes
 puis les informations à ajouter.\\
 
-Le fichier d'enrichissement est un fichier XML de type de document ``enrich''. Il a trois parties : une ``entries'' qui définit les entrées déjà
-présentes dans le fichier, une ``endogenous'' qui permet d'extraire des informations à partir des données présentes et une ``exogenous'' qui permet
-d'intégrer des dictionnaires.\\
+Le fichier d'enrichissement est un fichier XML de type de document ``enrich''. Il se divise en deux parties : une ``entries'' qui définit les entrées déjà présentes dans le fichier, une ``features'' qui permet d'enrichir les données.\\
 
-Chaque entrée (qu'elle soit déjà présente ou ajoutée) doit être nommée (via l'attribut \emph{``name''}) et deux entrées différentes ne peuvent pas
-avoir le même nom. En gras sont les différentes ``sections'', en italique les différentes informations. Un exemple de fichier de configuration pour le module enrich est illustré dans la figure \ref{fig:sem-features}.\\
+Chaque entrée (qu'elle soit déjà présente ou ajoutée) doit être nommée (via l'attribut \emph{``name''}) et deux entrées différentes ne peuvent pas avoir le même nom. Un exemple de fichier de configuration pour le module enrich est illustré dans la figure \ref{fig:sem-features}. Chaque entrée a un mode, qui permet de la considérer ou non selon un certain contexte. Le mode \textit{train} permet de n'utiliser certaines entrées que dans le but d'entrainer de nouveaux modèles. Le mode par défaut, \textit{label}, permet d'avoir les entrées de manière systématique.\\
+
+La majorité des \textit{features} disposent des champs suivants :
+\begin{itemize}
+    \item name="chaine" : le nom de la \textit{feature}. Obligatoire pour les \textit{features} racines.
+    \item action="chaine" : pour des features de même nature (ex: évaluation d'une expression régulière), choisit le type de résultat ou un calcul différent.
+    \item x="entier" : le décalage par rapport au mot courant (défaut: 0).
+    \item entry="chaine" : l'entrée que la feature observe (défaut: \textit{word}, sinon \textit{token}, sinon la première entrée définie dans la section \textit{entries}).
+    \item display="(yes|no)" : décide si la feature doit être affichée ou non. Il est possible de ne pas afficher une feature qui évalue un résultat intermédiaire pour calculer d'autres features.
+\end{itemize}
+
+Il existe plusieurs types de features en fonction des résultats qu'elles calculent ou du type d'arguments qu'elles prennent en entrée :
+\begin{itemize}
+    \item les \textit{token features} : elles traitent un token à la fois, parmi lesquelles :
+    \begin{itemize}
+        \item les \textit{string features} : elles traitent un token à la fois et renvoient une chaine de caractères ;
+        \item les \textit{boolean features} : elles traitent un token à la fois et renvoient un booléen ;
+    \end{itemize}
+    \item les \textit{sequence features} : elles traitent l'ensemble de la séquence en entrée et renvoient une séquence.
+\end{itemize}
 
 \begin{figure}[ht!]
 \footnotesize
@@ -27,15 +43,20 @@ avoir le même nom. En gras sont les différentes ``sections'', en italique les 
   }\\
   \xmarker{features}{}{\\
     \xunit{nullary}{\xfield{name}{lower} \xfield{action}{lower} \xfield{display}{no}}\\
-    \xmarker{unary}{ \xfield{name}{starts-with-upper} \xfield{action}{isUpper}}{0}\\
-    \xunit{dictionary}{\xfield{name}{title} \xfield{action}{token} \xfield{path}{title.txt} \xfield{entry}{lower}}\\
-    \xmarker{find}{ \xfield{name}{VerbForward} \xfield{action}{forward} \xfield{return\_entry}{word}}{\\
-      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}V}\\
+    \xunit{ontology}{\xfield{name}{NER-ontology} \xfield{path}{dictionaries/NER-ontology} \xfield{display}{no}}\\
+    \xmarker{fill}{ \xfield{name}{NER-ontology-POS} \xfield{entry}{NER-ontology} \xfield{filler-entry}{POS}}{\\
+      \xmarker{string}{ \xfield{action}{equal}}{O}\\
+    }\\
+    \xmarker{find}{ \xfield{name}{NounBackward} \xfield{action}{backward} \xfield{return\_entry}{word}}{\\
+      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}N}\\
+    }\\
+    \xmarker{find}{ \xfield{name}{NounForward} \xfield{action}{forward} \xfield{return\_entry}{word}}{\\
+      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}N}\\
     }\\
   }\\
 }
 \end{xml}
-\caption{exemples de fichier de génération de features de SEM, il est utilisé par le module enrich. Il permet de rajouter des descripteurs qui seront alors utilisés par les algorithmes par apprentissage automatique.}
+\caption{exemple de fichier de génération de features de SEM, il est utilisé par le module enrich. Il permet de rajouter des descripteurs qui seront alors utilisés par les algorithmes par apprentissage automatique.}
 \label{fig:sem-features}
 \end{figure}
 

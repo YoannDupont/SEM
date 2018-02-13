@@ -1,0 +1,30 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Les \textit{features} dictionary définissent des features se basant sur des lexiques. Les actions suivantes sont possibles :
+\begin{itemize}
+    \item token (\textit{boolean feature}) : vérifie l'appartenance d'un token au lexique ;
+    \item multiword (\textit{sequence feature}) : cherche les séquences de tokens appartenant au lexique.
+\end{itemize}
+
+Des exemples des ces features sont illustrées dans les figures \ref{fig:feature-dictionary-token} et \ref{fig:feature-dictionary-multiword}.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{dictionary}{\xfield{name}{token-dictionary} \xfield{action}{token} \xfield{path}{path/to/token-dictionary}}
+\end{xml}
+\caption{exemple de la feature \textit{dictionary} "token".}
+\label{fig:feature-dictionary-token}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{dictionary}{\xfield{name}{multiword-dictionary} \xfield{action}{multiword} \xfield{path}{path/to/multiword-dictionary}}
+\end{xml}
+\caption{exemple de la feature \textit{dictionary} "multiword".}
+\label{fig:feature-dictionary-multiword}
+\end{figure}
+
+\end{document}

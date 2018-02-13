@@ -6,20 +6,28 @@ file: lexicon.py
 Description: a tagger that uses lexica to annotate text
 
 author: Yoann Dupont
-copyright (c) 2016 Yoann Dupont - all rights reserved
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+MIT License
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Copyright (c) 2018 Yoann Dupont
 
-You should have received a copy of the GNU General Public License
-along with this program. If not, see GNU official website.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 
 try:
@@ -31,9 +39,9 @@ import logging
 import os.path
 import codecs
 
-from sem.logger import default_handler
+from . import Annotator as RootAnnotator
 
-from sem import SEM_HOME
+from sem.logger import default_handler
 
 from sem.features import MultiwordDictionaryFeature, NUL
 
@@ -149,14 +157,15 @@ class LexicaFeature(MultiwordDictionaryFeature):
         
         return l
 
-class Tagger(object):
-    def __init__(self, field, repository, token_field="word", input_encoding="utf-8", *args, **kwargs):
-        self._field = field
+class Annotator(RootAnnotator):
+    def __init__(self, field, location, token_field="word", input_encoding="utf-8", *args, **kwargs):
+        super(Annotator, self).__init__(field, location, input_encoding=input_encoding, *args, **kwargs)
+        
         self._token_field = token_field
         
-        self._feature = LexicaFeature(repository, self._token_field, self._field, input_encoding=input_encoding)
+        self._feature = LexicaFeature(self._location, self._token_field, self._field, input_encoding=input_encoding)
 
-    def process_document(self, document, annotation_fields=None):
+    def process_document(self, document, annotation_fields=None, *args, **kwargs):
         if annotation_fields is None:
             fields = document.corpus.fields
         else:

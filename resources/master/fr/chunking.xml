@@ -3,9 +3,9 @@
     <pipeline>
         <segmentation tokeniser="fr" />
         <enrich informations="../../enrich/fr/pos-lefff.xml" mode="label" />
-        <annotate model="../../models/fr/POS/plain.lefff" field="POS" />
+        <wapiti_label model="../../models/fr/POS/plain.lefff" field="POS" />
         <clean to-keep="word,POS" />
-        <annotate model="../../models/fr/chunk/plain_all" field="chunking" />
+        <wapiti_label model="../../models/fr/chunk/plain_all" field="chunking" />
         <clean to-keep="word,POS,chunking" />
     </pipeline>
     

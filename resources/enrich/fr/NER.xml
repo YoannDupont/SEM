@@ -5,7 +5,6 @@
         <before>
             <entry name="word" />
             <entry name="POS" />
-            <!--entry name="chunking" /-->
         </before>
         <after>
             <entry name="NE" mode="train" />
@@ -15,9 +14,9 @@
     <features>
         <nullary name="lower" action="lower" display="no" />
         
-        <ontology name="NER-ontology" path="../../dictionaries/fr/NER-ontology" display="no" />
+        <directory name="NER-directory" path="../../dictionaries/fr/NER-directory" display="no" />
         
-        <fill name="NER-ontology-POS" entry="NER-ontology" filler-entry="POS">
+        <fill name="NER-directory-POS" entry="NER-directory" filler-entry="POS">
             <string action="equal">O</string>
         </fill>
         

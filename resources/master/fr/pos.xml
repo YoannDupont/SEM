@@ -3,7 +3,7 @@
     <pipeline>
         <segmentation tokeniser="fr" />
         <enrich informations="../../enrich/fr/pos.xml" mode="label" />
-        <annotate model="../../models/fr/POS/plain" field="POS" />
+        <wapiti_label model="../../models/fr/POS/plain" field="POS" />
     </pipeline>
     
     <options>

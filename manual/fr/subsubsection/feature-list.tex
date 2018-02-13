@@ -1,0 +1,17 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+La feature \textit{list} est une feature booléenne qui permet de définir une liste non bornée de propriétés booléennes qui seront évaluées. Une feature de type \textit{list} dispose des actions suivantes : \textit{none} (toutes les features doivent être évaluées à faux), \textit{some} (au moins une feature doit être évaluée à vrai) et \textit{all} (toutes les features doivent être évaluées à vrai).
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{list}{ \xfield{name}{top-of-hierarchy} \xfield{action}{some}}{\\
+    \xmarker{string}{ \xfield{action}{equal}}{PDG}\\
+    \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{lower}}{\^{}(président|directeur)\$}\\
+}
+\end{xml}
+\caption{exemple de la feature \textit{list} "some".}
+\label{fig:feature-list-some}
+\end{figure}
+\end{document}

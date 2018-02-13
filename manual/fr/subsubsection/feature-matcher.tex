@@ -1,0 +1,37 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Les \textit{token features} \textit{regexp} évaluent des expressions régulières. Les actions suivantes, illustrées sur les figures \ref{fig:feature-matcher-check}, \ref{fig:feature-matcher-subsequence} et \ref{fig:feature-matcher-token} sont possibles :
+\begin{itemize}
+    \item action="check" (\textit{boolean feature}) : vérifie qu'une regexp est reconnue sur l'élément en entrée.
+    \item action="subsequence" (\textit{string feature}) : vérifie qu'une regexp est reconnue sur l'élément en entrée et renvoie la sous-chaine reconnue.
+    \item action="token" (\textit{string feature}) : vérifie qu'une regexp est reconnue sur l'élément en entrée et renvoie l'élément s'il est reconnu.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{only-first-upper} \xfield{action}{check}}{\^{}[A-Z][\^{}A-Z]*\$}
+\end{xml}
+\caption{exemple de la feature \textit{matcher} "check".}
+\label{fig:feature-matcher-check}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{after-hyphen} \xfield{action}{subsequence}}{-.+\$}
+\end{xml}
+\caption{exemple de la feature \textit{matcher} "subsequence".}
+\label{fig:feature-matcher-subsequence}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{ends-with-isme} \xfield{action}{token}}{isme\$}
+\end{xml}
+\caption{exemple de la feature \textit{matcher} "token".}
+\label{fig:feature-matcher-token}
+\end{figure}
+\end{document}

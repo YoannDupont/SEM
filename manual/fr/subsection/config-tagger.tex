@@ -13,14 +13,13 @@ une ``options'' qui permet de définir les options globales. Un exemple de pipel
 \xheader{xml version="1.0" encoding="UTF-8"}\\
 \xmarker{master}{}{\\
   \xmarker{pipeline}{}{\\
-    \xunit{segmentation}{\xfield{name}{fr}}\\
-    \xunit{enrich}{\xfield{config}{pos.xml}}\\
-    \xunit{label}{\xfield{model}{models/POS} \xfield{field}{POS}}\\
-    \xunit{clean\_info}{\xfield{to-keep}{word,POS}}\\
-    \xunit{label}{\xfield{model}{models/chunking} \xfield{field}{chunking}}\\
-    \xunit{enrich}{\xfield{config}{NER.xml}}\\
-    \xunit{label}{\xfield{model}{models/NER} \xfield{field}{NER}}\\
-    \xunit{clean\_info}{\xfield{to-keep}{word,POS,chunking,NER}}\\
+    \xunit{segmentation}{\xfield{tokeniser}{fr}}\\
+    \xunit{enrich}{\xfield{informations}{pos.xml} \xfield{mode}{label}}\\
+    \xunit{annotate}{\xfield{model}{models/POS} \xfield{field}{POS}}\\
+    \xunit{clean}{\xfield{to-keep}{word,POS}}\\
+    \xunit{enrich}{\xfield{informations}{NER.xml} \xfield{mode}{label}}\\
+    \xunit{annotate}{\xfield{model}{models/NER} \xfield{field}{NER}}\\
+    \xunit{clean}{\xfield{to-keep}{word,POS,NER}}\\
   }\\
 \\
   \xmarker{options}{}{\\

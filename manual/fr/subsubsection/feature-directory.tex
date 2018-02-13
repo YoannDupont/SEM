@@ -1,0 +1,29 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Les \textit{features} directory permettent d'utiliser des répertoires de lexiques comme définis dans \cite{dupont2017exploration}. Deux features sont définies :
+\begin{itemize}
+    \item directory (\textit{sequence feature}) : applique un répertoire de lexiques. Les tokens non-reconnus sont remplacés par "O". La \textit{feature} attend un champ "path" contenant le chemin vers le dossier contenant l'ensemble des lexique
+    \item fill (\textit{string feature}) : remplace l'élément par le contenu de l'entrée donnée dans le champ "filler-entry" si ce dernier est reconnu par la \textit{boolean feature} donnée en argument.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{directory}{\xfield{name}{NER-ontology} \xfield{path}{../../dictionaries/fr/NER-ontology}}
+\end{xml}
+\caption{exemple de la feature \textit{directory}.}
+\label{fig:feature-directory}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{fill}{ \xfield{name}{NER-ontology-POS} \xfield{entry}{NER-ontology} \xfield{filler-entry}{POS}}{\\
+    \xmarker{string}{ \xfield{action}{equal}}{O}\\
+}
+\end{xml}
+\caption{exemple de la feature \textit{directory} "fill".}
+\label{fig:feature-directory-fill}
+\end{figure}
+\end{document}

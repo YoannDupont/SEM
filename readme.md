@@ -54,7 +54,7 @@
    1. SEM can now train a Wapiti model using annotated files.
 4. another GUI created for annotating documents.
 5. updated manual
-6. new module: __tagging__. allows to call python taggers
+6. new module: __annotate__. allows to call python taggers
    1. python implementation of Wapiti labeling
    2. lexica-based tagger
 

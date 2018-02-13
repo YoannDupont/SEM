@@ -1,0 +1,21 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Les \textit{token features} string définissent des opérations de base sur les chaines de caractères. Les actions suivantes sont définies :
+\begin{itemize}
+    \item equal (\textit{boolean feature}) : vérifie l'égalité de la chaine en entrée par rapport à la chaine en argument. Définit les options suivantes :
+    \begin{itemize}
+        \item casing="(sensitive|s|insensitive|i)" : définit la sensibilité à la casse de la comparaison (défaut : "sensitive").
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{string}{ \xfield{action}{equal} \xfield{casing}{sensitive}}{O}
+\end{xml}
+\caption{exemple de la feature \textit{string} "equal".}
+\label{fig:feature-string-equal}
+\end{figure}
+
+\end{document}

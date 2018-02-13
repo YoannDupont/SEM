@@ -6,20 +6,28 @@ file: export.py
 Description: exports an input to a given format.
 
 author: Yoann Dupont
-copyright (c) 2016 Yoann Dupont - all rights reserved
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+MIT License
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Copyright (c) 2018 Yoann Dupont
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 
 import sys
@@ -94,11 +102,11 @@ class SEMModule(RootModule):
         laps = time.time() - start
         export_logger.info('done in %s' %(timedelta(seconds=laps)))
 
-def export(infile, exporter_name, outfile,
-           pos_column=0, chunk_column=0, ner_column=0,
-           lang="fr", lang_style="default.css",
-           ienc="utf-8", oenc="utf-8",
-           log_level=logging.WARNING, log_file=None):
+def main(infile, exporter_name, outfile,
+         pos_column=0, chunk_column=0, ner_column=0,
+         lang="fr", lang_style="default.css",
+         ienc="utf-8", oenc="utf-8",
+         log_level=logging.WARNING, log_file=None):
     
     start = time.time()
     
@@ -150,48 +158,39 @@ def export(infile, exporter_name, outfile,
     
     laps = time.time() - start
     export_logger.info('done in %s' %(timedelta(seconds=laps)))
-    
 
-if __name__ == "__main__":
-    import argparse, os.path
 
-    parser = argparse.ArgumentParser(description="Segments the textual content of a sentence into tokens. They can either be outputted line per line or in a vectorised format")
-    
-    parser.add_argument("infile",
-                        help="The input file")
-    parser.add_argument("exporter_name",
-                        help="The name of the exporter to use")
-    parser.add_argument("outfile",
-                        help="The output file")
-    parser.add_argument("-p", "--pos-column", dest="pos_column", type=int, default=0,
-                        help="The column for POS. If 0, POS information is not added (default: %(default)s)")
-    parser.add_argument("-c", "--chunk-column", dest="chunk_column", type=int, default=0,
-                        help="The column for chunk. If 0, chunk information is not added (default: %(default)s)")
-    parser.add_argument("-n", "--ner-column", dest="ner_column", type=int, default=0,
-                        help="The column for NER. If 0, chunk information is not added (default: %(default)s)")
-    parser.add_argument("--lang", dest="lang", default="fr",
-                        help="The language of the text (default: %(default)s)")
-    parser.add_argument("-s", "--lang-style", dest="lang_style", default="default.css",
-                        help="The style to use, if applicable (default: %(default)s)")
-    parser.add_argument("--input-encoding", dest="ienc",
-                        help="Encoding of the input (default: UTF-8)")
-    parser.add_argument("--output-encoding", dest="oenc",
-                        help="Encoding of the input (default: UTF-8)")
-    parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                        help="Encoding of both the input and the output (default: UTF-8)")
-    parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WARNING","ERROR","CRITICAL"), default="WARNING",
-                        help="Increase log level (default: %(default)s)")
-    parser.add_argument("--log-file", dest="log_file",
-                        help="The name of the log file")
+import os.path
+import sem
 
-    if __package__:
-        args = parser.parse_args(sys.argv[2:])
-    else:
-        args = parser.parse_args()
-    
-    export(args.infile, args.exporter_name, args.outfile,
-           pos_column=args.pos_column, chunk_column=args.chunk_column, ner_column=args.ner_column,
-           lang=args.lang, lang_style=args.lang_style,
-           ienc=args.ienc or args.enc, oenc=args.oenc or args.enc,
-           log_level=args.log_level, log_file=args.log_file)
-    sys.exit(0)
+_subparsers = sem.argument_subparsers
+
+parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0], description="Export CoNLL-formatted data to specified format.")
+
+parser.add_argument("infile",
+                    help="The input file")
+parser.add_argument("exporter_name",
+                    help="The name of the exporter to use")
+parser.add_argument("outfile",
+                    help="The output file")
+parser.add_argument("-p", "--pos-column", dest="pos_column", type=int, default=0,
+                    help="The column for POS. If 0, POS information is not added (default: %(default)s)")
+parser.add_argument("-c", "--chunk-column", dest="chunk_column", type=int, default=0,
+                    help="The column for chunk. If 0, chunk information is not added (default: %(default)s)")
+parser.add_argument("-n", "--ner-column", dest="ner_column", type=int, default=0,
+                    help="The column for NER. If 0, chunk information is not added (default: %(default)s)")
+parser.add_argument("--lang", dest="lang", default="fr",
+                    help="The language of the text (default: %(default)s)")
+parser.add_argument("-s", "--lang-style", dest="lang_style", default="default.css",
+                    help="The style to use, if applicable (default: %(default)s)")
+parser.add_argument("--input-encoding", dest="ienc",
+                    help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc",
+                    help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--encoding", dest="enc", default="UTF-8",
+                    help="Encoding of both the input and the output (default: UTF-8)")
+parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WARNING","ERROR","CRITICAL"), default="WARNING",
+                    help="Increase log level (default: %(default)s)")
+parser.add_argument("--log-file", dest="log_file",
+                    help="The name of the log file")
+

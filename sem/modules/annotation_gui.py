@@ -1,3 +1,31 @@
+"""
+file: annotation_gui.py
+
+author: Yoann Dupont
+
+MIT License
+
+Copyright (c) 2018 Yoann Dupont
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import codecs
 import re
 import logging
@@ -465,7 +493,7 @@ class AnnotationTool(tk.Frame):
         crf_cur_row = 0
         
         tk.Label(frame1, text='algotirhm').grid(row=0, column=0, sticky=tk.W)
-        CRF_algorithmValue = ttk.Combobox(frame1, textvariable=CRF_algorithmString)
+        CRF_algorithmValue = ttk.Combobox(frame1, textvariable=CRF_algorithmString, state="disabled")
         CRF_algorithmValue["values"] = [u"rprop", u"l-bfgs", u"sgd-l1", u"bcd", u"rprop+", u"rprop-"]
         CRF_algorithmValue.current(0)
         CRF_algorithmValue.grid(row=crf_cur_row, column=1)
@@ -490,7 +518,7 @@ class AnnotationTool(tk.Frame):
     
     def add_annotation(self, event, remove_focus=True):
         annotate_logger.debug("========== entering method")
-        cur_type = Adder.label2type(self.type_combos[0].get(), self.current_type_hierarchy_level, self.SELECT_TYPE)
+        cur_type = Adder.label2type(self.type_combos[self.current_type_hierarchy_level].get(), self.current_type_hierarchy_level, self.SELECT_TYPE)
         if cur_type != self.SELECT_TYPE:
             first = "sel.first"
             last = "sel.last"
@@ -504,11 +532,14 @@ class AnnotationTool(tk.Frame):
         try:
             text_select = True
             if first == "sel.first":
+                print "first", first,
                 first = self.text.index("sel.first")
+                print first
             if last == "sel.last":
                 last = self.text.index("sel.last")
             
         except tk.TclError:
+            print "error"
             return # no selection
         
         if self.current_type_hierarchy_level == 0:
@@ -753,16 +784,16 @@ class AnnotationTool(tk.Frame):
             self.text.unbind(letter)
             self.tree.unbind(letter)
         for adder in self.adders[self.current_type_hierarchy_level].values():
-            self.text.bind("<%s>" %adder.shortcut, adder.add)
+            self.text.bind_all("<%s>" %adder.shortcut, adder.add)
             self.tree.bind("<%s>" %adder.shortcut, adder.add)
             if adder.shortcut.islower():
-                self.text.bind("<%s>" %adder.shortcut.upper(), adder.add_all)
+                self.text.bind_all("<%s>" %adder.shortcut.upper(), adder.add_all)
                 self.tree.bind("<%s>" %adder.shortcut.upper(), adder.add_all)
         for i in range(len(self.type_hierarchy)):
             if i != self.current_type_hierarchy_level:
                 self.type_combos[i].configure(state=tk.DISABLED)
             else:
-                self.type_combos[i].configure(state=tk.NORMAL)
+                self.type_combos[i].configure(state="readonly")
     
     def add_document(self, document):
         found = self.doc is not None and any([document.name == doc.name for doc in self.corpus_documents])
@@ -870,20 +901,24 @@ class AnnotationTool(tk.Frame):
                     # combobox
                     self.type_combos.append(ttk.Combobox(self.toolbar))
                     self.type_combos[depth]["values"] = [self.SELECT_TYPE]
-                    self.type_combos[depth].bind("<<ComboboxSelected>>", None)
+                    self.type_combos[depth].bind("<<ComboboxSelected>>", self.add_annotation)
                     self.type_combos[depth].pack(side="left")
                 self.type_hierarchy[depth].add(type_to_add)
                 if type_to_add not in self.adders[depth]:
                     self.adders[depth][type_to_add] = Adder(self, type_to_add, self.available_chars, level=depth)
                     if len(self.type_combos) > 0:
                         self.type_combos[depth]["values"] = [self.SELECT_TYPE] + [self.adders[depth][key].label for key in sorted(self.adders[depth].keys())]
+        self.update_level()
     
     def load_tagset_gui(self, event=None):
         filename = tkFileDialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")])
         
         if filename == "": return
         
-        tagset = [line.strip() for line in codecs.open(filename, "rU", "utf-8")]
+        tagset = []
+        with codecs.open(filename, "rU", "utf-8") as I:
+            for line in I:
+                tagset.append(line.strip())
         tagset = [tag.split(u"#",1)[0] for tag in tagset]
         tagset = [tag for tag in tagset if tag != u""]
         

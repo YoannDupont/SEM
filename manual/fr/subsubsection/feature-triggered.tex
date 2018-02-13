@@ -1,0 +1,21 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+La \textit{string feature} \textit{trigger} permet de définir un déclencheur avant l'évaluation d'une autre feature. Elle a deux fils : le \textit{trigger} qui est la propriété booléenne à vérifier avant l'évaluation du second fils, qui peut être n'importe quelle \textit{feature} de token. Un exemple est illustré dans la figure \ref{fig:feature-triggered}.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{trigger}{ \xfield{name}{Substitute-Numbers-Triggered}}{\\
+    \xmarker{regexp}{ \xfield{action}{check}}{[0-9]}\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[0-9]+}\\
+        \xmarker{replace}{}{0}\\
+    }\\
+}
+\end{xml}
+\caption{exemple de la feature \textit{trigger}.}
+\label{fig:feature-triggered}
+\end{figure}
+
+\end{document}
