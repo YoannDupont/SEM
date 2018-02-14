@@ -90,7 +90,7 @@ class IdentityPattern(Pattern):
             else:
                 return u"_x+#"
         
-        return matrix[x][self.y]
+        return unicode(matrix[x][self.y])
     
     @property
     def x(self):
@@ -215,7 +215,6 @@ class ListPattern(Pattern):
         return self._patterns
     
     def instanciate(self, matrix, index):
-        print self
         return u"".join([instanciator(matrix, index) for instanciator in self._instanciators])
     
     @classmethod
