@@ -92,7 +92,7 @@ class Entry(object):
         return len(_equivalence[self._mode] & _equivalence[mode]) != 0
 
 class Informations(object):
-    def __init__(self, path=None, mode=u"label"):
+    def __init__(self, path=None, bentries=None, aentries=None, features=None, mode=u"label"):
         self._mode     = mode
         self._bentries = [] # informations that are before newly added information
         self._aentries = [] # informations that are after ...
@@ -102,6 +102,11 @@ class Informations(object):
         
         if path is not None:
             self.parse(path)
+        else:
+            self._bentries = ([entry for entry in bentries if entry.has_mode(self._mode)] if bentries else self._bentries)
+            self._aentries = ([entry for entry in aentries if entry.has_mode(self._mode)] if aentries else self._aentries)
+            self._features = features
+            self._names = set([entry.name for entry in self._aentries + self._bentries])
     
     def parse(self, filename):
         parsing = ElementTree()

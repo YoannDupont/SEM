@@ -155,6 +155,12 @@ _latest_changes = [
                     ],
                     [u"another GUI created for annotating documents.", []],
                     [u"updated manual",[]],
+                    [u"more thorough tests",
+                        [
+                            u"tests for features",
+                            u"tests for modules",
+                        ]
+                    ],
                     [u"new module: __annotate__. allows to call python taggers",
                         [
                             u"python implementation of Wapiti labeling",

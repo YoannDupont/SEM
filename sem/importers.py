@@ -56,7 +56,12 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
         return from_url(filename, wikinews_format=wikinews_format)
     
     if filename.endswith(".xml"):
-        return sem_xml_file(filename)
+        xml = ET.parse(filename)
+        root_tag = xml.getroot().tag
+        if root_tag == "sem":
+            return sem_xml_file(filename)
+        elif root_tag == "GateDocument":
+            return gate_data(xml, os.path.basename(filename))
     
     no_ext, ext = os.path.splitext(filename)
     if (ext == ".ann" and os.path.exists(no_ext+".txt")) or (ext == ".txt" and os.path.exists(no_ext+".ann")):
@@ -229,5 +234,34 @@ def brat_file(filename, encoding="utf-8"):
             ub = int(ub)
             annotations.append(Tag(lb=lb, ub=ub, value=value))
     document.add_annotation(annotations)
+    
+    return document
+
+def gate_file(filename):
+    data = ET.parse(filename)
+    return gate_data(data, name=os.path.basename(filename))
+
+def gate_data(data, name=None):
+    document = Document(name or "__DOCUMENT__")
+    
+    textwithnodes = data.findall("TextWithNodes")[0]
+    annotation_sets = data.findall("AnnotationSet")
+    
+    text_parts = [textwithnodes.text or u""]
+    nodes = {}
+    for node in list(textwithnodes):
+        nodes[int(node.attrib["id"])] = sum([len(part) for part in text_parts])
+        text_parts.append(node.tail or u"")
+    document.content = u"".join(text_parts)
+    
+    annotations = []
+    for annotation_set in annotation_sets:
+        annotation_name = annotation_set.attrib["Name"]
+        sem_annotation = Annotation(annotation_name)
+        for annotation in annotation_set:
+            lb = nodes[int(annotation.attrib["StartNode"])]
+            ub = nodes[int(annotation.attrib["EndNode"])]
+            sem_annotation.append(Tag(lb, ub, annotation.attrib["Type"]))
+        document.add_annotation(sem_annotation)
     
     return document

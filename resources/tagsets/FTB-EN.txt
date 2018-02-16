@@ -1,0 +1,7 @@
+Location
+Organization
+Person
+Company
+POI
+FictionCharacter
+Product

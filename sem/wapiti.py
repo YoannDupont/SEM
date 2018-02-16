@@ -43,6 +43,8 @@ from sem.logger import default_handler
 
 from sem import SEM_HOME, SEM_EXT_DIR
 
+from sem.misc import check_model_available
+
 wapiti_logger = logging.getLogger("sem.wapiti")
 wapiti_logger.addHandler(default_handler)
 wapiti_logger.setLevel("INFO")
@@ -130,13 +132,7 @@ def label_document(document, model, field, encoding, annotation_name=None, annot
     if annotation_name is None:
         annotation_name = unicode(field)
     
-    if not os.path.exists(model):
-        if os.path.exists(model + ".tar.gz"):
-            wapiti_logger.info("Model not extracted, extracting %s" %(os.path.normpath(model + ".tar.gz")))
-            with tarfile.open(model + ".tar.gz", "r:gz") as tar:
-                tar.extractall(os.path.dirname(model))
-        else:
-            raise IOError("Cannot find wapiti model file: %s" %model)
+    check_model_available(model, logger=wapiti_logger)
     
     corpus_unicode = document.corpus.unicode(fields).encode(encoding)
     

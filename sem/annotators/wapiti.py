@@ -41,13 +41,17 @@ from . import Annotator as RootAnnotator
 from sem.logger import default_handler
 from sem.CRF.model import Model as WapitiModel
 
-wapiti_logger = logging.getLogger("sem.wapiti")
+from sem.misc import check_model_available
+
+wapiti_logger = logging.getLogger("sem.annotators.wapiti")
 wapiti_logger.addHandler(default_handler)
 wapiti_logger.setLevel("INFO")
 
 class Annotator(RootAnnotator):
     def __init__(self, field, location, input_encoding=None, *args, **kwargs):
         super(Annotator, self).__init__(field, location, input_encoding=input_encoding, *args, **kwargs)
+        
+        check_model_available(self._location, logger=wapiti_logger)
         
         self._model = WapitiModel.from_wapiti_model(self._location, encoding=input_encoding)
 

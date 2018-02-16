@@ -69,6 +69,9 @@ class Tag(Span):
             self.levels[i] = ""
     
     def getValue(self):
+        if self.levels == []:
+            return self.value
+        
         values = []
         do_it = True
         i = -1

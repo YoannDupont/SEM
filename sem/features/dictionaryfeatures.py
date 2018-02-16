@@ -64,7 +64,7 @@ class TokenDictionaryFeature(DictionaryFeature):
         if self._path is not None:
             try:
                 self._value = pickle.load(open(self._path))
-            except (pickle.UnpicklingError, ImportError, EOFError):
+            except (pickle.UnpicklingError, ImportError, EOFError, IndexError):
                 self._value = compile_token(self._path, "utf-8")
             self._entries = None
         elif self._entries is not None:

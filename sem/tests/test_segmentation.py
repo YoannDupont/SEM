@@ -54,7 +54,7 @@ class TestSegmentation(unittest.TestCase):
         spaceless_content = content.replace("\r","").replace("\n","").replace(" ", "")
         
         self.assertEquals(token_content, spaceless_content) # no lost content
-        self.assertEquals(token_conll, conll)               # same segmentation
+        self.assertEquals(token_conll, conll) # same segmentation
     
     def test_en(self):
         tokeniser = EnglishTokeniser()

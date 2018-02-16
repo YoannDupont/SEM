@@ -40,7 +40,7 @@ from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
 from sem.logger               import default_handler, file_handler
 
-annotate_logger = logging.getLogger("sem.modules.annotate")
+annotate_logger = logging.getLogger("sem.wapiti_label")
 annotate_logger.addHandler(default_handler)
 
 class SEMModule(RootModule):

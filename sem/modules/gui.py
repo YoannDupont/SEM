@@ -64,7 +64,6 @@ class SemTkMainWindow(ttk.Frame):
         ttk.Frame.__init__(self, root)
         
         self.resource_dir = resource_dir
-        self.loaded_master = {}
         
         self.current_files = None
         self.current_output = os.path.join(sem.SEM_DATA_DIR, "outputs")
@@ -121,14 +120,8 @@ class SemTkMainWindow(ttk.Frame):
             os.makedirs(output_dir)
         
         try:
-            print "="*64
             export_format = self.export_format_selector.export_format()
-            if masterfile in self.loaded_master:
-                pipeline, workflow_options, exporter, couples = self.loaded_master[masterfile]
-            else:
-                self.loaded_master.clear()
-                pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
-                self.loaded_master[masterfile] = [pipeline, workflow_options, exporter, couples]
+            pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
             for current_file in current_files:
                 args = Holder(**{"infile":current_file, "output_directory":output_dir, "pipeline":pipeline, "options":workflow_options, "exporter":exporter, "couples":couples})
                 tagger(args)

@@ -77,7 +77,7 @@ def load_master(master, force_format="default"):
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
     
-    if (options.get("log_file",None) is not None):
+    if (options.get("log_file", None) is not None):
         sem_tagger_logger.addHandler(file_handler(options["log_file"]))
     sem_tagger_logger.setLevel(options.get("log_level", options.get("level", "WARNING")))
     
@@ -161,7 +161,7 @@ def main(args):
     
     sem_tagger_logger.info("Reading %s" %(infile))
     
-    if isinstance(infile,Document):
+    if isinstance(infile, Document):
         document = infile
     else:
         file_shortname, _ = os.path.splitext(os.path.basename(infile))

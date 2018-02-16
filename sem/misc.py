@@ -31,6 +31,8 @@ SOFTWARE.
 """
 
 import re
+import os.path
+import tarfile
 
 def ranges_to_set(ranges, length, include_zero=False):
     """
@@ -98,3 +100,13 @@ def correct_pos_tags(tags):
 def is_relative_path(s):
     tmp = s.replace(u"\\", u"/")
     return tmp.startswith(u"../") or tmp.startswith(u"~/") or tmp.startswith(u"./")
+
+def check_model_available(model, logger=None):
+    if not os.path.exists(model):
+        if os.path.exists(model + ".tar.gz"):
+            if logger is not None:
+                logger.info("Model not extracted, extracting %s" %(os.path.normpath(model + ".tar.gz")))
+            with tarfile.open(model + ".tar.gz", "r:gz") as tar:
+                tar.extractall(os.path.dirname(model))
+        else:
+            raise IOError("Cannot find model file: %s" %model)
