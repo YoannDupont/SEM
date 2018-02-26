@@ -93,31 +93,40 @@ class Exporter(DefaultExporter):
         # The text with anchors
         textWithNodes = ET.SubElement(gateDocument, "TextWithNodes")
         content = document.content
-        annotations = document.annotation(couples["ner"]).get_reference_annotations()
-        boundaries = set()
-        for annotation in annotations:
-            boundaries.add(annotation.lb)
-            boundaries.add(annotation.ub)
-        boundaries = sorted(boundaries)
-        textWithNodes.text = content[ : boundaries[0]]
-        for nth, boundary in enumerate(boundaries[:-1]):
-            node = ET.SubElement(textWithNodes, "Node")
-            node.set("id", str(boundary))
-            node.tail = content[boundary : boundaries[nth+1]]
-            previous = boundary
-        node = ET.SubElement(textWithNodes, "Node")
-        node.set("id", str(boundaries[-1]))
-        node.tail = content[boundaries[-1] : len(content)]
+        if "ner" in couples:
+            annotations = document.annotation(couples["ner"]).get_reference_annotations()
+            boundaries = set()
+            for annotation in annotations:
+                boundaries.add(annotation.lb)
+                boundaries.add(annotation.ub)
+            boundaries = sorted(boundaries)
+        else:
+            annotations = []
+            boundaries = []
         
-        id = 1
-        typeAnnotationSet = ET.SubElement(gateDocument, "AnnotationSet")
-        typeAnnotationSet.set("Name", "NER")
-        for annot in annotations:
-            annotation = ET.SubElement(typeAnnotationSet, "Annotation")
-            annotation.set("Id", str(id))
-            annotation.set("Type", annot.value)
-            annotation.set("StartNode", str(annot.lb))
-            annotation.set("EndNode", str(annot.ub))
-            id += 1
+        if boundaries != []:
+            textWithNodes.text = content[ : boundaries[0]]
+            for nth, boundary in enumerate(boundaries[:-1]):
+                node = ET.SubElement(textWithNodes, "Node")
+                node.set("id", str(boundary))
+                node.tail = content[boundary : boundaries[nth+1]]
+                previous = boundary
+            node = ET.SubElement(textWithNodes, "Node")
+            node.set("id", str(boundaries[-1]))
+            node.tail = content[boundaries[-1] : len(content)]
+        else:
+            textWithNodes.text = content
+        
+        if annotations != []:
+            id = 1
+            typeAnnotationSet = ET.SubElement(gateDocument, "AnnotationSet")
+            typeAnnotationSet.set("Name", "NER")
+            for annot in annotations:
+                annotation = ET.SubElement(typeAnnotationSet, "Annotation")
+                annotation.set("Id", str(id))
+                annotation.set("Type", annot.value)
+                annotation.set("StartNode", str(annot.lb))
+                annotation.set("EndNode", str(annot.ub))
+                id += 1
         
         return gateDocument

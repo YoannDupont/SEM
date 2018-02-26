@@ -110,3 +110,59 @@ def check_model_available(model, logger=None):
                 tar.extractall(os.path.dirname(model))
         else:
             raise IOError("Cannot find model file: %s" %model)
+
+def strip_html(html, keep_offsets=False):
+    hs = re.compile(u"<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL)
+    paragraphs = re.compile(u"<p.*?>.+?</p>", re.M + re.U + re.DOTALL)
+    # div_beg = re.compile(u"<div.*?>", re.M + re.U + re.DOTALL)
+    # div_end = re.compile(u"</div>", re.M + re.U + re.DOTALL)
+    # lis = re.compile(u"<li.*?>.+?</div>", re.M + re.U + re.DOTALL)
+    
+    parts = []
+    s_e = []
+    for finding in hs.finditer(html):
+        s_e.append([finding.start(), finding.end()])
+    for finding in paragraphs.finditer(html):
+        s_e.append([finding.start(), finding.end()])
+    s_e.sort(key=lambda x: (x[0], -x[1]))
+    ref = s_e[0]
+    i = 1
+    while i < len(s_e):
+        if ref[0] <= s_e[i][0] and s_e[i][1] <= ref[1]:
+            del s_e[i]
+            i -= 1
+        elif ref[1] <= s_e[i][0]:
+            ref = s_e[i]
+        i += 1
+
+    if keep_offsets:
+        non_space = re.compile("[^ \n\r]")
+        parts.append(u" " * s_e[0][0])
+    else:
+        non_space = re.compile("[^ \n\r]+")
+    for i in range(len(s_e)):
+        if i > 0:
+            parts.append(non_space.sub(u" ", html[s_e[i-1][1] : s_e[i][0]]))
+        parts.append(html[s_e[i][0] : s_e[i][1]])
+    stripped_html = u"".join(parts)
+    
+    tag = re.compile("<.+?>", re.U + re.M + re.DOTALL)
+    if keep_offsets:
+        def repl(m):
+            return u" " * (m.end() - m.start())
+    else:
+        repl = u""
+    
+    if keep_offsets:
+        stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", u"      ").replace(u"&#160;", u"      ")
+    else:
+        stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", u" ").replace(u"&#160;", u" ")
+    
+    return stripped_html
+
+def str2bool(s):
+    s = s.lower()
+    res = {"yes":True,"y":True,"true":True, "no":False,"n":False,"false":False}.get(s, None)
+    if res is None:
+        raise ValueError(u'Cannot convert to boolean: "%s"' %s)
+    return res

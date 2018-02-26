@@ -39,6 +39,8 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 
+import sem.misc
+
 from sem.tokenisers           import get_tokeniser
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
@@ -84,7 +86,9 @@ class SEMModule(RootModule):
 
         segmentation_logger.debug(u'segmenting "%s" content', document.name)
 
-        content         = document.content
+        content = document.content
+        if document.metadata("MIME") == "text/html":
+            content = sem.misc.strip_html(content, keep_offsets=True)
         token_spans     = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
         sentence_spans  = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
         paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
@@ -147,8 +151,3 @@ parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WA
                     help="Increase log level (default: %(default)s)")
 parser.add_argument("--log-file", dest="log_file",
                     help="The name of the log file")
-
-#args = parser.parse_args()
-#main(args)
-#
-#sys.exit(0)

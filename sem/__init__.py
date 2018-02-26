@@ -56,7 +56,7 @@ On a more NLP side, such changes could also include a change in corpora used in 
 If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
 """
 
-_version_minor = 0
+_version_minor = 1
 u"""
 The minor version number.
 Is only incremented when medium changes are made to the program.
@@ -77,7 +77,7 @@ _main_features = [
                         [
                             u'on Linux: double-clic on sem_gui.sh',
                             u'on Windows: double-clic on sem_gui.bat',
-                            u'from temrinal: run ```python -m sem gui```',
+                            u'from terminal: run ```python -m sem gui```',
                         ]
                     ],
                     [u"segmentation",
@@ -113,6 +113,17 @@ _main_features = [
                   ]
 
 _first_steps = [
+                    [u"Install setuptools",
+                        [
+                            u"If pip is installed: run ```pip install setuptools```",
+                            u"Otherwise: run (Ubuntu) ```apt-get install python-setuptools```"
+                        ],
+                    ],
+                    [u"Install Tkinter (optional)",
+                        [
+                            u"run (Ubuntu): ```apt-get install python-tk```"
+                        ],
+                    ],
                     [u"install SEM",
                         [
                             u"run ```python setup.py install --user``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```",
@@ -136,52 +147,19 @@ _external_resources = [
                         [u"NER annotated French Treebank by [Sagot et al. (2012)](https://halshs.archives-ouvertes.fr/file/index/docid/703108/filename/taln12ftbne.pdf): corpus used for NER.", []],
                         [u"[Lexique des Formes Fléchies du Français (LeFFF)](http://alpage.inria.fr/~sagot/lefff.html) by [Clément et al. (2004)](http://www.labri.fr/perso/clement/lefff/public/lrec04ClementLangSagot-1.0.pdf): french lexicon of inflected forms with various informations, such as their POS tag and lemmatization.", []],
                         [u"[Wapiti](http://wapiti.limsi.fr) by [Lavergne et al. (2010)](http://www.aclweb.org/anthology/P10-1052): linear-chain CRF library.", []],
+                        [u"[setuptools](https://pypi.python.org/pypi/setuptools): to install SEM.", []],
+                        [u"[Tkinter](https://wiki.python.org/moin/TkInter): for GUI modules (they will not be installed if Tkinter is not present).", []],
                         [u"Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.", []],
                         [u"Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.", []],
                         [u"GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.", []]
                       ]
 
-_latest_changes = [
-                    [u"improved SEM architecture.",[]],
-                    [u"SEM can now be installed.",
-                        [
-                            u"run ```python setup.py install --user```",
-                            u"will compile Wapiti",
-                            u"will create a sem_data folder in current user"
-                        ],
-                    ],
-                    [u"imrpoved GUI",
-                        [u"SEM can now train a Wapiti model using annotated files."]
-                    ],
-                    [u"another GUI created for annotating documents.", []],
-                    [u"updated manual",[]],
-                    [u"more thorough tests",
-                        [
-                            u"tests for features",
-                            u"tests for modules",
-                        ]
-                    ],
-                    [u"new module: __annotate__. allows to call python taggers",
-                        [
-                            u"python implementation of Wapiti labeling",
-                            u"lexica-based tagger"
-                        ]
-                    ],
-                  ]
-
 _planned_changes = [
                         [u"Add a tutorial.", []],
-                        [u"redo triggered features and sequence features.", []],
                         [u"add lemmatiser.", []],
-                        [u"migration to python3 ? (already made for revision 39 by lerela).", []],
+                        [u"migration to python3 (already made for revision 39 by lerela).", []],
                         [u"translate manual in English.", []],
                         [u'have more unit tests', []],
-                        [u'handle HTML input files for tagger module',
-                            [
-                                "create specific tokeniser",
-                                "need to handles cases such as words cut by a HTML tag"
-                            ]
-                        ],
                         [
                             "improve segmentation",
                             [
@@ -192,16 +170,34 @@ _planned_changes = [
                    ]
 
 _references = [
-                [u"[TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)", ["Chunking"]],
+                [u'[DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)',
+                    [
+                        u"Online interface"
+                    ]
+                ],
+                [u'(best RECITAL paper award) [DUPONT, Yoann. Exploration de traits pour la reconnaissance d’entités nommées du Français par apprentissage automatique. RECITAL, 2017, p. 42.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)',
+                    [
+                        u"Named Entity Recognition (new, please use this one)"
+                    ]
+                ],
+                [u"[TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)",
+                    [
+                        "Chunking"
+                    ]
+                ],
                 [u"[TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)",
                     [
                         u"Part-Of-Speech Tagging",
                         u"chunking"
                     ]
                 ],
-                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)", ["Named Entity Recognition"]]
-                #[u"[]()", [""]],
-              ]
+                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)",
+                    [
+                        u"Named Entity Recognition (old, please do not use)"
+                    ]
+                ],
+                #[u'[]()', ['']],
+]
 
 def name():
     return _name
@@ -233,11 +229,8 @@ def informations():
 ## External resources used by SEM
 %s
 
-## Latest changes (2.5.4 > %s)
-%s
-
-## Planned changes (no priority)
+## Planned changes (for latest changes, see changelog.md)
 %s
 
 ## SEM references (with task[s] of interest)
-%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), version(), make_md(_latest_changes), make_md(_planned_changes), make_md(_references))
+%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), make_md(_planned_changes), make_md(_references))

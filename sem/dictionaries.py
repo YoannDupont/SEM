@@ -56,6 +56,12 @@ def compile_multiword(infile, encoding):
 def compile_map(infile, encoding):
     out_map = {}
     for line in codecs.open(infile, "rU", encoding):
-        key,value = line.strip().split(u"\t")
-        out_map[key] = value
+        line = line.strip()
+        if line != "":
+            try:
+                key, value = line.split(u"\t")
+            except ValueError:
+                key = line
+                value = u""
+            out_map[key] = value
     return out_map

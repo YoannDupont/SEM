@@ -45,29 +45,41 @@ try:
 except ImportError:
     from html.parser import HTMLParser
 
+import sem.logger
+import sem.misc
 from sem.storage import Corpus
 from sem.storage import Document
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
 from sem.span import Span
 
-def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False):
+def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False, logger=None, strip_html=False, *args, **kwargs):
     if filename.startswith("http"):
-        return from_url(filename, wikinews_format=wikinews_format)
+        if logger is not None:
+            logger.info(u"detected format: HTML")
+        return from_url(filename, strip_html=strip_html, wikinews_format=wikinews_format)
     
     if filename.endswith(".xml"):
         xml = ET.parse(filename)
         root_tag = xml.getroot().tag
         if root_tag == "sem":
+            if logger is not None:
+                logger.info(u"detected format: SEM XML")
             return sem_xml_file(filename)
         elif root_tag == "GateDocument":
+            if logger is not None:
+                logger.info(u"detected format: GATE XML")
             return gate_data(xml, os.path.basename(filename))
     
     no_ext, ext = os.path.splitext(filename)
     if (ext == ".ann" and os.path.exists(no_ext+".txt")) or (ext == ".txt" and os.path.exists(no_ext+".ann")):
+        if logger is not None:
+            logger.info(u"detected format: BRAT")
         return brat_file(filename, encoding=encoding)
     
     if fields is not None and word_field is not None:
+        if logger is not None:
+            logger.info(u"No specific format found, defaulting to text format")
         return conll_file(filename, fields, word_field, encoding=encoding)
     
     # this should be the last: if everything fail, just load as text document
@@ -98,15 +110,17 @@ def conll_file(filename, fields, word_field, encoding="utf-8"):
     document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
     return document
 
-def from_url(url, wikinews_format=False):
+def from_url(url, strip_html=False, wikinews_format=False):
     url = url.strip()
     
     if url == u"": return None
     
+    strip_html |= wikinews_format # wikinews format is always stripped
+    
     charset = re.compile('charset="(.+?)"')
     escaped_url = u"".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
     #url = url.decode("iso-8859-1")
-    url = url.replace(":","")
+    #url = url.replace(":","")
     
     content = u""
     f = urllib.urlopen(escaped_url)
@@ -130,55 +144,33 @@ def from_url(url, wikinews_format=False):
     content = content.replace(u'\r', u'')
     content = content.replace(u'</p>', u'</p>\n\n')
     
-    hs = re.compile(u"<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL)
-    paragraphs = re.compile(u"<p.*?>.+?</p>", re.M + re.U + re.DOTALL)
-    div_beg = re.compile(u"<div.*?>", re.M + re.U + re.DOTALL)
-    div_end = re.compile(u"</div>", re.M + re.U + re.DOTALL)
-    lis = re.compile(u"<li.*?>.+?</div>", re.M + re.U + re.DOTALL)
+    if strip_html:
+        new_content = sem.misc.strip_html(content, keep_offsets=True)
+    else:
+        new_content = content
     
-    parts = []
-    s_e = []
-    for finding in hs.finditer(content):
-        s_e.append([finding.start(), finding.end()])
-    for finding in paragraphs.finditer(content):
-        s_e.append([finding.start(), finding.end()])
-    s_e.sort(key=lambda x: (x[0], -x[1]))
-    ref = s_e[0]
-    i = 1
-    while i < len(s_e):
-        if ref[0] <= s_e[i][0] and s_e[i][1] <= ref[1]:
-            del s_e[i]
-            i -= 1
-        elif ref[1] <= s_e[i][0]:
-            ref = s_e[i]
-        i += 1
-
-    non_space = re.compile("[^ \n\r]")
-    parts.append(u" " * s_e[0][0])
-    for i in range(len(s_e)):
-        if i > 0:
-            parts.append(non_space.sub(u" ", content[s_e[i-1][1] : s_e[i][0]]))
-        parts.append(content[s_e[i][0] : s_e[i][1]])
-    new_content = u"".join(parts)
+    if wikinews_format:
+        cleaned_content = new_content[ : content.index("<h2>")].strip()
+    else:
+        cleaned_content = new_content
     
-    tag = re.compile("<.+?>", re.U + re.M + re.DOTALL)
-    def repl(m):
-        return u" " * (m.end() - m.start())
+    if strip_html:
+        h = HTMLParser()
+        empty_line = re.compile("\n[ \t]+")
+        spaces = re.compile("[ \t]+")
+        newlines = re.compile("\n{2,}")
+        cleaned_content = h.unescape(cleaned_content)
+        cleaned_content = empty_line.sub(u"\n", cleaned_content)
+        cleaned_content = spaces.sub(u" ", cleaned_content)
+        cleaned_content = newlines.sub("\n\n", cleaned_content)
     
-    new_content = tag.sub(repl, new_content).replace("&nbsp;", u"      ").replace(u"&#160;", u"      ")
-    
-    spaces = re.compile(" +")
-    spaces_begin = re.compile("^ *", re.M)
-    spaces_end = re.compile(" *$", re.M)
-    newlines = re.compile("\n{2,}")
-    cleaned_content = (new_content[ : content.index("<h2>")].strip() if wikinews_format else content)
-    cleaned_content = cleaned_content.replace("\r", "")
-    cleaned_content = spaces.sub(u" ", cleaned_content)
+    spaces_begin = re.compile("^[ \t]+", re.M)
+    spaces_end = re.compile("[ \t]+$", re.M)
     cleaned_content = spaces_begin.sub("", cleaned_content)
     cleaned_content = spaces_end.sub("", cleaned_content)
-    cleaned_content = newlines.sub("\n\n", cleaned_content)
     
-    return Document(name=url, content=cleaned_content)
+    mime_type = ("text/plain" if strip_html else "text/html")
+    return Document(name=url, content=cleaned_content, original_content=content, mime_type=mime_type)
 
 def sem_xml_file(xml):
     if type(xml) in (str, unicode):
@@ -222,7 +214,7 @@ def brat_file(filename, encoding="utf-8"):
     if not (os.path.exists(txt_file) and os.path.exists(ann_file)):
         raise ValueError("missing either .ann or .txt file")
     
-    document = Document(txt_file, encoding=encoding)
+    document = Document(txt_file, encoding=encoding, mime_type="text/plain")
     document.content = codecs.open(txt_file, "rU", encoding).read().replace(u"\r", u"")
     annotations = Annotation("NER")
     for line in codecs.open(ann_file, "rU", encoding):
@@ -242,7 +234,7 @@ def gate_file(filename):
     return gate_data(data, name=os.path.basename(filename))
 
 def gate_data(data, name=None):
-    document = Document(name or "__DOCUMENT__")
+    document = Document(name or "__DOCUMENT__", mime_type="text/plain")
     
     textwithnodes = data.findall("TextWithNodes")[0]
     annotation_sets = data.findall("AnnotationSet")
@@ -265,3 +257,23 @@ def gate_data(data, name=None):
         document.add_annotation(sem_annotation)
     
     return document
+
+def json_data(data):
+    document = Document(data.get(u"name", u"_DOCUMENT_"), content=data.get(u"content", u""))
+    for key, value in data.get(u"metadatas", {}).items():
+        document.add_metadata(key, value)
+    
+    for segmentation_name in data.get(u"segmentations", {}):
+        d = data[u"segmentations"][segmentation_name]
+        spans = [Span(lb=span[u"s"], ub=0, length=span[u"l"]) for span in d[u"spans"]]
+        segmentation = Segmentation(segmentation_name, spans=spans, reference=d.get(u"reference", None))
+        document.add_segmentation(segmentation)
+    for segmentation in document.segmentations:
+        if segmentation.reference is not None:
+            segmentation.reference = document.segmentation(segmentation.reference)
+    
+    for annotation_name in data.get(u"annotations", {}):
+        d = data[u"annotations"][annotation_name]
+        annotations = [Tag(lb=annotation[u"s"], ub=0, length=annotation[u"l"], value=annotation[u"v"]) for annotation in d[u"annotations"]]
+        annotation = Annotation(annotation_name, reference=document.segmentation(d[u"reference"]), annotations=annotations)
+        document.add_annotation(annotation)

@@ -55,18 +55,20 @@ from sem.span                 import Span
 from sem.misc                 import correct_pos_tags
 
 class Document(Holder):
-    def __init__(self, name, content=None, encoding=None, lang=None, **kwargs):
+    def __init__(self, name, content=None, encoding=None, lang=None, mime_type=None, **kwargs):
         super(Document, self).__init__(**kwargs)
         self._name          = name
         self._content       = content
         self._segmentations = {}
         self._annotations   = {}
         self._corpus        = Corpus()
-        self._metadata      = {}
+        self._metadatas     = {}
         if encoding is not None:
-            self._metadata["encoding"] = encoding
+            self._metadatas["encoding"] = encoding
         if lang is not None:
-            self._metadata["lang"] = lang
+            self._metadatas["lang"] = lang
+        if mime_type is not None:
+            self._metadatas["MIME"] = mime_type
     
     @property
     def name(self):
@@ -91,6 +93,10 @@ class Document(Holder):
     @property
     def annotations(self):
         return self._annotations
+    
+    @property
+    def metadatas(self):
+        return self._metadatas
     
     @classmethod
     def from_file(cls, filename, encoding="utf-8"):
@@ -221,7 +227,16 @@ class Document(Holder):
         self._annotations[annotation.name]._document = self
     
     def annotation(self, name):
-        return self._annotations[name]
+        return self._annotations.get(name, None)
+    
+    def add_metadata(self, key, value):
+        self._metadatas[key] = value
+    
+    def metadata(self, name):
+        return self._metadatas.get(name, None)
+    
+    def mime_type(self):
+        return self.metadata("MIME")
     
     def write(self, f, depth=0, indent=4, add_header=False):
         if add_header:
@@ -229,7 +244,7 @@ class Document(Holder):
         f.write(u'%s<document name="%s">\n' %(depth*indent*" ", self.name))
         depth += 1
         f.write(u'%s<metadata' %(depth*indent*" "))
-        for metakey, metavalue in sorted(self._metadata.items()):
+        for metakey, metavalue in sorted(self._metadatas.items()):
             f.write(u' %s="%s"' %(metakey, metavalue))
         f.write(u' />\n')
         f.write(u'%s<content>%s</content>\n' %(depth*indent*" ", cgi.escape(self.content)))

@@ -22,8 +22,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-#from distutils.core import setup
-
 # setuptools
 from setuptools import setup, find_packages
 
@@ -31,13 +29,40 @@ import platform
 SYSTEM = platform.system().lower()
 ON_WINDOWS = (SYSTEM == "windows")
 
-
 import subprocess
 import tarfile
 import os.path
 import shutil
+import sys
 
 import sem
+
+#
+# Removing GUI features, whan tkinter is not installed.
+#
+
+tkinter_available = True
+try:
+    import Tkinter
+except ImportError:
+    try:
+        import tkinter
+    except ImportError:
+        tkinter_available = False
+
+packages = find_packages()
+
+if not tkinter_available:
+    module_dir = os.path.join("sem", "modules")
+    gui_files = [f for f in os.listdir(module_dir) if "gui" in f]
+    for gui_file in gui_files:
+        gui_path = os.path.join(module_dir, gui_file)
+        shutil.move(gui_path, os.path.join(".", "."+gui_file))
+    packages = [p for p in packages if "gui" not in p]
+
+#
+# compiling Wapiti
+#
 
 ext_dir = "./ext/"
 wapiti_tar = os.path.join(ext_dir, [f for f in os.listdir("./ext") if f.startswith("wapiti") and f.endswith("tar.gz")][0])
@@ -65,31 +90,49 @@ else:
     print wapiti_exec, "already exists, not compiling."
     print
 
-try:
-    shutil.rmtree(os.path.join(os.path.expanduser(u"~"), "sem_data"))
-except: # does not exist
-    pass
+#
+# preparing SEM data
+#
 
+# overriding SEM data, in a typical "wrong but easy" way as far as command-line is concerned.
+OVERRIDE_DATA_SWITCH = "--override-data"
+OVERRIDE_DATA = OVERRIDE_DATA_SWITCH in sys.argv
+if OVERRIDE_DATA:
+    sys.argv.remove(OVERRIDE_DATA_SWITCH)
+
+if OVERRIDE_DATA:
+    try:
+        shutil.rmtree(os.path.join(os.path.expanduser(u"~"), "sem_data"))
+    except: # does not exist
+        pass
+
+already_exists = False
 try:
     os.makedirs(os.path.join(os.path.expanduser(u"~"), "sem_data"))
 except: # already exists
-    pass
-try:
-    shutil.copytree("./resources", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources"))
-except:
-    pass
-try:
-    shutil.copytree("./images", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources", "images"))
-except:
-    pass
-try:
-    shutil.copytree("./ext", os.path.join(os.path.expanduser(u"~"), "sem_data", "ext"))
-except:
-    pass
-try:
-    shutil.copytree("./non-regression", os.path.join(os.path.expanduser(u"~"), "sem_data", "non-regression"))
-except:
-    pass
+    already_exists = True
+
+if not (OVERRIDE_DATA and already_exists):
+    try:
+        shutil.copytree("./resources", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources"))
+    except:
+        pass
+    try:
+        shutil.copytree("./images", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources", "images"))
+    except:
+        pass
+    try:
+        shutil.copytree("./ext", os.path.join(os.path.expanduser(u"~"), "sem_data", "ext"))
+    except:
+        pass
+    try:
+        shutil.copytree("./non-regression", os.path.join(os.path.expanduser(u"~"), "sem_data", "non-regression"))
+    except:
+        pass
+
+#
+# launching setup
+#
 
 setup(
     name="SEM",
@@ -111,3 +154,7 @@ setup(
         ]
     },
 )
+
+if not tkinter_available:
+    for gui_file in gui_files:
+        shutil.move(os.path.join(".", "."+gui_file), os.path.join(module_dir, gui_file))

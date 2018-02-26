@@ -30,7 +30,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs, logging, os, shutil
+import codecs
+import logging
+import os
+import shutil
+import ConfigParser
 
 try:
     from xml.etree import cElementTree as ET
@@ -53,22 +57,45 @@ import sem.modules.pipeline
 import sem.modules.export
 import sem.exporters
 import sem.exporters.conll
+import sem.importers
 import sem.misc
 
 sem_tagger_logger = logging.getLogger("sem.tagger")
 sem_tagger_logger.addHandler(default_handler)
+
+def get_option(cfg, section, option, default=None):
+    try:
+        return cfg.get(section, option)
+    except:
+        return default
+
+def get_section(cfg, section):
+    try:
+        return dict(cfg.items(section))
+    except ConfigParser.NoSectionError:
+        return {}
 
 def load_master(master, force_format="default"):
     tree = ET.parse(master)
     root = tree.getroot()
     xmlpipes, xmloptions = list(root)
     
-    options = {}
+    options = ConfigParser.RawConfigParser()
     exporter = None
     couples = {}
     for xmloption in xmloptions:
         if xmloption.tag != "export":
-            options.update(xmloption.attrib)
+            section = xmloption.tag
+            options.add_section(section)
+            attribs = {}
+            for key, val in xmloption.attrib.items():
+                key = key.replace(u"-", u"_")
+                try:
+                    attribs[key] = sem.misc.str2bool(val)
+                except ValueError:
+                    attribs[key] = val
+            for key, val in attribs.items():
+                options.set(section, key, val)
         else:
             couples = dict(xmloption.attrib.items())
             export_format = couples.pop("format")
@@ -77,9 +104,9 @@ def load_master(master, force_format="default"):
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
     
-    if (options.get("log_file", None) is not None):
-        sem_tagger_logger.addHandler(file_handler(options["log_file"]))
-    sem_tagger_logger.setLevel(options.get("log_level", options.get("level", "WARNING")))
+    if get_option(options, "log", "log_file") is not None:
+        sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
+    sem_tagger_logger.setLevel(get_option(options, "log", "level", "WARNING"))
     
     classes = {}
     pipes = []
@@ -97,9 +124,12 @@ def load_master(master, force_format="default"):
             elif sem.misc.is_relative_path(value):
                 value = os.path.abspath(os.path.join(os.path.dirname(master), value))
             arguments[key.replace(u"-", u"_")] = value
-        for key, value in options.items():
-            if key not in arguments:
-                arguments[key] = value
+        for section in options.sections():
+            for key, value in options.items(section):
+                if key not in arguments:
+                    arguments[key] = value
+                else:
+                    sem_tagger_logger.warn('Not adding already existing option: %s' %(key))
         sem_tagger_logger.info("loading %s" %xmlpipe.tag)
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes)
@@ -139,12 +169,12 @@ def main(args):
         options = args.options
         exporter = args.exporter
         couples = args.couples
-    
-        if (options.get("log_file",None) is not None):
-            sem_tagger_logger.addHandler(file_handler(options["log_file"]))
-        sem_tagger_logger.setLevel(options.get("log_level", "WARNING"))
     except AttributeError:
         pipeline, options, exporter, couples = load_master(args.master, force_format)
+    
+    if get_option(options, "log", "log_file") is not None:
+        sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
+    sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
     
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
@@ -152,8 +182,8 @@ def main(args):
     exports = {} # keeping track of already done exports
     
     nth = 1
-    ienc = options.get("input-encoding", "utf-8")
-    oenc = options.get("output-encoding", "utf-8")
+    ienc = get_option(options, "encoding", "input_encoding", "utf-8")
+    oenc = get_option(options, "encoding", "output_encoding", "utf-8")
     
     current_fields = None
     # the fields at the current state (depends on enrichments and
@@ -166,27 +196,34 @@ def main(args):
     else:
         file_shortname, _ = os.path.splitext(os.path.basename(infile))
         export_name = os.path.join(output_directory, file_shortname)
-        file_format = options.get("format", "text")
+        file_format = get_option(options, "file", "format", "guess")
+        opts = get_section(options, "file")
+        opts.update(get_section(options, "encoding"))
         if file_format == "text":
-            document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""))
+            document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
         elif file_format == "conll":
-            document = Document.from_conll(infile, options["fields"].split(u','), options["word_field"])
+            document = Document.from_conll(infile, **opts)
+        elif file_format == "guess":
+            document = sem.importers.load(infile, logger=sem_tagger_logger, **opts)
         else:
-            raise ValueError(u"unknown format: %s" %options["format"])
+            raise ValueError(u"unknown format: %s" %file_format)
     
     pipeline.process_document(document)
     
     if exporter is not None:
+        name = document.name
+        if u"/" in name:
+            name = name.rsplit(u"/", 1)[1]
         if exporter.extension() == "html":
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", "tabs.css"), output_directory)
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, "default.css"), output_directory)
+            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", get_option(options, "export", "lang", "tabs.css")), output_directory)
+            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, get_option(options, "export", "lang_style", "default.css")), output_directory)
         
         if exporter.extension() == "ann":
-            out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(document.name)[0], exporter.extension()))
-            with codecs.open(os.path.join(output_directory, document.name), "w", oenc) as O:
+            out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(name)[0], exporter.extension()))
+            with codecs.open(os.path.join(output_directory, name), "w", oenc) as O:
                 O.write(document.content)
         else:
-            out_path = os.path.join(output_directory, "%s.%s" %(document.name, exporter.extension()))
+            out_path = os.path.join(output_directory, "%s.%s" %(name, exporter.extension()))
         exporter.document_to_file(document, couples, out_path, encoding=oenc)
     
     laps = time.time() - start

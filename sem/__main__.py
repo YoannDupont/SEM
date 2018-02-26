@@ -50,19 +50,33 @@ def find_suggestions(operation, ids):
     suggestions = []
     for name in ids:
         shortest = (name if len(name) < len(operation) else operation)
-        longest  = (operation if shortest == name else name)
+        longest = (operation if shortest == name else name)
         if shortest in longest:
             suggestions.append(name)
     return suggestions
 
 def main(args=None):
+    def banter():
+        def username():
+            import os
+            return os.environ.get("USERNAME", os.environ.get("USER", os.path.split(os.path.expanduser(u"~"))[-1]))
+        import random
+        l = [
+            u"Do thou mockest me?",
+            u"Try again?",
+            u"I'm sorry %s, I'm afraid I can't do that." %username(),
+            u'The greatest trick this module ever pulled what convincing the users he did not exist.',
+            u"It's just a typo."
+        ]
+        random.shuffle(l)
+        return l[0]
+        
     modules = {}
     for element in os.listdir(os.path.join(sem.SEM_HOME, "modules")):
         m = element[:-3]
         if valid_module(element):
             modules[m] = sem.modules.get_package(m)
-    #modules   = [element[:-3] for element in os.listdir(os.path.join(sem.SEM_HOME, "modules")) if valid_module(element)]
-    name      = os.path.basename(sys.argv[0])
+    name = os.path.basename(sys.argv[0])
     operation = (sys.argv[1] if len(sys.argv) > 1 else "-h")
 
     if operation in modules:
@@ -96,7 +110,7 @@ def main(args=None):
             for suggestion in suggestions:
                 print "\t%s" %suggestion
         else:
-            print "No suggestions found... Try again?"
+            print "No suggestions found...", banter()
 
 if __name__ == "__main__":
     main()

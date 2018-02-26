@@ -31,6 +31,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from sem.misc import str2bool
+
 class Feature(object):
     def __init__(self, *args, **kwargs):
         self._is_boolean  = False
@@ -38,7 +40,7 @@ class Feature(object):
         self._name        = kwargs.pop("name", None)
         self._display     = kwargs.pop("display", "yes").lower()
         
-        self._display = {"yes":True,"y":True,"true":True, "no":False,"n":False,"false":False}[self._display]
+        self._display = str2bool(self._display)
     
     def __call__(self, *args, **kwargs):
         raise TypeError('Cannot call %s object' %self.__class__.__name__)

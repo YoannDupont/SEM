@@ -39,7 +39,13 @@ class Exporter(DefaultExporter):
         pass
     
     def document_to_unicode(self, document, couples, **kwargs):
-        if not couples or (len(couples)==1 and (couples.keys()[0].lower() in ["word", "token"])):
+        logger = kwargs.get("logger", None)
+        if len(document.corpus.fields) == 0:
+            if logger is not None:
+                logger.warn("No fields found for Corpus, cannot create string.")
+            return u""
+        
+        if not couples or (len(couples)==0) or (len(couples)==1 and (couples.keys()[0].lower() in ["word", "token"])):
             return unicode(document.corpus)
         else:
             lower  = {}

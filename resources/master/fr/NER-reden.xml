@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<master>
+    <pipeline>
+        <segmentation tokeniser="fr" />
+        <enrich informations="../../enrich/fr/pos.xml" mode="label" />
+        <wapiti_label model="../../models/fr/POS/plain" field="POS" />
+        <clean to-keep="word,POS" />
+        <enrich informations="../../enrich/fr/NER.xml" mode="label" />
+        <wapiti_label model="../../models/fr/NER/plain_NER" field="NER" />
+        <clean to-keep="word,POS,NER" />
+        <label_consistency field="NER" />
+        <map_annotations annotation_name="NER" mapping="../../dictionaries/fr/REDEN-NER-map" />
+    </pipeline>
+    
+    <options>
+        <encoding input-encoding="utf-8" output-encoding="utf-8" />
+        <file format="guess" strip-html="yes" wikinews-format="no" />
+        <log log_level="INFO"/>
+        <export format="tei_reden" NER="NER" lang="fr" lang_style="default-no_empty_span.css" />
+    </options>
+</master>

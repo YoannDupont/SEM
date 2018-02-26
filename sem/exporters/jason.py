@@ -55,7 +55,9 @@ class Exporter(DefaultExporter):
         """
         
         json_dict = {}
+        json_dict[u"name"] = document.name
         json_dict[u"content"] = document.content
+        json_dict[u"metadatas"] = document.metadatas
         
         json_dict[u"segmentations"] = {}
         refs = [seg.reference for seg in document.segmentations.values() if seg.reference]

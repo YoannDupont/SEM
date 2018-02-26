@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-file: tei.py
+file: tei_reden.py
 
-Description: export annotated file to a TEI format.
+Description: export annotated file to a REDEN TEI format.
 
-author: Nour El Houda Belhaouane and Yoann Dupont
+author: Yoann Dupont
 
 MIT License
 
-Copyright (c) 2018 Nour El Houda and Yoann Dupont
+Copyright (c) 2018 Yoann Dupont
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,7 @@ def add_tail(node, tail):
         br.tail = u"\n" + parts[1]
 
 class Exporter(DefaultExporter):
-    __ext = "tei.xml"
+    __ext = "reden.tei.xml"
     
     def __init__(self, *args, **kwargs):
         pass
@@ -68,20 +68,22 @@ class Exporter(DefaultExporter):
         raise NotImplementedError("corpus_to_unicode not implemented for TEI exporter.")
     
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
-        teiCorpus = self.document_to_data(document, couples=couples)
+        teiDocument = self.document_to_data(document, couples=couples)
         if type(output) in (str, unicode):
             with open(output, "w") as O:
                 O.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-                O.write(ET.tostring(teiCorpus, encoding="utf-8"))
-                #O.write(self.document_to_unicode(document, couples, encoding=encoding, **kwargs))
+                O.write(ET.tostring(teiDocument, encoding="utf-8"))
         else:
             output.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-            output.write(ET.tostring(teiCorpus, encoding="utf-8"))
+            output.write(ET.tostring(teiDocument, encoding="utf-8"))
     
     def document_to_data(self, document, couples, **kwargs):
-        teiCorpus = ET.Element("teiCorpus")
-        teiCorpus.set("xmlns","http://www.tei-c.org/ns/1.0")
-        teiHeader = ET.SubElement(teiCorpus,"teiHeader")
+        TEI = ET.Element("TEI")
+        TEI.set("xmlns","http://www.tei-c.org/ns/1.0")
+        lang = document.metadata("lang")
+        if lang is not None:
+            TEI.set("xml:lang", lang)
+        teiHeader = ET.SubElement(TEI,"teiHeader")
         fileDesc = ET.SubElement(teiHeader,"fileDesc")
         titleStmt = ET.SubElement(fileDesc,"titleStmt")
         title = ET.SubElement(titleStmt,"title")
@@ -96,9 +98,6 @@ class Exporter(DefaultExporter):
         publisher.text =""
         sourceDesc = ET.SubElement(fileDesc,"sourceDesc")
         sourceDesc.text =""
-        TEI = ET.SubElement(teiCorpus,"TEI")
-        teiHeader = ET.SubElement(TEI,"teiHeader")
-        teiHeader.text =""
         titleStmt = ET.SubElement(fileDesc,"titleStmt")
         title = ET.SubElement(titleStmt,"title")
         title.text =""
@@ -115,6 +114,7 @@ class Exporter(DefaultExporter):
 
         root = ET.SubElement(TEI,"text")
         body = ET.SubElement(root,"body")
+        div = ET.SubElement(body, "div")
         
         lower  = {}
         for field in couples:
@@ -131,63 +131,25 @@ class Exporter(DefaultExporter):
             raise ValueError("Could not determine the field to use for TEI export.")
         
         content = document.content
-        words = document.segmentation(u"tokens").get_reference_spans()
-        paragraphs = document.segmentation(u"paragraphs").get_reference_spans() or Span(0, len(content))
-        NEs = document.annotation(field)[:]
+        paragraphs = (document.segmentation(u"paragraphs").get_reference_spans() if document.segmentation(u"paragraphs") is not None else [Span(0, len(content))])
+        NEs = document.annotation(field).get_reference_annotations()
         values = set([entity.value for entity in NEs])
-        
-        for i in range(len(NEs)):
-            NEs[i].ub = words[NEs[i].ub-1].ub
-            NEs[i].lb = words[NEs[i].lb].lb
         
         nth = dict([(value,0) for value in values])
         for paragraph in paragraphs:
             entities = [entity for entity in NEs if entity.lb >= paragraph.lb and entity.ub <= paragraph.ub]
-            p = ET.SubElement(body,"p")
+            p = ET.SubElement(div,"p")
             start = paragraph.lb
             if len(entities) == 0:
                 p.text = content[paragraph.lb : paragraph.ub]
             else:
                 p.text = content[paragraph.lb : entities[0].lb]
-                for i,entity in enumerate(entities):
-                    nth[entity.value] += 1
-                    entity_start = ET.SubElement(p,"anchor",{"xml:id":"u-%s-%i-start" %(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitStart"})
-                    entity_start.tail = content[entity.lb : entity.ub]
-                    entity_end = ET.SubElement(p,"anchor",{"xml:id":"u-%s-%i-end" %(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitEnd"})
+                for i, entity in enumerate(entities):
+                    entity_xml = ET.SubElement(p, entity.value)
+                    entity_xml.text = content[entity.lb : entity.ub]
                     if i < len(entities)-1:
-                        entity_end.tail = content[entity.ub : entities[i+1].lb]
+                        entity_xml.tail = content[entity.ub : entities[i+1].lb]
                     else:
-                        entity_end.tail = content[entity.ub : paragraph.ub]
+                        entity_xml.tail = content[entity.ub : paragraph.ub]
         
-        back = ET.SubElement(root,"back")
-        for value in sorted(values):
-            spanGrp = ET.SubElement(back, "spanGrp")
-            spanGrp.set("type", "AnalecUnit")
-            spanGrp.set("n", value)
-            i = 0
-            for entity in [ent for ent in NEs if ent.value == value]:
-                i += 1
-                ET.SubElement(spanGrp, "span", {"xml:id":"u-%s-%i"%(value, i), "from":"#u-%s-%i-start"%(value, i), "to":"#u-%s-%i-end"%(value, i), "ana":"#u-%s-%i-fs"%(value, i)})
-        
-        fvLib = ET.SubElement(back,"fvLib")
-        fvLib.set("n","AnalecElementProperties")
-        nth = dict([(value,0) for value in values])
-        for i, entity in enumerate(NEs):
-            nth[entity.value] += 1
-            fs = ET.SubElement(fvLib,"fs",{"xml:id": "u-%s-%i-fs" %(entity.value, nth[entity.value])})
-            
-            """f = ET.SubElement(fs,"f")
-            f.set("name","REF")
-            ET.SubElement(f,"string")
-            
-            f = ET.SubElement(fs,"f")
-            f.set("name","CODE_SEM")
-            fstring = ET.SubElement(f,"string")
-            fstring.text = value
-            
-            f = ET.SubElement(fs,"f")
-            f.set("name","CATEGORIE")
-            fstring = ET.SubElement(f,"string")
-            fstring.text = value"""
-        
-        return teiCorpus
+        return TEI

@@ -105,7 +105,7 @@ class Exporter(DefaultExporter):
             parts.append(cgi.escape(content[annotation.lb : annotation.ub]).replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r"))
             parts.append(u'<span id="%s" title="%s">' %(annotation.value, annotation.value))
             last = annotation.lb
-        parts.append(cgi.escape(content[0:last]))
+        parts.append(cgi.escape(content[0:last]).replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r"))
         
         new_content = u"".join(parts[::-1])
         return new_content
