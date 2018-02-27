@@ -76,29 +76,31 @@ def get_section(cfg, section):
         return {}
 
 def load_master(master, force_format="default"):
-    tree = ET.parse(master)
-    root = tree.getroot()
+    try:
+        tree = ET.parse(master)
+        root = tree.getroot()
+    except IOError:
+        root = ET.fromstring(master)
     xmlpipes, xmloptions = list(root)
     
     options = ConfigParser.RawConfigParser()
     exporter = None
     couples = {}
     for xmloption in xmloptions:
-        if xmloption.tag != "export":
-            section = xmloption.tag
-            options.add_section(section)
-            attribs = {}
-            for key, val in xmloption.attrib.items():
-                key = key.replace(u"-", u"_")
-                try:
-                    attribs[key] = sem.misc.str2bool(val)
-                except ValueError:
-                    attribs[key] = val
-            for key, val in attribs.items():
-                options.set(section, key, val)
-        else:
-            couples = dict(xmloption.attrib.items())
-            export_format = couples.pop("format")
+        section = xmloption.tag
+        options.add_section(section)
+        attribs = {}
+        for key, val in xmloption.attrib.items():
+            key = key.replace(u"-", u"_")
+            try:
+                attribs[key] = sem.misc.str2bool(val)
+            except ValueError:
+                attribs[key] = val
+        for key, val in attribs.items():
+            options.set(section, key, val)
+        if xmloption.tag == "export":
+            couples = dict(options.items("export"))
+            export_format = couples["format"]
             if force_format is not None and force_format != "default":
                 sem_tagger_logger.info("using forced format: %s" %force_format)
                 export_format = force_format
@@ -125,6 +127,7 @@ def load_master(master, force_format="default"):
                 value = os.path.abspath(os.path.join(os.path.dirname(master), value))
             arguments[key.replace(u"-", u"_")] = value
         for section in options.sections():
+            if section == "export": continue
             for key, value in options.items(section):
                 if key not in arguments:
                     arguments[key] = value
@@ -214,13 +217,16 @@ def main(args):
         name = document.name
         if u"/" in name:
             name = name.rsplit(u"/", 1)[1]
-        if exporter.extension() == "html":
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", get_option(options, "export", "lang", "tabs.css")), output_directory)
+        if "html" in exporter.extension():
+            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", "tabs.css"), output_directory)
             shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, get_option(options, "export", "lang_style", "default.css")), output_directory)
         
         if exporter.extension() == "ann":
             out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(name)[0], exporter.extension()))
-            with codecs.open(os.path.join(output_directory, name), "w", oenc) as O:
+            filename = name
+            if not filename.endswith(".txt"):
+                filename += ".txt"
+            with codecs.open(os.path.join(output_directory, filename), "w", oenc) as O:
                 O.write(document.content)
         else:
             out_path = os.path.join(output_directory, "%s.%s" %(name, exporter.extension()))

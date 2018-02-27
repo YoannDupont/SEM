@@ -62,7 +62,7 @@ def add_tail(node, tail):
         br.tail = u"\n" + parts[1]
 
 class Exporter(DefaultExporter):
-    __ext = "tei.xml"
+    __ext = "analec.tei.xml"
     
     def __init__(self, *args, **kwargs):
         pass

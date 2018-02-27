@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## Unreleased
 
+## [SEM v3.1.1](https://github.com/YoannDupont/SEM/releases/tag/v3.1.1)
+### Changed
+- corrected a bug in exporters that would crash SEM
+- corrected a bug in tagger module that would copy the wrong CSS files for HTML exporters
+- corrected a bug where output file would not always have ".txt" extension when exporting to BRAT format
+- now all master files use a "guess" format
+- changed ```tei_np``` exporter extension to "analec.tei.xml"
+### Removed
+- removed ```master_parser.py``` and ```pipeline_factory.py``` as loading a master file is ensured by method ```load_master``` in ```tagger.py```.
+
 ## [SEM v3.1.0](https://github.com/YoannDupont/SEM/releases/tag/v3.1.0)
 ### Added
 - new module: ```map_annotations```. Modifies annotations' types given a mapping
@@ -45,5 +55,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
     - tests for modules
 
 ## changes compared to other versions:
-unrealeased: https://github.com/YoannDupont/SEM/compare/v3.1.0...HEAD
-3.1.0: https://github.com/YoannDupont/SEM/compare/v3.0.0...v3.1.0
+- unreleased: https://github.com/YoannDupont/SEM/compare/v3.1.1...HEAD
+- 3.1.1: https://github.com/YoannDupont/SEM/compare/v3.1.0...v3.1.1
+- 3.1.0: https://github.com/YoannDupont/SEM/compare/v3.0.0...v3.1.0

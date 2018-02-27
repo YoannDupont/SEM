@@ -51,7 +51,13 @@ class Exporter(DefaultExporter):
         for entry in couples:
             entry_names[entry.lower()] = couples[entry]
         
-        key = entry_names.get("ner", entry_names.get("chunking", entry_names.get("pos", None)))
+        key = entry_names.get("ner", None)
+        if key is None or document.annotation(key) is None:
+            key = entry_names.get("chunking", None)
+        if key is None or document.annotation(key) is None:
+            key = entry_names.get("pos", None)
+        if key is None or document.annotation(key) is None:
+            raise KeyError("Cannot find any annotation for export.")
         
         content = document.content[:]
         

@@ -9,6 +9,7 @@
     
     <options>
         <encoding input-encoding="utf-8" output-encoding="utf-8" />
+        <file format="guess" strip-html="yes" />
         <log log_level="INFO"/>
         <export format="html" pos="POS" lang="fr" lang_style="default.css" />
     </options>

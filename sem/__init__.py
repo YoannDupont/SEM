@@ -64,7 +64,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 0
+_version_patch = 1
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
