@@ -141,14 +141,16 @@ class Document(Holder):
         elif isinstance(data, type(ET.Element("a"))):
             root = data
         
-        if root.tag != "document":
-            raise ValueError
+        if root.tag == "sem":
+            root = list(root)[0]
+        elif root.tag != "document":
+            raise TypeError("Invalid XML document type for XML-SEM document: %s" %(root.tag))
         
         htmlparser = HTMLParser()
         document = Document(root.attrib.get("name", u"_DOCUMENT_"))
         for element in list(root):
             if element.tag == "metadata":
-                document.metadata = element.attrib
+                document._metadatas = element.attrib
             elif element.tag == "content":
                 document.content = htmlparser.unescape(element.text)
             elif element.tag == "segmentations":

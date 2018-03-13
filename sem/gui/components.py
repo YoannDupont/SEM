@@ -342,16 +342,19 @@ class SEMTkWapitiTrain(ttk.Frame):
         pattern_file = (pattern if pattern else os.path.join(output_dir, "pattern.txt"))
         model_file = os.path.join(output_dir, "model.txt")
         documents = []
+        for filename in self.file_selector.files():
+            document = sem.importers.load(filename, encoding="utf-8")
+            args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
+            document = tagger(args)
+            
+            document.set_reference("NER", "tokens", add_to_corpus=True)
+            if not any([document.name == d.name for d in documents]):
+                documents.append(document)
+        
         with codecs.open(train_file, "w", "utf-8") as O:
-            for filename in self.file_selector.files():
-                document = sem.importers.load(filename, encoding="utf-8")
-                args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
-                document = tagger(args)
-                
-                document.set_reference("NER", "tokens", add_to_corpus=True)
+            for document in documents:
                 O.write(unicode(document.corpus))
                 O.write(u"\n")
-                documents.append(document)
         
         if pattern:
             shutil.copy(pattern, output_dir)

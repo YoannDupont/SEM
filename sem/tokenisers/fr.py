@@ -41,7 +41,7 @@ class Tokeniser(DefaultTokeniser):
         super(Tokeniser, self).__init__()
         
         self._cls         = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))\b", re.U + re.I)
-        self._is_abn      = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\.?", re.U + re.I)
+        self._is_abn      = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\b\.?", re.U + re.I)
         self._abbrev      = re.compile(r"\b(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
         self._digit_valid = set(u"0123456789,.-")
         
@@ -107,6 +107,120 @@ class Tokeniser(DefaultTokeniser):
         bounds.append(Span(len(s), len(s)))
         
         return bounds
+    
+    def word_spans(self, content):
+        spaces = re.compile(u"\s+", re.U+re.M)
+
+        l = [match.span() for match in spaces.finditer(content)]
+        l1 = [(l[i][1],l[i+1][0]) for i in range(len(l)-1)]
+
+        if l[0][0] != 0:
+            l1.insert(0, (0, l[0][0]))
+        if l[-1][1] != len(content):
+            l1.append((l[-1][1], len(content)))
+        
+        word = re.compile(u"^[^\W\d]+$", re.U + re.M)
+        number_with_unit = re.compile(u"([0-9][^0-9,.])|([^0-9,.][0-9])")
+        atomic = re.compile(u"[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
+        comma_not_number = re.compile(u"(?<=[^0-9]),(?![0-9])", re.U + re.M)
+        apostrophe = re.compile(u"(?=['ʼ’])", re.U + re.M)
+        clitics = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))$", re.U + re.I)
+        i = 0
+        while i < len(l1):
+            span = l1[i]
+            text = content[span[0] : span[1]]
+            if len(text) == 1:
+                i += 1
+                continue
+            if word.match(text):
+                i += 1
+                continue
+            found = False
+            for forbidden in self._forbidden:
+                found = forbidden.match(text)
+                if found:
+                    i += 1
+                    break
+            if found:
+                continue
+            tmp = []
+            # atomic characters, they are always split
+            prev = span[0]
+            for find in atomic.finditer(text):
+                if prev != span[0]+find.start(): tmp.append((prev, span[0]+find.start()))
+                tmp.append((span[0]+find.start(), span[0]+find.end()))
+                prev = span[0]+find.end()
+            if tmp != []:
+                if prev != span[1]:
+                    tmp.append((prev, span[1]))
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            del tmp[:]
+            # commas
+            prev = span[0]
+            for find in comma_not_number.finditer(text):
+                tmp.extend([(prev, span[0]+find.start()), (span[0]+find.start(), span[0]+find.end())])
+                prev = span[0]+find.end()+1
+            if tmp != []:
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            del tmp[:]
+            # apostrophes
+            prev = span[0]
+            for find in apostrophe.finditer(text):
+                tmp.append((prev, span[0]+find.start()+1))
+                prev = span[0]+find.start()+1
+            if prev < span[1]:
+                tmp.append((prev, span[1]))
+            if len(tmp) > 1:
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            del tmp[:]
+            # clitics
+            prev = span[0]
+            for find in clitics.finditer(text):
+                tmp.append((prev, span[0]+find.start()))
+                prev = span[0]+find.start()
+            if tmp:
+                if tmp[0][0] == tmp[0][1]:
+                    del tmp[:]
+                else:
+                    tmp.append((prev, span[1]))
+            if len(tmp) > 1:
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            del tmp[:]
+            # number with unit
+            prev = span[0]
+            for find in number_with_unit.finditer(text):
+                tmp.append((prev, span[0]+find.start()+1))#, (span[0]+find.start(), span[1])])
+                prev = span[0]+find.start()+1
+            if tmp:
+                tmp.append((prev, span[1]))
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            del tmp[:]
+            # dots and ending commas
+            if text[-1] in u".,":
+                tmp = [(span[0], span[1]-1), (span[1]-1, span[1])]
+            if tmp:
+                del l1[i]
+                for t in reversed(tmp):
+                    l1.insert(i, t)
+                continue
+            i += 1
+
+        return [Span(s[0], s[1]) for s in l1]
     
     def sentence_bounds(self, content, token_spans):
         sent_bounds    = SpannedBounds()

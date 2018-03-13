@@ -65,7 +65,7 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
         if root_tag == "sem":
             if logger is not None:
                 logger.info(u"detected format: SEM XML")
-            return sem_xml_file(filename)
+            return Document.from_xml(xml)
         elif root_tag == "GateDocument":
             if logger is not None:
                 logger.info(u"detected format: GATE XML")
@@ -171,41 +171,6 @@ def from_url(url, strip_html=False, wikinews_format=False):
     
     mime_type = ("text/plain" if strip_html else "text/html")
     return Document(name=url, content=cleaned_content, original_content=content, mime_type=mime_type)
-
-def sem_xml_file(xml):
-    if type(xml) in (str, unicode):
-        data = ET.parse(xml)
-    elif isinstance(xml, ET.Tree):
-        data = xml
-    else:
-        raise TypeError("Invalid type for loading XML-SEM document: %s" %(type(xml)))
-    
-    htmlparser = HTMLParser()
-    root = data.getroot()
-    document = Document(root.attrib.get("name", u"_DOCUMENT_"))
-    for element in list(root):
-        if element.tag == "metadata":
-            document.metadata = element.attrib
-        elif element.tag == "content":
-            document.content = htmlparser.unescape(element.text)
-        elif element.tag == "segmentations":
-            for segmentation in list(element):
-                spans = [Span(lb=int(span.attrib.get("start", span.attrib["s"])), ub=0, length=int(span.attrib.get("length", span.attrib["l"]))) for span in list(segmentation)]
-                reference = segmentation.get(u"reference", None)
-                if reference:
-                    reference = document.segmentation(reference)
-                document.add_segmentation(Segmentation(segmentation.attrib[u"name"], spans=spans, reference=reference))
-        elif element.tag == "annotations":
-            for annotation in list(element):
-                tags = [Tag(lb=int(tag.attrib.get("start", tag.attrib["s"])), ub=0, length=int(tag.attrib.get("length", tag.attrib["l"])), value=tag.attrib.get(u"value",tag.attrib[u"v"])) for tag in list(annotation)]
-                reference = annotation.get(u"reference", None)
-                if reference:
-                    reference = document.segmentation(reference)
-                annotation = Annotation(annotation.attrib[u"name"], reference=reference)
-                annotation.annotations = tags
-                document.add_annotation(annotation)
-    
-    return document
 
 def brat_file(filename, encoding="utf-8"):
     no_ext, ext = os.path.splitext(filename)

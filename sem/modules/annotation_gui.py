@@ -51,7 +51,7 @@ import sem
 from sem.storage.document import Document, SEMCorpus
 from sem.storage.annotation import Tag, Annotation
 from sem.logger import extended_handler
-from sem.importers import from_url
+import sem.importers
 from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder
 
 annotate_logger = logging.getLogger("sem.annotate")
@@ -322,13 +322,13 @@ class AnnotationTool(tk.Frame):
         
         documents = []
         for filename in filenames:
-            if filename.endswith(".txt"):
-                documents.append(Document.from_file(filename, encoding="utf-8"))
-            elif filename.endswith(".sem.xml") or filename.endswith(".sem"):
+            if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
                     documents.append(Document.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True))
                 except:
                     documents.extend(SEMCorpus.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True).documents)
+            else:
+                documents.append(sem.importers.load(filename, encoding="utf-8"))
         
         if documents == []: return
         
@@ -357,7 +357,7 @@ class AnnotationTool(tk.Frame):
             self.url.set("")
             toplevel.destroy()
         def ok(event=None):
-            document = from_url(self.url.get(), wikinews_format=True)
+            document = sem.importers.from_url(self.url.get(), wikinews_format=True)
             if document is None: return
         
             added = self.add_document(document)

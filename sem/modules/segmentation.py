@@ -89,8 +89,11 @@ class SEMModule(RootModule):
         content = document.content
         if document.metadata("MIME") == "text/html":
             content = sem.misc.strip_html(content, keep_offsets=True)
-        token_spans     = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
-        sentence_spans  = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
+        try:
+            token_spans = current_tokeniser.word_spans(content)
+        except NotImplementedError:
+            token_spans = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
+        sentence_spans = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
         paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
 
         segmentation_logger.info('segmented "%s" in %i sentences, %i tokens' %(document.name, len(sentence_spans), len(token_spans)))
@@ -110,7 +113,7 @@ def main(args):
     
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
-    segmenter = SEMModule(args.tokeniser_name)
+    segmenter = SEMModule(args.tokeniser_name, log_level=args.log_level)
     document = Document(os.path.basename(args.infile), content=codecs.open(args.infile, "rU", ienc).read().replace(u"\r", u""))
     segmenter.process_document(document, log_level=args.log_level)
     tokens_spans = document.segmentation("tokens")

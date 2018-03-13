@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## Unreleased
 
+## [SEM v3.1.2](https://github.com/YoannDupont/SEM/releases/tag/v3.1.2)
+### Added
+- Added method "word_spans" in tokenizers to directly produce word spans without first creating "non-word spans"
+### Changed
+- setup will now ask if user want to remove sem_data folder. If not, it will check for missing files
+- corrected a bug in metadata handling in Document
+- changed file format handling in module ```annotation_gui```
+
 ## [SEM v3.1.1](https://github.com/YoannDupont/SEM/releases/tag/v3.1.1)
 ### Changed
 - corrected a bug in exporters that would crash SEM

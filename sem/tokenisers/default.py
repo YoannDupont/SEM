@@ -61,6 +61,19 @@ class Tokeniser(object):
         
         return bounds
     
+    def word_spans(self, content):
+        spaces = re.compile(u"\s+", re.U+re.M)
+
+        l = [match.span() for match in spaces.finditer(content)]
+        l1 = [(l[i][1],l[i+1][0]) for i in range(len(l)-1)]
+
+        if l[0][0] != 0:
+            l1.insert(0, (0, l[0][0]))
+        if l[-1][1] != len(content):
+            l1.append((l[-1][1], len(content)))
+        
+        return [Span(span[0], span[1]) for span in l1]
+    
     def sentence_bounds(self, content, token_spans):
         """
         Returns a list of bounds matching sentences.
