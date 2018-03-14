@@ -192,6 +192,7 @@ def brat_file(filename, encoding="utf-8"):
                 lb = int(lb)
                 ub = int(ub)
                 annotations.append(Tag(lb=lb, ub=ub, value=value))
+    annotations.sort()
     document.add_annotation(annotations)
     
     return document

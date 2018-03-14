@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ### Changed
 - corrected setup: when missing resource file is directory, use copy_tree
 - BRAT importer: handling multiple annotations at the same span
+- BRAT importer: sorting annotations
 
 ## [SEM v3.1.2](https://github.com/YoannDupont/SEM/releases/tag/v3.1.2)
 ### Added
@@ -66,6 +67,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
     - tests for modules
 
 ## changes compared to other versions:
-- unreleased: https://github.com/YoannDupont/SEM/compare/v3.1.1...HEAD
+- unreleased: https://github.com/YoannDupont/SEM/compare/v3.1.2...HEAD
+- 3.1.2: https://github.com/YoannDupont/SEM/compare/v3.1.1...3.1.2
 - 3.1.1: https://github.com/YoannDupont/SEM/compare/v3.1.0...v3.1.1
 - 3.1.0: https://github.com/YoannDupont/SEM/compare/v3.0.0...v3.1.0
