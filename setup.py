@@ -49,9 +49,9 @@ def diff_files(dcmp):
     return acc
 
 try:
-	prompt = raw_input
+    prompt = raw_input
 except NameError:
-	prompt = input
+    prompt = input
 validity = {"y":True, "ye":True, "yes":True, "n":False, "no":False}
 
 import sem
@@ -118,8 +118,8 @@ usr_sem_data = os.path.join(os.path.expanduser(u"~"), "sem_data")
 already_exists = os.path.exists(usr_sem_data)
 override = False
 if already_exists:
-	answer = prompt("\nsem_data already exists, override? [y/N] ").lower()
-	override = validity.get(answer, False)
+    answer = prompt("\nsem_data already exists, override? [y/N] ").lower()
+    override = validity.get(answer, False)
 
 if override:
     try:
@@ -150,18 +150,21 @@ if override or not already_exists:
     except:
         pass
 else:
-	# even if sem_data already exists, there may be some new files
-	# the user would like to have.
-	missing = diff_files(dircmp(os.path.join(usr_sem_data, "resources"), 'resources'))
-	if missing:
-		print "\nThe following files are missing:"
-		print u"\t"+u" ".join(missing)
-		answer = prompt("add missing files? [Y/n] ").lower()
-		add_missing = validity.get(answer, True)
-		if add_missing:
-			for filename in missing:
-				dest = os.path.join(usr_sem_data, filename)
-				shutil.copy(filename, dest)
+    # even if sem_data already exists, there may be some new files
+    # the user would like to have.
+    missing = diff_files(dircmp(os.path.join(usr_sem_data, "resources"), 'resources'))
+    if missing:
+        print "\nThe following files are missing:"
+        print u"\t"+u" ".join(missing)
+        answer = prompt("add missing files? [Y/n] ").lower()
+        add_missing = validity.get(answer, True)
+        if add_missing:
+            for filename in missing:
+                dest = os.path.join(usr_sem_data, filename)
+                if os.path.isdir(filename):
+                    shutil.copytree(filename, dest)
+                else:
+                    shutil.copy(filename, dest)
 
 #
 # launching setup

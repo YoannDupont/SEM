@@ -186,10 +186,12 @@ def brat_file(filename, encoding="utf-8"):
         line = line.strip()
         if line != u"" and line.startswith(u'T'):
             parts = line.split(u"\t")
-            value, lb, ub = parts[1].split()
-            lb = int(lb)
-            ub = int(ub)
-            annotations.append(Tag(lb=lb, ub=ub, value=value))
+            value, bounds = parts[1].split(" ", 1)
+            for bound in bounds.split(";"):
+                lb, ub = bound.split()
+                lb = int(lb)
+                ub = int(ub)
+                annotations.append(Tag(lb=lb, ub=ub, value=value))
     document.add_annotation(annotations)
     
     return document

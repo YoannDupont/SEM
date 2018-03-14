@@ -4,6 +4,9 @@ All notable changes to SEM will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- corrected setup: when missing resource file is directory, use copy_tree
+- BRAT importer: handling multiple annotations at the same span
 
 ## [SEM v3.1.2](https://github.com/YoannDupont/SEM/releases/tag/v3.1.2)
 ### Added
