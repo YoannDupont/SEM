@@ -179,7 +179,7 @@ def brat_file(filename, encoding="utf-8"):
     if not (os.path.exists(txt_file) and os.path.exists(ann_file)):
         raise ValueError("missing either .ann or .txt file")
     
-    document = Document(txt_file, encoding=encoding, mime_type="text/plain")
+    document = Document(os.path.basename(txt_file), encoding=encoding, mime_type="text/plain")
     document.content = codecs.open(txt_file, "rU", encoding).read().replace(u"\r", u"")
     annotations = Annotation("NER")
     for line in codecs.open(ann_file, "rU", encoding):
@@ -187,11 +187,10 @@ def brat_file(filename, encoding="utf-8"):
         if line != u"" and line.startswith(u'T'):
             parts = line.split(u"\t")
             value, bounds = parts[1].split(" ", 1)
-            for bound in bounds.split(";"):
-                lb, ub = bound.split()
-                lb = int(lb)
-                ub = int(ub)
-                annotations.append(Tag(lb=lb, ub=ub, value=value))
+            bounds_list = bounds.split(";")
+            lb = int(bounds_list[0].split()[0])
+            ub = int(bounds_list[-1].split()[-1])
+            annotations.append(Tag(lb=lb, ub=ub, value=value))
     annotations.sort()
     document.add_annotation(annotations)
     
