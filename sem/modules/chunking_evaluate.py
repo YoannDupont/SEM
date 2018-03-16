@@ -1,5 +1,5 @@
 """
-file: chunking_fscore.py
+file: chunking_evaluate.py
 
 author: Yoann Dupont
 
@@ -69,19 +69,52 @@ def float2spreadsheet(f):
     return (u"%.2f" %f).replace(u".",u",")
 
 def precision(d):
+    numerator = float(len(d["correct"]))
+    denominator  = float(len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["noise"]))
+    if denominator == 0.0:
+        return 0.0
+    else:
+        return numerator / denominator
     return float(len(d["correct"])) / len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["noise"])
 
 def recall(d):
+    numerator = float(len(d["correct"]))
+    denominator = len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["silence"])
+    if denominator == 0.0:
+        return 0.0
+    else:
+        return numerator / denominator
     return float(len(d["correct"])) / len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["silence"])
 
 def undergeneration(d):
+    numerator = float(len(d["silence"]))
+    denominator = float(len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["silence"]))
+    if denominator == 0.0:
+        return 0.0
+    else:
+        return numerator / denominator
     return float(len(d["silence"])) / len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["silence"])
 
 def overgeneration(d):
+    numerator = float(len(d["noise"]))
+    denominator = float(len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["noise"]))
+    if denominator == 0.0:
+        return 0.0
+    else:
+        return numerator / denominator
     return float(len(d["noise"])) / len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]+d["noise"])
 
 def substitution(d):
+    numerator = float(len(d["type"]+d["boundary"]+d["type+boundary"]))
+    denominator = float(len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"]))
+    if denominator == 0.0:
+        return 0.0
+    else:
+        return numerator / denominator
     return float(len(d["type"]+d["boundary"]+d["type+boundary"])) / len(d["correct"]+d["type"]+d["boundary"]+d["type+boundary"])
+
+def fscore(P, R, beta=1.0):
+    return ((1+(beta**2))*P*R / (((beta**2)*P)+R) if P+R != 0 else 0.0)
 
 def main(args):
     infile = args.infile
@@ -97,7 +130,7 @@ def main(args):
     prf = {}
     if input_format == "conll":
         if reference_file:
-            print "reference_file not handled for CoNLL files"
+            print "%s\treference_file not handled for CoNLL files"
         L = []
         R = []
         for n_line, p in Reader(infile, ienc).line_iter():
@@ -178,26 +211,63 @@ def main(args):
     d["silence"] = L[:]
     d["noise"] = R[:]
     
-    print "reference:", len_ref
-    print "tagging:", len_tag
+    entities = set()
+    for l in d.values():
+        for e in l:
+            try:
+                l,r = e
+                entities.add(l.value)
+                entities.add(r.value)
+            except:
+                entities.add(e.value)
+    
+    counts = {}
+    for entity in entities:
+        sub_d = {}
+        sub_d["correct"] = [m for m in d["correct"] if m[0].value == entity]
+        sub_d["type"] = [m for m in d["type"] if m[0].value == entity or m[1].value == entity]
+        sub_d["boundary"] = [m for m in d["boundary"] if m[0].value == entity or m[1].value == entity]
+        sub_d["type+boundary"] = [m for m in d["type+boundary"] if m[0].value == entity or m[1].value == entity]
+        sub_d["noise"] = [m for m in d["noise"] if m.value == entity]
+        sub_d["silence"] = [m for m in d["silence"] if m.value == entity]
+        
+        counts[entity] = sub_d
+    
+    # basic counts
+    print u"entity\tmeasure\tvalue"
+    for entity in sorted(entities):
+        print "%s\tcorrect\t%i" %(entity, len(counts[entity]["correct"]))
+        print "%s\ttype\t%i" %(entity, len(counts[entity]["type"]))
+        print "%s\tboundary\t%i" %(entity, len(counts[entity]["boundary"]))
+        print "%s\ttype+boundary\t%i" %(entity, len(counts[entity]["type+boundary"]))
+        print "%s\tnoise\t%i" %(entity, len(counts[entity]["noise"]))
+        print "%s\tsilence\t%i" %(entity, len(counts[entity]["silence"]))
+    print "global\treference\t%i" %(len_ref)
+    print "global\ttagging\t%i" %(len_tag)
     for key in ["correct", "type", "boundary", "type+boundary", "noise", "silence"]:
-        print key, len(d[key])
+        print "global\t%s\t%i" %(key, len(d[key]))
     
-    lines = []
-    with codecs.open(infile, "rU", "utf-8") as O:
-        lines = O.readlines()
-    """for L,R in d["type+boundary"]:
-        print L, R
-        print u"".join(lines[L.lb : L.ub])
-        print"""
+    # P R F
+    print
+    print u"entity\tmeasure\tvalue"
+    for entity in sorted(entities):
+        print "%s\tprecision\t%.4f" %(entity, precision(counts[entity]))
+        print "%s\trecall\t%.4f" %(entity, recall(counts[entity]))
+        print "%s\tfscore\t%.4f" %(entity, fscore(precision(counts[entity]), recall(counts[entity])))
+    print "global\tprecision\t%.4f" %(precision(d))
+    print "global\trecall\t%.4f" %(recall(d))
+    print "global\tfscore\t%.4f" %(fscore(precision(d), recall(d)))
     
+    # over/under generation, substitution
     print
-    print "precision:", precision(d)
-    print "recall:", recall(d)
-    print
-    print "undergeneration:", undergeneration(d)
-    print "overgeneration:", overgeneration(d)
-    print "substitution:", substitution(d)
+    print u"entity\tmeasure\tvalue"
+    for entity in sorted(entities):
+        print "%s\tundergeneration\t%.4f" %(entity, undergeneration(counts[entity]))
+        print "%s\tovergeneration\t%.4f" %(entity, overgeneration(counts[entity]))
+        print "%s\tsubstitution\t%.4f" %(entity, substitution(counts[entity]))
+    print "global\tundergeneration\t%.4f" %(undergeneration(d))
+    print "global\tovergeneration\t%.4f" %(overgeneration(d))
+    print "global\tsubstitution\t%.4f" %(substitution(d))
 
 
 import os.path
