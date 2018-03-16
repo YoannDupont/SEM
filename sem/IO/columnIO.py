@@ -69,6 +69,22 @@ class Reader(object):
         if paragraph != []:
             yield paragraph
     
+    def line_iter(self):
+        paragraph = []
+        n_line = -1
+        for line_number, line in enumerate(codecs.open(self._name, "rU", self._encoding), 0):
+            line  = self._cleaner(line)
+            if line != "":
+                if paragraph == []:
+                    n_line = line_number
+                line = self._splitter(line)
+                paragraph.append(line)
+            elif paragraph != []:
+                yield n_line, paragraph
+                del paragraph[:]
+        if paragraph != []:
+            yield n_line, paragraph
+    
     @property
     def length(self):
         if self._length is None:

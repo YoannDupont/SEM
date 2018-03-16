@@ -4,10 +4,14 @@ All notable changes to SEM will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- module ```chunking_evaluate```: a module that will compute various metrics. Will replace the module ```chunking_fscore```
 ### Changed
 - corrected setup: when missing resource file is directory, use copy_tree
-- BRAT importer: handling discontinuous annotations. A single annotation is created covering the whole span.
+- BRAT importer: handling discontinuous annotations. A single annotation is created covering the whole span
 - BRAT importer: sorting annotations
+### Deprecated
+- module ```chunking_fscore```: will be replaced by ```chunking_evaluate``` which will be more thorough
 
 ## [SEM v3.1.2](https://github.com/YoannDupont/SEM/releases/tag/v3.1.2)
 ### Added
