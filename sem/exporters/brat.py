@@ -44,11 +44,12 @@ class Exporter(DefaultExporter):
         pass
     
     def document_to_unicode(self, document, couples, **kwargs):
-        if "ner" not in couples:
+        lowers = dict([(x.lower(), y) for (x,y) in couples.items()])
+        if "ner" not in lowers:
             return u""
         content = document.content
         parts = []
-        for id, annotation in enumerate(document.annotation(couples["ner"]).get_reference_annotations(), 1):
+        for id, annotation in enumerate(document.annotation(lowers["ner"]).get_reference_annotations(), 1):
             parts.append(u"T%i\t%s %i %i\t%s" %(id, annotation.value, annotation.lb, annotation.ub, content[annotation.lb : annotation.ub].replace(u"\r",u"").replace(u"\n",u" ")))
         return u"\n".join(parts)
     

@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - corrected setup: when missing resource file is directory, use copy_tree
 - BRAT importer: handling discontinuous annotations. A single annotation is created covering the whole span
 - BRAT importer: sorting annotations
+- BRAT importer: better handling of annotation information
+- GUI: corrected bug when giving pattern file for training SEM
+- annotation_gui: user can now export annotated corpus as BRAT
 ### Deprecated
 - module ```chunking_fscore```: will be replaced by ```chunking_evaluate``` which will be more thorough
 

@@ -94,7 +94,9 @@ class AnnotationTool(tk.Frame):
         self.file_menu.add_command(label="Open...", command=self.openfile, accelerator="Ctrl+O")
         self.file_menu.add_command(label="Open url...", command=self.openurl, accelerator="Ctrl+Shift+O")
         self.file_menu.add_command(label="Save to...", command=self.save, accelerator="Ctrl+S")
+        self.file_menu.add_command(label="Save as BRAT corpus to...", command=self.save_brat)
         self.file_menu.entryconfig("Save to...", state=tk.DISABLED)
+        self.file_menu.entryconfig("Save as BRAT corpus to...", state=tk.DISABLED)
         # edit menu
         self.edit_menu = tk.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="Edit", menu=self.edit_menu)
@@ -120,8 +122,6 @@ class AnnotationTool(tk.Frame):
         self.SELECT_TYPE = u"-- select type --"
         self.current_selection = None
         self.wish_to_add = []
-        
-        self.errors = codecs.open(".errors", "a", "utf-8")
         
         self.position2annots = {}
         self.current_annots = []
@@ -324,9 +324,10 @@ class AnnotationTool(tk.Frame):
         for filename in filenames:
             if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
-                    documents.append(Document.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True))
+                    docs = SEMCorpus.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True).documents
+                    documents.extend(docs)
                 except:
-                    documents.extend(SEMCorpus.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True).documents)
+                    documents.append(Document.from_xml(filename, chunks_to_load=["NER"], load_subtypes=True))
             else:
                 documents.append(sem.importers.load(filename, encoding="utf-8"))
         
@@ -343,6 +344,7 @@ class AnnotationTool(tk.Frame):
         
         self.train_btn.configure(state=tk.NORMAL)
         self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
+        self.file_menu.entryconfig("Save as BRAT corpus to...", state=tk.NORMAL)
         self.current_type_hierarchy_level = 0
         self.update_level()
     
@@ -415,6 +417,25 @@ class AnnotationTool(tk.Frame):
         corpus = SEMCorpus(documents=self.corpus_documents)
         with codecs.open(filename, "w", "utf-8") as O:
             corpus.write(O)
+    
+    def save_brat(self, event=None):
+        annotate_logger.debug("========== entering method")
+        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        if output_directory == u"": return
+        
+        update_annotations(self.doc, "NER", self.current_annots)
+        
+        corpus = SEMCorpus(documents=self.corpus_documents)
+        exporter = sem.exporters.get_exporter("brat")()
+        couples = {"NER":"NER"}
+        for document in corpus:
+            name = os.path.basename(document.name).replace(":", "")
+            out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(name)[0], exporter.extension()))
+            if not name.endswith(".txt"):
+                name += ".txt"
+            with codecs.open(os.path.join(output_directory, name), "w", "utf-8") as O:
+                O.write(document.content)
+            exporter.document_to_file(document, couples, out_path, encoding="utf-8")
     
     #
     # Edit menu methods
@@ -734,8 +755,6 @@ class AnnotationTool(tk.Frame):
             value = self.current_selection.value
             start = self.current_selection.lb
             end = self.current_selection.ub
-            self.errors.write(u"%s %s\n" %(self.doc.content[start:end], value))
-            self.errors.flush()
             for occ in find_occurrences(self.doc.content[start:end], self.doc.content):
                 self.current_selection = Tag(occ.start(), occ.end(), value)
                 self.delete(event)
@@ -911,7 +930,7 @@ class AnnotationTool(tk.Frame):
         self.update_level()
     
     def load_tagset_gui(self, event=None):
-        filename = tkFileDialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")])
+        filename = tkFileDialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")], initialdir=sem.SEM_DATA_DIR)
         
         if filename == "": return
         

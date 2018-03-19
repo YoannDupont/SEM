@@ -48,6 +48,7 @@ import os.path
 import multiprocessing
 import time
 import codecs
+import shutil
 
 import sem
 import sem.wapiti, sem.exporters.conll
@@ -259,8 +260,8 @@ class SEMTkWapitiTrain(ttk.Frame):
         crf_cur_row = 0
         
         ttk.Button(algsFrame, text='pattern (optional)', command=self.select_file).grid(row=crf_cur_row, column=0, sticky=tk.W)
-        pattern_label = tk.Label(algsFrame, textvariable=self.pattern_label_var)
-        pattern_label.grid(row=crf_cur_row, column=1, sticky=tk.W)
+        self.pattern_label = tk.Label(algsFrame, textvariable=self.pattern_label_var)
+        self.pattern_label.grid(row=crf_cur_row, column=1, sticky=tk.W)
         crf_cur_row += 1
         
         tk.Label(algsFrame, text='algotirhm').grid(row=crf_cur_row, column=0, sticky=tk.W)
@@ -298,7 +299,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         options = {}
         options['defaultextension'] = '.txt'
         options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-        options['initialdir'] = os.path.expanduser("~")
+        options['initialdir'] = sem.SEM_DATA_DIR
         options['parent'] = self.trainTop
         options['title'] = 'Select pattern file.'
         pattern = tkFileDialog.askopenfilename(**options)
@@ -317,7 +318,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         return int(self.CRF_nprocs_var.get())
     
     def pattern(self):
-        self.pattern_label_var.get()
+        return self.pattern_label_var.get()
     
     def compact(self):
         return bool(self.compact_var.get())
@@ -339,7 +340,6 @@ class SEMTkWapitiTrain(ttk.Frame):
             os.makedirs(output_dir)
         
         train_file = os.path.join(output_dir, "train.conll")
-        pattern_file = (pattern if pattern else os.path.join(output_dir, "pattern.txt"))
         model_file = os.path.join(output_dir, "model.txt")
         documents = []
         for filename in self.file_selector.files():
@@ -356,10 +356,11 @@ class SEMTkWapitiTrain(ttk.Frame):
                 O.write(unicode(document.corpus))
                 O.write(u"\n")
         
+        pattern_file = os.path.join(output_dir, "pattern.txt")
         if pattern:
-            shutil.copy(pattern, output_dir)
+            shutil.copy(pattern, pattern_file)
         else:
-            with codecs.open(pattern_file, "w", "utf-8") as O:
+            with codecs.open(os.path.join(output_dir, "pattern.txt"), "w", "utf-8") as O:
                 O.write("u\n\n")
                 for i, field in enumerate(documents[0].corpus.fields[:-1]):
                     for shift in range(-2,3):

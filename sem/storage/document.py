@@ -395,6 +395,9 @@ class SEMCorpus(Holder):
         else:
             self._documents = documents
     
+    def __iter__(self):
+        return iter(self._documents)
+    
     @property
     def documents(self):
         return self._documents

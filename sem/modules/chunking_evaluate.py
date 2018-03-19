@@ -61,12 +61,8 @@ def compile_chunks(sentence, column=-1, shift=0):
     
     return entity_chunks
 
-
-def float2spreadsheet(f):
-    """
-    For spreadsheets, dots should be replaced by commas.
-    """
-    return (u"%.2f" %f).replace(u".",u",")
+def mean(numbers):
+    return float(sum(numbers)) / len(numbers)
 
 def precision(d):
     numerator = float(len(d["correct"]))
@@ -248,15 +244,22 @@ def main(args):
         print "global\t%s\t%i" %(key, len(d[key]))
     
     # P R F
+    precisions = []
+    recalls = []
     print
     print u"entity\tmeasure\tvalue"
     for entity in sorted(entities):
-        print "%s\tprecision\t%.4f" %(entity, precision(counts[entity]))
-        print "%s\trecall\t%.4f" %(entity, recall(counts[entity]))
+        precisions.append(precision(counts[entity]))
+        recalls.append(recall(counts[entity]))
+        print "%s\tprecision\t%.4f" %(entity, precisions[-1])
+        print "%s\trecall\t%.4f" %(entity, recalls[-1])
         print "%s\tfscore\t%.4f" %(entity, fscore(precision(counts[entity]), recall(counts[entity])))
     print "global\tprecision\t%.4f" %(precision(d))
     print "global\trecall\t%.4f" %(recall(d))
     print "global\tfscore\t%.4f" %(fscore(precision(d), recall(d)))
+    print "global\tmacro-precision\t%.4f" %(mean(precisions))
+    print "global\tmacro-recall\t%.4f" %(mean(recalls))
+    print "global\tmacro-fscore\t%.4f" %(fscore(mean(precisions), mean(recalls)))
     
     # over/under generation, substitution
     print
