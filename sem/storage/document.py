@@ -48,9 +48,10 @@ try:
 except ImportError:
     from html.parser import HTMLParser
 
+import sem
 from sem.storage.segmentation import Segmentation
 from sem.storage.corpus       import Corpus
-from sem.storage.annotation   import Tag, Annotation, chunk_annotation_from_corpus
+from sem.storage.annotation   import Tag, Annotation, chunk_annotation_from_corpus, get_top_level
 from sem.span                 import Span
 from sem.misc                 import correct_pos_tags
 
@@ -207,6 +208,13 @@ class Document(Holder):
         
         return document
     
+    def escaped_name(self):
+        name = basename(self._name)
+        if sem.ON_WINDOWS:
+            return name.replace(u":", u"").replace(u"\\", u"").replace(u"?", u"").replace(u'"', u"").replace(u"<", u"").replace(u">", u"").replace(u"|", u"")
+        else:
+            return name
+    
     def get_tokens(self):
         tokens  = []
         content = self.content
@@ -242,8 +250,8 @@ class Document(Holder):
     
     def write(self, f, depth=0, indent=4, add_header=False):
         if add_header:
-            f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or "ASCII"))
-        f.write(u'%s<document name="%s">\n' %(depth*indent*" ", self.name))
+            f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or u"ASCII"))
+        f.write(u'%s<document name="%s">\n' %(depth*indent*u" ", self.name))
         depth += 1
         f.write(u'%s<metadata' %(depth*indent*" "))
         for metakey, metavalue in sorted(self._metadatas.items()):
@@ -284,33 +292,41 @@ class Document(Holder):
                 f.write(u'%s</annotation>\n' %(depth*indent*" "))
                 depth -= 1
             f.write(u'%s</annotations>\n' %(depth*indent*" "))
-            depth -= 1
         
+        depth -= 1
         f.write(u'%s</document>\n' %(depth*indent*" "))
     
-    def set_reference(self, annotation_name, reference_name, add_to_corpus=False):
+    def set_reference(self, annotation_name, reference_name, add_to_corpus=False, filter=get_top_level):
         annot = self.annotation(annotation_name)
         
-        if annot.reference is None or annot.reference.name != reference_name:
+        if annot is not None and (annot.reference is None or annot.reference.name != reference_name):
             spans = self.segmentation(reference_name).get_reference_spans()
             begin = 0
             for j, annotation in enumerate(annot):
                 start = annotation.lb
                 end   = annotation.ub
                 i = 0
-                while not(spans[i].lb <= start and start < spans[i].ub):
+                while not(spans[i].lb <= start and start <= spans[i].ub):
                     i += 1
                 begin = i
                 while spans[i].ub < end:
                     i += 1
                 annotation.lb = begin
                 annotation.ub = i + 1
+                begin = 0
+                i = 0
             annot._reference = self.segmentation(reference_name)
         
         if add_to_corpus:
+            if filter and annot is not None:
+                annot = filter(annot)
             sentence_spans = iter(self.segmentation("sentences"))
-            annots = iter(annot)
-            cur_annot = next(annots)
+            if annot is None or len(annot) == 0:
+                annots = iter([])
+                cur_annot = None
+            else:
+                annots = iter(annot)
+                cur_annot = next(annots)
             shift = 0
             for sentence in self.corpus.sentences:
                 span = next(sentence_spans)
@@ -395,6 +411,9 @@ class SEMCorpus(Holder):
         else:
             self._documents = documents
     
+    def __len__(self):
+        return len(self._documents)
+    
     def __iter__(self):
         return iter(self._documents)
     
@@ -406,13 +425,18 @@ class SEMCorpus(Holder):
     def from_xml(cls, xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
         if type(xml) in (str, unicode):
             data = ET.parse(xml)
-        elif isinstance(xml, ET.Tree):
+        elif isinstance(xml, ET.ElementTree):
+            data = xml
+        elif isinstance(xml, type(ET.Element("a"))): # did not ind a better way to do this
             data = xml
         else:
             raise TypeError("Invalid type for loading XML-SEM document: %s" %(type(xml)))
         
+        root = data.getroot()
+        if root.tag != "sem":
+            raise ValueError("Not sem xml file type: '%s'" %root.tag)
         doc_list = []
-        for document in list(data.getroot()):
+        for document in list(root):
             doc_list.append(Document.from_xml(document))
         return SEMCorpus(doc_list)
     
@@ -423,7 +447,7 @@ class SEMCorpus(Holder):
     
     def write(self, f, indent=4):
         f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or "ASCII"))
-        f.write("<sem>\n")
+        f.write(u"<sem>\n")
         for document in self._documents:
             document.write(f, depth=1, indent=indent, add_header=False)
-        f.write("</sem>")
+        f.write(u"</sem>")

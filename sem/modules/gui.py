@@ -48,7 +48,7 @@ import os.path
 
 import sem
 from sem.modules.tagger import load_master, main as tagger
-from sem.storage.holder import Holder
+from sem.storage import Holder, SEMCorpus
 from sem.gui.components import SemTkMasterSelector, SemTkLangSelector, SemTkFileSelector, SemTkExportSelector, SEMTkWapitiTrain
 
 import platform
@@ -122,9 +122,20 @@ class SemTkMainWindow(ttk.Frame):
         try:
             export_format = self.export_format_selector.export_format()
             pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
+            args = Holder(**{"output_directory":output_dir, "pipeline":pipeline, "options":workflow_options, "exporter":exporter, "couples":couples})
             for current_file in current_files:
-                args = Holder(**{"infile":current_file, "output_directory":output_dir, "pipeline":pipeline, "options":workflow_options, "exporter":exporter, "couples":couples})
-                tagger(args)
+                corpus = None
+                try:
+                    corpus = SEMCorpus.from_xml(current_file)
+                except:
+                    pass
+                if corpus is not None:
+                    for doc in corpus:
+                        args.infile = doc
+                        tagger(args)
+                else:
+                    args.infile = current_file
+                    tagger(args)
         except Exception,e:
             tkMessageBox.showerror("launching SEM", "Error: " + e.message)
             raise
@@ -143,7 +154,7 @@ class SemTkMainWindow(ttk.Frame):
             tkMessageBox.showwarning("launching SEM", "No workflow selected.")
             return
         
-        wt = SEMTkWapitiTrain(self.file_selector, self.master)
+        wt = SEMTkWapitiTrain(self.file_selector, self.master, None)
 
 
 import sem

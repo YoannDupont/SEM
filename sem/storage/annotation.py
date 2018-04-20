@@ -37,12 +37,17 @@ class Tag(Span):
     def __init__(self, lb, ub, value, length=-1):
         super(Tag, self).__init__(lb, ub, length=length)
         self._value = value
-        self.levels = []
+        self.levels = value.strip(u".").split(u".")
         self.ids = {}
     
     @property
     def value(self):
         return self._value
+    
+    @value.setter
+    def value(self, value):
+        self._value = value
+        self.levels = value.strip(u".").split(u".")
     
     def __eq__(self, tag):
         return self.value == tag.value and self.lb == tag.lb and self.ub == tag.ub
@@ -57,16 +62,19 @@ class Tag(Span):
         return u"chunking"
     
     def getLevel(self, nth):
-        while nth >= len(self.levels):
-            self.levels.append("")
+        if nth >= len(self.levels):
+            return u""
         return self.levels[nth]
     
     def setLevel(self, nth, value):
         while nth >= len(self.levels):
             self.levels.append("")
         self.levels[nth] = value
-        for i in range(nth+1, len(self.levels)):
-            self.levels[i] = ""
+        while self.levels[-1] == u"":
+            del self.levels[-1]
+        while len(self.levels) > nth+1:
+            del self.levels[-1]
+        self._value = u".".join(self.levels).strip(u".")
     
     def getValue(self):
         if self.levels == []:
@@ -121,13 +129,15 @@ class Annotation(object):
         i = 0
         if after is None:
             while i < len(self._annotations):
-                if annotation.lb > self._annotations[i].lb:
+                if annotation.lb > self._annotations[i].ub:
                     None
                 elif annotation.lb > self._annotations[i].ub:
                     break
                 elif annotation.lb == self._annotations[i].lb:
                     if self._annotations[i].ub <= annotation.ub:
                         break
+                else:
+                    break
                 i += 1
         else:
             while i < len(self._annotations):
@@ -162,6 +172,29 @@ class Annotation(object):
             reference_spans = self.reference.get_reference_spans()
             return [Tag(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub, element.value) for element in self.annotations]
     
+def get_top_level(annotations):
+    result = annotations[:]
+    modified = True
+    while modified:
+        modified = False
+        for i in range(len(result)-1):
+            modified = result[i].lb <= result[i+1].lb and result[i].ub >= result[i+1].ub
+            if modified:
+                del result[i+1]
+                break
+    return result
+    
+def get_bottom_level(annotations):
+    result = annotations[:]
+    modified = True
+    while modified:
+        modified = False
+        for i in range(len(result)-1):
+            modified = result[i].lb <= result[i+1].lb and result[i].ub >= result[i+1].ub
+            if modified:
+                del result[i]
+                break
+    return result
 
 def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
     BEGIN  = "B"  # begin flags

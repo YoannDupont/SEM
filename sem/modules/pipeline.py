@@ -36,6 +36,23 @@ class Pipeline(SEMModule):
         
         self._pipes = pipes
     
+    def __iter__(self):
+        for pipe in self._pipes:
+            yield pipe
+    
+    def __len__(self):
+        return len(self._pipes)
+    
+    @property
+    def pipes(self):
+        return self._pipes
+    
+    def append(self, pipe):
+        self._pipes.append(pipe)
+    
+    def remove(self, pipe):
+        self._pipes.remove(pipe)
+    
     def process_document(self, document, **kwargs):
         for pipe in self._pipes:
             pipe.process_document(document, **kwargs)

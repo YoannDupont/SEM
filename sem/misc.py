@@ -166,3 +166,81 @@ def str2bool(s):
     if res is None:
         raise ValueError(u'Cannot convert to boolean: "%s"' %s)
     return res
+
+def longest_common_substring(a, b, casesensitive=True, lastchance=False):
+    """
+    A backtrack algorithm to find the best suited match between a long and
+    a short form.
+    It will generate a list of candidate solutions that have exactly the
+    same number of matching tokens as the LCS algorithm found.
+    
+    """
+    if len(a) < len(b):
+        # left should be the longest sequence, but here right is.
+        # We invert them so we do not have to deal with the mirroring of the checks.
+        # However, in the end, the indexes will be switched between the two tokens, so we put them back in place.
+        return [[(y,x) for (x,y) in solution] for solution in longest_common_substring(b, a, casesensitive)]
+    if not casesensitive:
+        # simple and dirty python to easily simulate case insensitivity.
+        # Even though it works for most cases, it will not for some specific unicode characters which I do not recall.
+        return longest_common_substring(a.lower(), b.lower(), casesensitive=True)
+
+    lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            if x == y:
+                lengths[i+1][j+1] = lengths[i][j] + 1
+            else:
+                lengths[i+1][j+1] = max(lengths[i+1][j], lengths[i][j+1])
+
+    solutions = set()
+    def bcktrck(x, y, current):
+        """
+        The recursive algorithm that finds solutions by backtracking
+        """
+        if x == 0 or y == 0:
+            if current == []: return # empty solution
+            if len(current) != lengths[-1][-1]: return
+            
+            z,t = current[0]
+            if z > 0 and a[z-1].isalpha(): return # we start in the middle of a word of the long form
+            if t != 0: return                     # we do not take the first character of the short form
+            
+            solutions.add(tuple(current))
+            return
+        if a[x-1] == b[y-1]:
+            try:
+                a_x2_ok = a[x-2].isalpha()
+            except:
+                a_x2_ok = False
+            
+            if current != []:
+                if a[current[0][0]-1].isalpha():
+                    bcktrck(x-1, y, current)
+                    return
+                if " " in a[x-1 : current[0][0]].strip() and a_x2_ok: # generated more than one token, and splitted one of them
+                    bcktrck(x-1, y, current)
+                    return
+            else:
+                if "-" in a[x-1 : ] and not a[x-1] == "-": # we cut somewhere after a hyphen
+                    if lengths[x-1][y] == lengths[x][y]:
+                        bcktrck(x-1, y, current)
+                    return
+                if " " in a[x-1:].strip() and (x>1 and a_x2_ok): # generated more than one token *and* splitted one of them
+                    if lengths[x-1][y] == lengths[x][y]:
+                        bcktrck(x-1, y, current)
+                    return
+            
+            bcktrck(x-1, y-1, [(x-1,y-1)] + current)
+            if lengths[x][y] == lengths[x-1][y]:
+                bcktrck(x-1, y, current)
+            if lengths[x][y] == lengths[x][y-1]:
+                bcktrck(x, y-1, current)
+        elif lengths[x][y] == lengths[x-1][y]:
+            bcktrck(x-1, y, current)
+        elif lengths[x][y] == lengths[x][y-1]:
+            bcktrck(x, y-1, current)
+    
+    bcktrck(len(a), len(b), [])
+    
+    return list(solutions)

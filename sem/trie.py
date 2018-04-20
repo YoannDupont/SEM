@@ -66,7 +66,7 @@ class Trie(object):
             
             if found:
                 keys.remove(_NUL)
-                if dic[_NUL] == {}:
+                if dic[_NUL]:
                     yield seq
             keys = list(keys)
             keys.sort()
@@ -107,7 +107,7 @@ class Trie(object):
         d[_NUL] = {}
     
     def add_with_value(self, sequence, value):
-        iterator = sequence.__iter__()
+        iterator = iter(sequence)
         d        = self._data
         
         try:
@@ -124,7 +124,7 @@ class Trie(object):
         d[_NUL] = value
     
     def contains(self, sequence):
-        iterator = sequence.__iter__()
+        iterator = iter(sequence)
         d        = self._data
         result   = True
         
@@ -154,5 +154,26 @@ class Trie(object):
                 if _NUL in dic:
                     del dic[_NUL]
 
-        remove(self._data, sequence.__iter__())
+        remove(self._data, iter(sequence))
     
+    def goto(self, sequence):
+        iterator = iter(sequence)
+        d        = self._data
+        result   = True
+        
+        try:
+            while True:
+                token = next(iterator)
+                
+                if token not in d:
+                    result = False
+                    break
+
+                d = d[token]
+        except StopIteration:
+            pass
+        
+        if result:
+            return d
+        else:
+            return None

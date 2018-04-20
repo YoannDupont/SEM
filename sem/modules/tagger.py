@@ -192,11 +192,11 @@ def main(args):
     # the fields at the current state (depends on enrichments and
     # info cleaning). They will be used for wapiti
     
-    sem_tagger_logger.info("Reading %s" %(infile))
-    
     if isinstance(infile, Document):
+        sem_tagger_logger.info("Reading %s" %(infile.name))
         document = infile
     else:
+        sem_tagger_logger.info("Reading %s" %(infile))
         file_shortname, _ = os.path.splitext(os.path.basename(infile))
         export_name = os.path.join(output_directory, file_shortname)
         file_format = get_option(options, "file", "format", "guess")
@@ -214,9 +214,7 @@ def main(args):
     pipeline.process_document(document)
     
     if exporter is not None:
-        name = document.name
-        if u"/" in name:
-            name = name.rsplit(u"/", 1)[1]
+        name = document.escaped_name()
         if "html" in exporter.extension():
             shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", "tabs.css"), output_directory)
             shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, get_option(options, "export", "lang_style", "default.css")), output_directory)

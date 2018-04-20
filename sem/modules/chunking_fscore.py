@@ -32,6 +32,8 @@ from sem.IO.columnIO import Reader
 
 from sem.features import MultiwordDictionaryFeature, NUL
 
+import sem.importers
+
 def compile_chunks(sentence, column=-1):
     entity_chunks = set()
     label         = u""
@@ -75,12 +77,47 @@ def main(args):
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
     verbose = args.verbose
+    input_format = args.input_format
     
     counts = {}
     prf = {}
-    for p in Reader(infile, ienc):
-        reference = compile_chunks(p, column=reference_column)
-        tagging = compile_chunks(p, column=tagging_column)
+    if input_format == "conll":
+        for p in Reader(infile, ienc):
+            reference = compile_chunks(p, column=reference_column)
+            tagging = compile_chunks(p, column=tagging_column)
+            ok = reference & tagging
+            silence = reference - ok
+            noise = tagging - ok
+            for e in ok:
+                label = e[0]
+                if label not in counts:
+                    counts[label] = {"ok":0.0, "gold":0.0, "guess":0.0}
+                counts[label]["ok"] += 1.0
+                counts[label]["gold"] += 1.0
+                counts[label]["guess"] += 1.0
+            for e in silence:
+                label = e[0]
+                if label not in counts:
+                    counts[label] = {"ok":0.0, "gold":0.0, "guess":0.0}
+                counts[label]["gold"] += 1.0
+            for e in noise:
+                label = e[0]
+                if label not in counts:
+                    counts[label] = {"ok":0.0, "gold":0.0, "guess":0.0}
+                counts[label]["guess"] += 1.0
+        counts[""] = {"ok":0.0, "gold":0.0, "guess":0.0}
+        for label in counts:
+            if label == "": continue
+            counts[""]["ok"] += counts[label]["ok"]
+            counts[""]["gold"] += counts[label]["gold"]
+            counts[""]["guess"] += counts[label]["guess"]
+    elif input_format == "brat":
+        tagging_document = sem.importers.brat_file(infile)
+        reference_document = sem.importers.brat_file(args.reference_file)
+        tagging_annotations = tagging_document.annotation("NER").get_reference_annotations()
+        reference_annotations = reference_document.annotation("NER").get_reference_annotations()
+        """tagging = set([tuple([ann.value, ann.lb, ann.ub]) for ann in tagging_annotations])
+        reference = set([tuple([ann.value, ann.lb, ann.ub]) for ann in reference_annotations])
         ok = reference & tagging
         silence = reference - ok
         noise = tagging - ok
@@ -101,12 +138,89 @@ def main(args):
             if label not in counts:
                 counts[label] = {"ok":0.0, "gold":0.0, "guess":0.0}
             counts[label]["guess"] += 1.0
-    counts[""] = {"ok":0.0, "gold":0.0, "guess":0.0}
-    for label in counts:
-        if label == "": continue
-        counts[""]["ok"] += counts[label]["ok"]
-        counts[""]["gold"] += counts[label]["gold"]
-        counts[""]["guess"] += counts[label]["guess"]
+        counts[""] = {"ok":0.0, "gold":0.0, "guess":0.0}"""
+        
+        boundary_errors = set() # the set of already aligned entities in gold (may be aligned twice)
+        
+        L = tagging_annotations
+        R = reference_annotations
+        
+        d = {"correct":[], "type":[], "boundary":[], "type+boundary":[], "silence":[], "noise":[]}
+        # first pass, removing correct
+        i = 0
+        print "corrects", len(L), len(R)
+        while i < len(L):
+            LR = L[i]
+            j = 0
+            while j < len(R):
+                RR = R[j]
+                if LR == RR:
+                    del L[i]
+                    del R[j]
+                    i -= 1
+                    d["correct"].append([LR, RR])
+                    break
+                j += 1
+            i += 1
+        
+        # second pass, typing errors
+        i  = 0
+        print "type", len(L), len(R)
+        while i < len(L):
+            LR = L[i]
+            j = 0
+            while j < len(R):
+                RR = R[j]
+                if LR.value != RR.value and LR.lb == RR.lb and LR.ub == RR.ub:
+                    del L[i]
+                    del R[j]
+                    d["type"].append([LR, RR])
+                    break
+                j += 1
+            i += 1
+        
+        # third pass, boundary errors
+        i  = 0
+        print "boundary", len(L), len(R)
+        while i < len(L):
+            LR = L[i]
+            j = 0
+            while j < len(R):
+                RR = R[j]
+                if LR.value == RR.value and ((LR.lb != RR.lb and LR.ub == RR.ub) or (LR.lb == RR.lb and LR.ub != RR.ub)):
+                    del L[i]
+                    del R[j]
+                    i -= 1
+                    d["boundary"].append([LR, RR])
+                    break
+                j += 1
+            i += 1
+        
+        # fourth pass, both type and boundary errors
+        i  = 0
+        print "type+boundary", len(L), len(R)
+        while i < len(L):
+            LR = L[i]
+            j = 0
+            while j < len(R):
+                RR = R[j]
+                if LR.value != RR.value and (LR.lb != RR.lb and LR.lb == RR.ub) or (LR.lb == RR.lb and LR.lb != RR.ub):
+                    del L[i]
+                    del R[j]
+                    i -= 1
+                    d["type+boundary"].append([LR, RR])
+                    break
+                j += 1
+            i += 1
+        
+        print len(L), len(R)
+        d["silence"] = L[:]
+        d["noise"] = R[:]
+        
+        for key, value in d.items():
+            print key, len(value)
+    else:
+        raise RuntimeError("format not handled")
     
     for label in counts:
         lbl_c = counts[label]
@@ -150,6 +264,10 @@ parser.add_argument("-r", "--reference-column", dest="reference_column", type=in
                     help="Column for reference output (default: %(default)s)")
 parser.add_argument("-t", "--tagging-column", dest="tagging_column", type=int, default=-1,
                     help="Column for CRF output (default: %(default)s)")
+parser.add_argument("-f", "--format", dest="input_format", default="conll",
+                    help="The input format (default: %(default)s)")
+parser.add_argument("-c", "--reference-file", dest="reference_file",
+                    help="The comparing file")
 parser.add_argument("--input-encoding", dest="ienc",
                     help="Encoding of the input (default: utf-8)")
 parser.add_argument("--output-encoding", dest="oenc",

@@ -52,13 +52,29 @@ class SEMModule(RootModule):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
         self._mode = mode
+        self._source = informations
         
         if type(informations) in (str, unicode):
             enrich_logger.info('loading %s' %informations)
-            self._informations = Informations(informations, mode=self._mode)
+            self._informations = Informations(self._source, mode=self._mode)
         else:
-            self._informations = informations
-        
+            self._informations = self._source
+    
+    @property
+    def informations(self):
+        return self._informations
+    
+    @property
+    def mode(self):
+        return self._mode
+    
+    @mode.setter
+    def mode(self, mode):
+        if type(self._source) not in (str, unicode):
+            raise RuntimeError("cannot change mode for Enrich module: source for informations is not a file.")
+        self._mode = mode
+        enrich_logger.info('loading %s' %self._source)
+        self._informations = Informations(self._source, mode=self._mode)
     
     def process_document(self, document, **kwargs):
         """

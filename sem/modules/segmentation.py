@@ -89,19 +89,30 @@ class SEMModule(RootModule):
         content = document.content
         if document.metadata("MIME") == "text/html":
             content = sem.misc.strip_html(content, keep_offsets=True)
-        try:
-            token_spans = current_tokeniser.word_spans(content)
-        except NotImplementedError:
-            token_spans = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
-        sentence_spans = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
-        paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
-
-        segmentation_logger.info('segmented "%s" in %i sentences, %i tokens' %(document.name, len(sentence_spans), len(token_spans)))
-
-        document.add_segmentation(Segmentation("tokens", spans=token_spans))
-        document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
-        document.add_segmentation(Segmentation("paragraphs", reference=document.segmentation("sentences"), spans=paragraph_spans))
-        document.corpus.from_segmentation(document.content, document.segmentation("tokens"), document.segmentation("sentences"))
+        
+        do_segmentation = document.segmentation("tokens") is None or document.segmentation("sentences") is None or document.segmentation("paragraphs") is None
+        if do_segmentation:
+            try:
+                token_spans = current_tokeniser.word_spans(content)
+            except NotImplementedError:
+                token_spans = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
+            sentence_spans = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
+            paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
+        else:
+            segmentation_logger.info('%s already has segmenation, not computing' %(document.name))
+            token_spans = document.segmentation("tokens").spans
+            sentence_spans = document.segmentation("sentences").spans
+            paragraph_spans = document.segmentation("paragraphs").spans
+        segmentation_logger.info('"%s" segmented in %i sentences, %i tokens' %(document.name, len(sentence_spans), len(token_spans)))
+        
+        if document.segmentation("tokens") is None:
+            document.add_segmentation(Segmentation("tokens", spans=token_spans))
+        if document.segmentation("sentences") is None:
+            document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
+        if document.segmentation("paragraphs") is None:
+            document.add_segmentation(Segmentation("paragraphs", reference=document.segmentation("sentences"), spans=paragraph_spans))
+        if len(document.corpus) == 0:
+            document.corpus.from_segmentation(document.content, document.segmentation("tokens"), document.segmentation("sentences"))
 
         laps = time.time() - start
         segmentation_logger.info('in %s' %(timedelta(seconds=laps)))

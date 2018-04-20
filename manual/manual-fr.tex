@@ -2,6 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage[french]{babel}
 
 \usepackage[usenames,dvipsnames]{color}
 
@@ -10,16 +11,18 @@
 \usepackage{macros}
 \usepackage[many]{tcolorbox}
 
-%\usepackage{pst-all}
-
-%\usepackage{multirow}
-
-%\usepackage{amsmath}
-%\usepackage{amssymb}
-
-%\usepackage[]{algorithm2e}
-
 \usepackage[top=1in, bottom=1.5in, left=1in, right=1in]{geometry}
+
+\usepackage{listings}
+\lstdefinestyle{pieceofcode}{ 
+  basicstyle=\bfseries\color{white},
+  backgroundcolor=\color{black},
+  stepnumber=2,
+  identifierstyle=\color{white},
+  stringstyle=\color{white},
+  keywordstyle=\color{white},
+  commentstyle=\color{white},
+}
 
 \usepackage{subfiles}
 
@@ -72,8 +75,20 @@
         \subsection{fichiers linéaires}
         \subfile{fr/subsection/file-linear}
 
+            \subsubsection{Exemples}
+            \subfile{fr/subsubsection/file-linear-examples}
+
         \subsection{fichiers vectorisés}
         \subfile{fr/subsection/file-vectorised}
+
+            \subsubsection{Exemples}
+            \subfile{fr/subsubsection/file-vectorised-examples}
+
+        \subsection{fichiers SEM}
+        \subfile{fr/subsection/file-sem}
+
+            \subsubsection{Exemples}
+            \subfile{fr/subsubsection/file-sem-examples}
     
     \section{Utilisation}
     \subfile{fr/section/usage}
@@ -122,8 +137,62 @@
         \subsection{Pour le module enrich}
         \subfile{fr/subsection/config-enrich}
 
+            \subsubsection{Les features \textit{arity}}
+            \subfile{fr/subsubsection/feature-arity}
+
+            \subsubsection{Les features \textit{boolean}}
+            \subfile{fr/subsubsection/feature-boolean}
+
+            \subsubsection{Les features \textit{dictionary}}
+            \subfile{fr/subsubsection/feature-dictionary}
+
+            \subsubsection{Les features \textit{directory}}
+            \subfile{fr/subsubsection/feature-directory}
+
+            \subsubsection{Les features \textit{list}}
+            \subfile{fr/subsubsection/feature-list}
+
+            \subsubsection{Les features \textit{matcher}}
+            \subfile{fr/subsubsection/feature-matcher}
+
+            \subsubsection{Les features \textit{rule}}
+            \subfile{fr/subsubsection/feature-rule}
+
+            \subsubsection{Les features \textit{string}}
+            \subfile{fr/subsubsection/feature-string}
+
+            \subsubsection{Les features \textit{trigger}}
+            \subfile{fr/subsubsection/feature-triggered}
+
         \subsection{Pour le module tagger}
         \subfile{fr/subsection/config-tagger}
+    
+    \section{Réentraîner \SEM}
+    \subfile{fr/section/retrain-sem}
+    
+        \subsection{Réentraîner SEM depuis des fichiers déjà annotés}
+        
+            \subsubsection{Lancer la GUI de SEM}
+            \subfile{fr/subsubsection/launch-sem-gui}
+            
+            \subsubsection{Sélectionner les données et leur prétraitement}
+            \subfile{fr/subsubsection/data-and-preprocess}
+            
+            \subsubsection{Lancer l'entraînement}
+            \label{subsubsec:train-SEM-from-annotated}
+            \subfile{fr/subsubsection/train-SEM-from-annotated}
+        
+        \subsection{Réentraîner SEM depuis des fichiers non annotés}
+        \subfile{fr/subsection/retrain-sem-from-unannotated}
+        
+            \subsubsection{Lancer la GUI de SEM pour l'annotation manuelle}
+            \subfile{fr/subsubsection/launch-sem-annotation-gui}
+        
+            \subsubsection{Annoter manuellement avec la GUI de SEM}
+            \subfile{fr/subsubsection/manually-annotate-with-sem}
+        
+        \subsection{Utiliser le nouveau modèle}
+        \subfile{fr/subsection/use-new-model}
     
     \bibliographystyle{apa}
     \bibliography{biblio}

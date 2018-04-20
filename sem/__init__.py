@@ -34,6 +34,10 @@ import argparse
 
 from os.path import dirname, abspath, join, expanduser
 
+import platform
+SYSTEM = platform.system().lower()
+ON_WINDOWS = (SYSTEM == "windows")
+
 SEM_HOME = dirname(abspath(__file__)).decode(sys.getfilesystemencoding())
 SEM_DATA_DIR = join(expanduser(u"~"), u"sem_data")
 SEM_RESOURCE_DIR = join(SEM_DATA_DIR, u"resources")

@@ -90,3 +90,10 @@ ENV/
 
 # Wapiti compilation stuff
 ext/wapiti/
+
+# latex ignore
+*.aux
+*.bbl
+*.blg
+*.out
+*.toc

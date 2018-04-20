@@ -53,9 +53,9 @@ import shutil
 import sem
 import sem.wapiti, sem.exporters.conll
 import sem.importers
-from sem.storage import Holder
-from sem.storage import Document
+from sem.storage import Holder, Document, SEMCorpus
 from sem.modules.tagger import load_master, main as tagger
+from sem.modules import EnrichModule
 
 class SemTkMasterSelector(ttk.Frame):
     def __init__(self, root, resource_dir, lang="fr"):
@@ -237,15 +237,20 @@ class SemTkExportSelector(ttk.Frame):
 
 
 class SEMTkWapitiTrain(ttk.Frame):
-    def __init__(self, file_selector, master):
+    def __init__(self, file_selector, master, annotation_name, top=None, main_frame=None, text="Algorithm-specific variables"):
         self.file_selector = file_selector
         self.master = master
+        self.annotation_name = annotation_name
         
         self.current_train = os.path.join(sem.SEM_DATA_DIR, "train")
         if not os.path.exists(self.current_train):
             os.makedirs(self.current_train)
         
-        self.trainTop = tk.Toplevel()
+        if top:
+            self.trainTop = top
+        else:
+            self.trainTop = tk.Toplevel()
+        self.main_frame = main_frame or self.trainTop
         self.trainTop.focus_set()
         self.CRF_algorithm_var = tk.StringVar(self.trainTop, value="rprop")
         self.CRF_l1_var = tk.StringVar(self.trainTop, value="0.5")
@@ -254,7 +259,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         self.pattern_label_var = tk.StringVar(self.trainTop, value="")
         self.compact_var = tk.IntVar()
         
-        algsFrame = ttk.LabelFrame(self.trainTop, text="Algorithm-specific variables")
+        algsFrame = ttk.LabelFrame(self.trainTop, text=text)
         algsFrame.pack(fill="both", expand="yes")
         
         crf_cur_row = 0
@@ -264,7 +269,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         self.pattern_label.grid(row=crf_cur_row, column=1, sticky=tk.W)
         crf_cur_row += 1
         
-        tk.Label(algsFrame, text='algotirhm').grid(row=crf_cur_row, column=0, sticky=tk.W)
+        tk.Label(algsFrame, text='algorithm').grid(row=crf_cur_row, column=0, sticky=tk.W)
         CRF_algorithmValue = ttk.Combobox(algsFrame, textvariable=self.CRF_algorithm_var)
         CRF_algorithmValue["values"] = [u"rprop", u"l-bfgs", u"sgd-l1", u"bcd", u"rprop+", u"rprop-"]
         CRF_algorithmValue.current(0)
@@ -299,7 +304,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         options = {}
         options['defaultextension'] = '.txt'
         options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-        options['initialdir'] = sem.SEM_DATA_DIR
+        options['initialdir'] = os.path.join(sem.SEM_DATA_DIR, "resources", "patterns")
         options['parent'] = self.trainTop
         options['title'] = 'Select pattern file.'
         pattern = tkFileDialog.askopenfilename(**options)
@@ -328,12 +333,20 @@ class SEMTkWapitiTrain(ttk.Frame):
         alg = self.algorithm()
         l1 = self.l1()
         l2 = self.l2()
-        nprocs = self.nprocs()
         pattern = self.pattern()
+        nprocs = self.nprocs()
         compact = self.compact()
         masterfile = self.master.workflow()
         export_format = "conll"
         pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
+        
+        pipes = [pipe for pipe in pipeline]
+        for pipe in reversed(pipes):
+            if isinstance(pipe, EnrichModule):
+                pipe.mode = "train"
+                self.annotation_name = pipe.informations.aentries[-1].name
+                pipe.mode = "label"
+                break
         
         output_dir = os.path.join(self.current_train, time.strftime("%Y%m%d%H%M%S"))
         if not os.path.exists(output_dir):
@@ -341,15 +354,30 @@ class SEMTkWapitiTrain(ttk.Frame):
         
         train_file = os.path.join(output_dir, "train.conll")
         model_file = os.path.join(output_dir, "model.txt")
+        try:
+            files = self.file_selector.files()
+        except:
+            files = self.file_selector
         documents = []
-        for filename in self.file_selector.files():
+        for filename in files:
             document = sem.importers.load(filename, encoding="utf-8")
             args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
-            document = tagger(args)
-            
-            document.set_reference("NER", "tokens", add_to_corpus=True)
-            if not any([document.name == d.name for d in documents]):
-                documents.append(document)
+            if isinstance(document, SEMCorpus):
+                for doc in document:
+                    args.infile = doc
+                    doc = tagger(args)
+                    
+                    if self.annotation_name is not None:
+                        doc.set_reference(self.annotation_name, "tokens", add_to_corpus=True)
+                    if not any([doc.name == d.name for d in documents]):
+                        documents.append(doc)
+            else:
+                document = tagger(args)
+                
+                if self.annotation_name is not None:
+                    document.set_reference(self.annotation_name, "tokens", add_to_corpus=True)
+                if not any([document.name == d.name for d in documents]):
+                    documents.append(document)
         
         with codecs.open(train_file, "w", "utf-8") as O:
             for document in documents:
@@ -379,4 +407,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         
         tkMessageBox.showinfo("training SEM", "Everything went ok! files are located in: " + output_dir)
         
-        self.trainTop.destroy()
+        if self.main_frame:
+            self.main_frame.destroy()
+        else:
+            self.trainTop.destroy()

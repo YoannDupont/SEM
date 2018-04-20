@@ -34,6 +34,7 @@ import urllib
 import re
 import os.path
 import codecs
+import sys
 
 try:
     from xml.etree import cElementTree as ET
@@ -48,12 +49,17 @@ except ImportError:
 import sem.logger
 import sem.misc
 from sem.storage import Corpus
-from sem.storage import Document
+from sem.storage import Document, SEMCorpus
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
 from sem.span import Span
 
 def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False, logger=None, strip_html=False, *args, **kwargs):
+    if type(filename) in (Document, SEMCorpus):
+        if logger is not None:
+            logger.info(u"detected format: SEM XML")
+        return filename
+    
     if filename.startswith("http"):
         if logger is not None:
             logger.info(u"detected format: HTML")
@@ -63,6 +69,10 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
         xml = ET.parse(filename)
         root_tag = xml.getroot().tag
         if root_tag == "sem":
+            if logger is not None:
+                logger.info(u"detected format: SEM XML")
+            return SEMCorpus.from_xml(xml)
+        elif root_tag == "document":
             if logger is not None:
                 logger.info(u"detected format: SEM XML")
             return Document.from_xml(xml)
@@ -115,10 +125,16 @@ def from_url(url, strip_html=False, wikinews_format=False):
     
     if url == u"": return None
     
+    try:
+        url = url.decode(sys.getfilesystemencoding())
+    except:
+        pass
+    
     strip_html |= wikinews_format # wikinews format is always stripped
     
     charset = re.compile('charset="(.+?)"')
     escaped_url = u"".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
+    escaped_url = escaped_url.replace(u"%2525", u"%25")
     #url = url.decode("iso-8859-1")
     #url = url.replace(":","")
     
@@ -187,10 +203,11 @@ def brat_file(filename, encoding="utf-8"):
         if line != u"" and line.startswith(u'T'):
             parts = line.split(u"\t")
             value, bounds = parts[1].split(" ", 1)
-            bounds_list = bounds.split(";")
-            lb = int(bounds_list[0].split()[0])
-            ub = int(bounds_list[-1].split()[-1])
-            annotations.append(Tag(lb=lb, ub=ub, value=value))
+            for bound in bounds.split(";"):
+                lb, ub = bound.split()
+                lb = int(lb)
+                ub = int(ub)
+                annotations.append(Tag(lb=lb, ub=ub, value=value))
     annotations.sort()
     document.add_annotation(annotations)
     

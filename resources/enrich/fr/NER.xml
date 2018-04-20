@@ -7,7 +7,7 @@
             <entry name="POS" />
         </before>
         <after>
-            <entry name="NE" mode="train" />
+            <entry name="NER" mode="train" />
         </after>
     </entries>
     

@@ -72,9 +72,15 @@ class SEMModule(RootModule):
             annotate_logger.addHandler(file_handler(self._log_file))
         annotate_logger.setLevel(self._log_level)
         
-        annotate_logger.info("annotating document with %s field", self._field)
-        
-        sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
+        if self._field in document.corpus.fields:
+            annotate_logger.warn("field %s already exists in document, not annotating", self._field)
+            
+            tags = [[s[self._field] for s in sentence] for sentence in corpus]
+            document.annotation_from_tags(tags, self._field, self._field)
+        else:
+            annotate_logger.info("annotating document with %s field", self._field)
+            
+            sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
         
         laps = time.time() - start
         annotate_logger.info('in %s' %(timedelta(seconds=laps)))

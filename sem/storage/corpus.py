@@ -45,6 +45,9 @@ class Corpus(object):
         else:
             self.sentences = []
     
+    def __len__(self):
+        return len(self.sentences)
+    
     def __iter__(self):
         for element in self.iterate_on_sentences():
             yield element
