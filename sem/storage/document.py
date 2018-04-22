@@ -306,7 +306,7 @@ class Document(Holder):
                 start = annotation.lb
                 end   = annotation.ub
                 i = 0
-                while not(spans[i].lb <= start and start <= spans[i].ub):
+                while not(spans[i].lb <= start and start < spans[i].ub):
                     i += 1
                 begin = i
                 while spans[i].ub < end:

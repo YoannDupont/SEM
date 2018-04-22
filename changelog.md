@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - module ```chunking_evaluate```: a module that will compute various metrics. Will replace the module ```chunking_fscore```
 - new section in manual: how to train a new model with SEM
 ### Changed
+- corrected a bug when changing reference segmentation
 - SEM can now train wapiti models. Required several changes
 - corrected setup: when missing resource file is directory, use copy_tree
 - BRAT importer: handling discontinuous annotations. A single annotation is created covering the whole span
