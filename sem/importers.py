@@ -82,7 +82,7 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
             return gate_data(xml, os.path.basename(filename))
     
     no_ext, ext = os.path.splitext(filename)
-    if (ext == ".ann" and os.path.exists(no_ext+".txt")) or (ext == ".txt" and os.path.exists(no_ext+".ann")):
+    if (ext == ".ann") or (ext == ".txt" and os.path.exists(no_ext+".ann")):
         if logger is not None:
             logger.info(u"detected format: BRAT")
         return brat_file(filename, encoding=encoding)

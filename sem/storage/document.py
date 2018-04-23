@@ -51,7 +51,7 @@ except ImportError:
 import sem
 from sem.storage.segmentation import Segmentation
 from sem.storage.corpus       import Corpus
-from sem.storage.annotation   import Tag, Annotation, chunk_annotation_from_corpus, get_top_level
+from sem.storage.annotation   import Tag, Annotation, tag_annotation_from_corpus, chunk_annotation_from_corpus, get_top_level
 from sem.span                 import Span
 from sem.misc                 import correct_pos_tags
 
@@ -104,7 +104,7 @@ class Document(Holder):
         return Document(basename(filename), content=codecs.open(filename, "rU", encoding).read().replace("\r",""), encoding=encoding)
     
     @classmethod
-    def from_conll(cls, filename, fields, word_field, encoding="utf-8"):
+    def from_conll(cls, filename, fields, word_field, taggings=None, chunkings=None, encoding="utf-8", **kwargs):
         document         = Document(basename(filename), encoding=encoding)
         document._corpus = Corpus.from_conll(filename, fields, encoding=encoding)
         character_index  = 0
@@ -123,7 +123,11 @@ class Document(Holder):
             sentence_index += len(sentence)
         document._content = u"\n".join([u" ".join(content) for content in contents])
         document.add_segmentation(Segmentation("tokens", spans=word_spans))
-        document.add_segmentation(Segmentation("sentences", reference="tokens", spans=sentence_spans[:]))
+        document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans[:]))
+        for tagging in taggings:
+            document.add_annotation(tag_annotation_from_corpus(document._corpus, tagging, tagging, reference=document.segmentation("tokens"), strict=True))
+        for chunking in chunkings:
+            document.add_annotation(chunk_annotation_from_corpus(document._corpus, chunking, chunking, reference=document.segmentation("tokens"), strict=True))
         return document
     
     @classmethod
@@ -181,19 +185,19 @@ class Document(Holder):
         
             if chunks_to_load is not None:
                 for chunk_to_load in chunks_to_load:
-                    ner_annot = document.annotation(chunk_to_load)
-                    if ner_annot and ner_annot.reference is None:
-                        document.set_reference(ner_annot.name, "tokens")
+                    cur_annot = document.annotation(chunk_to_load)
+                    if cur_annot and cur_annot.reference is None:
+                        document.set_reference(cur_annot.name, "tokens")
                     i = 0
                     sent_iter = iter(document.corpus)
                     shift = 0
-                    present = set([(a.lb,a.ub) for a in ner_annot])
+                    present = set([(a.lb,a.ub) for a in cur_annot])
                     for sentence in document.segmentation("sentences"):
                         sent = next(sent_iter)
                         annots = []
-                        while i<len(ner_annot) and ner_annot[i].ub <= sentence.ub:
-                            annots.append(ner_annot[i])
-                            if tuple([ner_annot[i].lb, ner_annot[i].ub]) not in present:
+                        while i<len(cur_annot) and cur_annot[i].ub <= sentence.ub:
+                            annots.append(cur_annot[i])
+                            if tuple([cur_annot[i].lb, cur_annot[i].ub]) not in present:
                                 raise Exception
                             i += 1
                         l = [u"O" for _ in range(len(sentence))]

@@ -205,6 +205,9 @@ def main(args):
         if file_format == "text":
             document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
         elif file_format == "conll":
+            opts["fields"] = opts["fields"].split(u",")
+            opts["taggings"] = [tagging for tagging in opts.get("taggings", u"").split(u",") if tagging]
+            opts["chunkings"] = [chunking for chunking in opts.get("chunkings", u"").split(u",") if chunking]
             document = Document.from_conll(infile, **opts)
         elif file_format == "guess":
             document = sem.importers.load(infile, logger=sem_tagger_logger, **opts)
