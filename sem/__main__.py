@@ -65,7 +65,7 @@ def main(args=None):
             u"Do thou mockest me?",
             u"Try again?",
             u"I'm sorry %s, I'm afraid I can't do that." %username(),
-            u'The greatest trick this module ever pulled what convincing the users he did not exist.',
+            u'The greatest trick this module ever pulled what convincing the users it did not exist.',
             u"It's just a typo."
         ]
         random.shuffle(l)
@@ -106,7 +106,7 @@ def main(args=None):
         print "Module not found: " + operation
         suggestions = find_suggestions(operation, modules)
         if len(suggestions) > 0:
-            print "Did you mean one of the following ?"
+            print "Did you mean one of the following?"
             for suggestion in suggestions:
                 print "\t%s" %suggestion
         else:

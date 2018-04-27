@@ -86,8 +86,11 @@ def tokens2regex(tokens, flags=re.U):
 def detect_abbreviations(document, field):
     content = document.content
     word_spans = document.segmentation("tokens")
-    sentence_spans = document.segmentation("sentences").spans
-    sentence_spans_ref = document.segmentation("sentences").get_reference_spans()
+    if document.segmentation("sentences") is not None:
+        sentence_spans = document.segmentation("sentences").spans
+        sentence_spans_ref = document.segmentation("sentences").get_reference_spans()
+    else:
+        sentence_spans_ref = [Span(0, len(document.content))]
     tokens = [content[span.lb : span.ub] for span in word_spans]
     annotations = document.annotation(field).get_reference_annotations()
 

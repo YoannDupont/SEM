@@ -31,3 +31,6 @@ def tab_split(s):
 
 def tab_join(s):
     return u"\t".join(s)
+
+from columnIO import Reader, Writer
+from keyIO import KeyReader, KeyWriter

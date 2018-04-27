@@ -105,8 +105,12 @@ class Document(Holder):
     
     @classmethod
     def from_conll(cls, filename, fields, word_field, taggings=None, chunkings=None, encoding="utf-8", **kwargs):
-        document         = Document(basename(filename), encoding=encoding)
-        document._corpus = Corpus.from_conll(filename, fields, encoding=encoding)
+        return Document.from_corpus(basename(filename), Corpus.from_conll(filename, fields, encoding=encoding), word_field, taggings=taggings, chunkings=chunkings, encoding=encoding, **kwargs)
+    
+    @classmethod
+    def from_corpus(cls, name, corpus, word_field, taggings=None, chunkings=None, encoding="utf-8", **kwargs):
+        document         = Document(name, encoding=encoding)
+        document._corpus = corpus
         character_index  = 0
         sentence_index   = 0
         contents         = []
@@ -124,9 +128,9 @@ class Document(Holder):
         document._content = u"\n".join([u" ".join(content) for content in contents])
         document.add_segmentation(Segmentation("tokens", spans=word_spans))
         document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans[:]))
-        for tagging in taggings:
+        for tagging in (taggings or []):
             document.add_annotation(tag_annotation_from_corpus(document._corpus, tagging, tagging, reference=document.segmentation("tokens"), strict=True))
-        for chunking in chunkings:
+        for chunking in (chunkings or []):
             document.add_annotation(chunk_annotation_from_corpus(document._corpus, chunking, chunking, reference=document.segmentation("tokens"), strict=True))
         return document
     

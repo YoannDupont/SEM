@@ -31,7 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.IO.KeyIO import KeyReader
+from sem.IO import KeyReader
 
 class Corpus(object):
     def __init__(self, fields=None, sentences=None):

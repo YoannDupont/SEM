@@ -40,8 +40,8 @@ from datetime import timedelta
 from .sem_module import SEMModule as RootModule
 
 from sem.information import Informations
-from sem.IO.KeyIO    import KeyReader, KeyWriter
-from sem.logger      import default_handler, file_handler
+from sem.IO import KeyReader, KeyWriter
+from sem.logger import default_handler, file_handler
 
 import os.path
 enrich_logger = logging.getLogger("sem.%s" %os.path.basename(__file__).split(".")[0])

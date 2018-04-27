@@ -112,7 +112,6 @@ class TestModules(unittest.TestCase):
         self.assertEquals(sentence[4]["the_new_field"], u"O")
     
     def test_wapiti_label(self):
-        document = Document("document", "Ceci est un test.")
         corpus = Corpus([u"word", u"tag"], sentences=[
             [
                 {u"word":u"Ceci", u"tag":u"B-tag"},
@@ -136,7 +135,7 @@ class TestModules(unittest.TestCase):
                 {u"word":u".", u"tag":u"O"}
             ],
         ])
-        document._corpus = corpus
+        document = Document.from_corpus("document", corpus, u"word")
         tags = []
         for sentence in document._corpus.sentences:
             for token in sentence:
