@@ -36,163 +36,216 @@
     \newpage
     
     \section{Préface}
+    \label{sec:preface}
     
         \subsection{Présentation de \SEM}
-        \subfile{fr/subsection/presentation}
+        \label{subsec:presentation}
+        \subfile{fr/preface/presentation}
     
     \section{Installation}
-    \subfile{fr/section/installation}
+    \label{sec:installation}
+    \subfile{fr/installation}
 
         \subsection{Si GIT est installé}
-        \subfile{fr/subsection/git-installed}
+        \label{ssubec:git-installed}
+        \subfile{fr/installation/git-installed}
 
         \subsection{Si GIT n'est pas installé}
-        \subfile{fr/subsection/git-not-installed}
+        \label{subsec:git-not-installed}
+        \subfile{fr/installation/git-not-installed}
 
         \subsection{\Wapiti}
-        \subfile{fr/subsection/wapiti}
+        \label{subsec:wapiti}
+        \subfile{fr/installation/wapiti}
     
     \section{Corpus, annotations et ressources linguistiques}
+    \label{sec:corpus-annotations-resources}
 
         \subsection{\FTBFull}
-        \subfile{fr/subsection/ftb}
+        \label{subsec:ftb}
+        \subfile{fr/corpus-annotations-resources/ftb}
 
         \subsection{Jeu d'annotation PoS}
-        \subfile{fr/subsection/tags-pos}
+        \label{subsec:tags-pos}
+        \subfile{fr/corpus-annotations-resources/tags-pos}
 
         \subsection{Annotation en chunks}
-        \subfile{fr/subsection/tags-chunking}
+        \label{subsec:tags-chunking}
+        \subfile{fr/corpus-annotations-resources/tags-chunking}
 
         \subsection{Annotation en entités nommées}
-        \subfile{fr/subsection/tags-ner}
+        \label{subsec:tags-ner}
+        \subfile{fr/corpus-annotations-resources/tags-ner}
 
         \subsection{\LeFFFFull}
-        \subfile{fr/subsection/lefff}
+        \label{subsec:lefff}
+        \subfile{fr/corpus-annotations-resources/lefff}
     
     \section{Formats des fichiers}
-    \subfile{fr/section/file_formats}
+    \label{sec:file-formats}
+    \subfile{fr/file-formats}
 
         \subsection{fichiers linéaires}
-        \subfile{fr/subsection/file-linear}
+        \label{subsec:file-linear}
+        \subfile{fr/file-formats/file-linear}
 
             \subsubsection{Exemples}
-            \subfile{fr/subsubsection/file-linear-examples}
+            \label{subsubsec:file-linear-examples}
+            \subfile{fr/file-formats/file-linear/examples}
 
         \subsection{fichiers vectorisés}
-        \subfile{fr/subsection/file-vectorised}
+        \label{subsec:file-vectorised}
+        \subfile{fr/file-formats/file-vectorised}
 
             \subsubsection{Exemples}
-            \subfile{fr/subsubsection/file-vectorised-examples}
+            \label{subsubsec:file-vectorised-examples}
+            \subfile{fr/file-formats/file-vectorised/examples}
 
         \subsection{fichiers SEM}
-        \subfile{fr/subsection/file-sem}
+        \label{subsec:file-sem}
+        \subfile{fr/file-formats/file-sem}
 
             \subsubsection{Exemples}
-            \subfile{fr/subsubsection/file-sem-examples}
+            \label{subsubsec:file-sem-examples}
+            \subfile{fr/file-formats/file-sem/examples}
     
     \section{Utilisation}
-    \subfile{fr/section/usage}
+    \label{sec:usage}
+    \subfile{fr/usage}
 
         \subsection{annotate}
-        \subfile{fr/subsection/module-annotate}
+        \label{subsec:module-annotate}
+        \subfile{fr/usage/module-annotate}
 
         \subsection{chunking\_fscore}
-        \subfile{fr/subsection/module-chunking_fscore}
+        \label{subsec:module-chunking-fscore}
+        \subfile{fr/usage/module-chunking-fscore}
 
         \subsection{clean}
-        \subfile{fr/subsection/module-clean_info}
+        \label{subsec:module-clean}
+        \subfile{fr/usage/module-clean}
 
         \subsection{enrich}
-        \subfile{fr/subsection/module-enrich}
+        \label{subsec:module-enrich}
+        \subfile{fr/usage/module-enrich}
 
         \subsection{export}
-        \subfile{fr/subsection/module-export}
+        \label{subsec:module-export}
+        \subfile{fr/usage/module-export}
 
         \subsection{label\_consistency}
-        \subfile{fr/subsection/module-label_consistency}
+        \label{subsec:module-label-consistency}
+        \subfile{fr/usage/module-label-consistency}
 
         \subsection{tagging}
-        \subfile{fr/subsection/module-tagging}
+        \label{subsec:module-tagging}
+        \subfile{fr/usage/module-tagging}
 
         \subsection{segmentation}
-        \subfile{fr/subsection/module-segmentation}
+        \label{subsec:module-segmentation}
+        \subfile{fr/usage/module-segmentation}
 
         \subsection{compile}
-        \subfile{fr/subsection/module-compile}
+        \label{subsec:module-compile}
+        \subfile{fr/usage/module-compile}
 
         \subsection{decompile}
-        \subfile{fr/subsection/module-decompile}
+        \label{subsec:module-decompile}
+        \subfile{fr/usage/module-decompile}
 
         \subsection{tagger}
-        \subfile{fr/subsection/module-tagger}
+        \label{subsec:module-tagger}
+        \subfile{fr/usage/module-tagger}
 
         \subsection{gui}
-        \subfile{fr/subsection/module-gui}
+        \label{subsec:module-gui}
+        \subfile{fr/usage/module-gui}
 
         \subsection{annotation\_gui}
-        \subfile{fr/subsection/module-annotation_gui}
+        \label{subsec:module-annotation-gui}
+        \subfile{fr/usage/module-annotation_gui}
     
     \section{Fichiers de configuration}
+    \label{sec:config-files}
 
         \subsection{Pour le module enrich}
-        \subfile{fr/subsection/config-enrich}
+        \label{subsec:config-enrich}
+        \subfile{fr/config-files/enrich}
 
             \subsubsection{Les features \textit{arity}}
-            \subfile{fr/subsubsection/feature-arity}
+            \label{subsubsec:feature-arity}
+            \subfile{fr/config-files/enrich/feature-arity}
 
             \subsubsection{Les features \textit{boolean}}
-            \subfile{fr/subsubsection/feature-boolean}
+            \label{subsubsec:feature-boolean}
+            \subfile{fr/config-files/enrich/feature-boolean}
 
             \subsubsection{Les features \textit{dictionary}}
-            \subfile{fr/subsubsection/feature-dictionary}
+            \label{subsubsec:feature-dictionary}
+            \subfile{fr/config-files/enrich/feature-dictionary}
 
             \subsubsection{Les features \textit{directory}}
-            \subfile{fr/subsubsection/feature-directory}
+            \label{subsubsec:feature-directory}
+            \subfile{fr/config-files/enrich/feature-directory}
 
             \subsubsection{Les features \textit{list}}
-            \subfile{fr/subsubsection/feature-list}
+            \label{subsubsec:feature-list}
+            \subfile{fr/config-files/enrich/feature-list}
 
             \subsubsection{Les features \textit{matcher}}
-            \subfile{fr/subsubsection/feature-matcher}
+            \label{subsubsec:feature-matcher}
+            \subfile{fr/config-files/enrich/feature-matcher}
 
             \subsubsection{Les features \textit{rule}}
-            \subfile{fr/subsubsection/feature-rule}
+            \label{subsubsec:feature-rule}
+            \subfile{fr/config-files/enrich/feature-rule}
 
             \subsubsection{Les features \textit{string}}
-            \subfile{fr/subsubsection/feature-string}
+            \label{subsubsec:feature-string}
+            \subfile{fr/config-files/enrich/feature-string}
 
             \subsubsection{Les features \textit{trigger}}
-            \subfile{fr/subsubsection/feature-triggered}
+            \label{subsubsec:feature-triggered}
+            \subfile{fr/config-files/enrich/feature-triggered}
 
         \subsection{Pour le module tagger}
-        \subfile{fr/subsection/config-tagger}
+        \label{sec:config-tagger}
+        \subfile{fr/config-files/tagger}
     
     \section{Réentraîner \SEM}
-    \subfile{fr/section/retrain-sem}
+    \label{sec:retrain-sem}
+    \subfile{fr/retrain-sem}
     
         \subsection{Réentraîner SEM depuis des fichiers déjà annotés}
+        \label{subsec:retrain-sem-annotated}
         
             \subsubsection{Lancer la GUI de SEM}
-            \subfile{fr/subsubsection/launch-sem-gui}
+            \label{subsec:launch-sem-gui}
+            \subfile{fr/retrain-sem/annotated/launch-sem-gui}
             
             \subsubsection{Sélectionner les données et leur prétraitement}
-            \subfile{fr/subsubsection/data-and-preprocess}
+            \label{subsec:data-and-preprocess}
+            \subfile{fr/retrain-sem/annotated/data-and-preprocess}
             
             \subsubsection{Lancer l'entraînement}
             \label{subsubsec:train-SEM-from-annotated}
-            \subfile{fr/subsubsection/train-SEM-from-annotated}
+            \subfile{fr/retrain-sem/annotated/train-sem}
         
         \subsection{Réentraîner SEM depuis des fichiers non annotés}
-        \subfile{fr/subsection/retrain-sem-from-unannotated}
+        \label{sec:retrain-sem-unannotated}
+        \subfile{fr/retrain-sem/unannotated}
         
             \subsubsection{Lancer la GUI de SEM pour l'annotation manuelle}
-            \subfile{fr/subsubsection/launch-sem-annotation-gui}
+            \label{subsubsec:launch-sem-annotation-gui}
+            \subfile{fr/retrain-sem/unannotated/launch-sem-annotation-gui}
         
             \subsubsection{Annoter manuellement avec la GUI de SEM}
-            \subfile{fr/subsubsection/manually-annotate-with-sem}
+            \label{subsubsec:manually-annotate-with-sem}
+            \subfile{fr/retrain-sem/unannotated/manually-annotate-with-sem}
         
         \subsection{Utiliser le nouveau modèle}
-        \subfile{fr/subsection/use-new-model}
+        \label{subsec:use-new-model}
+        \subfile{fr/retrain-sem/use-new-model}
     
     \bibliographystyle{apa}
     \bibliography{biblio}
