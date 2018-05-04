@@ -37,6 +37,7 @@ from .holder import Holder
 from os.path import basename
 import cgi
 import codecs
+import logging
 
 try:
     from xml.etree import cElementTree as ET
@@ -54,6 +55,11 @@ from sem.storage.corpus       import Corpus
 from sem.storage.annotation   import Tag, Annotation, tag_annotation_from_corpus, chunk_annotation_from_corpus, get_top_level
 from sem.span                 import Span
 from sem.misc                 import correct_pos_tags
+from sem.logger               import default_handler
+
+document_logger = logging.getLogger("sem.storage.document")
+document_logger.addHandler(default_handler)
+document_logger.setLevel("WARNING")
 
 class Document(Holder):
     def __init__(self, name, content=None, encoding=None, lang=None, mime_type=None, **kwargs):
@@ -326,31 +332,60 @@ class Document(Holder):
             annot._reference = self.segmentation(reference_name)
         
         if add_to_corpus:
-            if filter and annot is not None:
-                annot = filter(annot)
-            sentence_spans = iter(self.segmentation("sentences"))
-            if annot is None or len(annot) == 0:
-                annots = iter([])
-                cur_annot = None
-            else:
-                annots = iter(annot)
-                cur_annot = next(annots)
-            shift = 0
-            for sentence in self.corpus.sentences:
-                span = next(sentence_spans)
-                for token in sentence:
-                    token[annotation_name] = u"O"
-                while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
-                    sentence[cur_annot.lb -shift][annotation_name] = u"B-%s" %cur_annot.value
-                    for k in range(cur_annot.lb+1, cur_annot.ub):
-                        sentence[k - shift][annotation_name] = u"I-%s" %cur_annot.value
-                    try:
-                        cur_annot = next(annots)
-                    except StopIteration:
-                        cur_annot = None
-                shift += len(sentence)
-            self.corpus.fields.append(annotation_name)
+            self.add_to_corpus(annotation_name, filter=filter)
+    
+    def add_to_corpus(self, annotation_name, filter=get_top_level):
+        annotations = self.annotation(annotation_name).get_reference_annotations()
         
+        spans = self.segmentation("tokens").get_reference_spans()
+        begin = 0
+        for j, annotation in enumerate(annotations):
+            start = annotation.lb
+            end   = annotation.ub
+            i = 0
+            while not(spans[i].lb <= start and start < spans[i].ub):
+                i += 1
+            begin = i
+            while spans[i].ub < end:
+                i += 1
+            annotation.lb = begin
+            annotation.ub = i + 1
+            begin = 0
+            i = 0
+        
+        if filter:
+            annotations = filter(annotations)
+        sentence_spans = iter(self.segmentation("sentences"))
+        annot_index = 0
+        if len(annotations) == 0:
+            annots = []
+            cur_annot = None
+        else:
+            annots = annotations
+            cur_annot = annots[annot_index]
+        shift = 0
+        for sentence in self.corpus.sentences:
+            span = next(sentence_spans)
+            for token in sentence:
+                token[annotation_name] = u"O"
+            while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
+                sentence[cur_annot.lb -shift][annotation_name] = u"B-%s" %cur_annot.value
+                for k in range(cur_annot.lb+1, cur_annot.ub):
+                    sentence[k - shift][annotation_name] = u"I-%s" %cur_annot.value
+                try:
+                    annot_index += 1
+                    cur_annot = annots[annot_index]
+                except IndexError:
+                    cur_annot = None
+            if cur_annot is not None and ((span.lb <= cur_annot.lb < span.ub) and cur_annot.ub > span.ub): # annotation spans over at least two sentences
+                document_logger.warn("Annotation %s spans over multiple sentences, ignoring" %(cur_annot))
+                try:
+                    annot_index += 1
+                    cur_annot = annots[annot_index]
+                except IndexError:
+                    cur_annot = None
+            shift += len(sentence)
+        self.corpus.fields.append(annotation_name)
     
     def add_annotation_from_tags(self, tags, field, annotation_name):
         BIO = all([tag[0] in u"BIO" for tag in tags[0]])

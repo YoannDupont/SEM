@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - new section in manual: how to train a new model with SEM
 - explicit handling of annotated CoNLL files. Use attribute ```taggings``` for taggins such as POS and ```chunkings``` for BIO-formatted taggings such as chunking or NER: ```<file format="conll" fields="field1,field2,POS,NER" word_field="field1" taggings="POS" chunkings="NER" />```
 ### Changed
+- corrected a bug when an annotation spanned over multiple sentences
+- modified french segmentation: "X." where X is an uppercase is left as is
 - corrected some typos in __main__.py
 - renamed "KeyIO.py" to "keyIO.py"
 - in ```label_consistency```, use whole document if no sentence segmentation

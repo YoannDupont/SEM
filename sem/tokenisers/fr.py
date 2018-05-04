@@ -211,7 +211,7 @@ class Tokeniser(DefaultTokeniser):
                 continue
             del tmp[:]
             # dots and ending commas
-            if text[-1] in u".,":
+            if text[-1] in u".," and not (len(text) == 2 and text[0].isupper()):
                 tmp = [(span[0], span[1]-1), (span[1]-1, span[1])]
             if tmp:
                 del l1[i]
