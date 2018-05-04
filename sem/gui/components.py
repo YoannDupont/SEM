@@ -368,14 +368,14 @@ class SEMTkWapitiTrain(ttk.Frame):
                     doc = tagger(args)
                     
                     if self.annotation_name is not None:
-                        doc.set_reference(self.annotation_name, "tokens", add_to_corpus=True)
+                        doc.add_to_corpus(self.annotation_name)
                     if not any([doc.name == d.name for d in documents]):
                         documents.append(doc)
             else:
                 document = tagger(args)
                 
                 if self.annotation_name is not None:
-                    document.set_reference(self.annotation_name, "tokens", add_to_corpus=True)
+                    document.add_to_corpus(self.annotation_name)
                 if not any([document.name == d.name for d in documents]):
                     documents.append(document)
         

@@ -316,10 +316,10 @@ class Document(Holder):
         if annot is not None and (annot.reference is None or annot.reference.name != reference_name):
             spans = self.segmentation(reference_name).get_reference_spans()
             begin = 0
+            i = 0
             for j, annotation in enumerate(annot):
                 start = annotation.lb
                 end   = annotation.ub
-                i = 0
                 while not(spans[i].lb <= start and start < spans[i].ub):
                     i += 1
                 begin = i
@@ -327,8 +327,8 @@ class Document(Holder):
                     i += 1
                 annotation.lb = begin
                 annotation.ub = i + 1
+                i = max(begin-1, 0)
                 begin = 0
-                i = 0
             annot._reference = self.segmentation(reference_name)
         
         if add_to_corpus:
@@ -339,10 +339,10 @@ class Document(Holder):
         
         spans = self.segmentation("tokens").get_reference_spans()
         begin = 0
+        i = 0
         for j, annotation in enumerate(annotations):
             start = annotation.lb
             end   = annotation.ub
-            i = 0
             while not(spans[i].lb <= start and start < spans[i].ub):
                 i += 1
             begin = i
@@ -350,8 +350,8 @@ class Document(Holder):
                 i += 1
             annotation.lb = begin
             annotation.ub = i + 1
+            i = max(begin-1, 0)
             begin = 0
-            i = 0
         
         if filter:
             annotations = filter(annotations)

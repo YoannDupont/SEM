@@ -241,6 +241,8 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
         elif lengths[x][y] == lengths[x][y-1]:
             bcktrck(x, y-1, current)
     
-    bcktrck(len(a), len(b), [])
-    
-    return list(solutions)
+    try:
+        bcktrck(len(a), len(b), [])
+        return list(solutions)
+    except RuntimeError: # maximum recursion depth
+        return []
