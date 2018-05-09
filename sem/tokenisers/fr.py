@@ -161,7 +161,7 @@ class Tokeniser(DefaultTokeniser):
             # commas
             prev = span[0]
             for find in comma_not_number.finditer(text):
-                tmp.extend([(prev, span[0]+find.start()), (span[0]+find.start(), span[0]+find.end())])
+                tmp.extend([(prev, span[0]+find.start()), (span[0]+find.start(), span[0]+find.end()), (span[0]+find.end(), span[1])])
                 prev = span[0]+find.end()+1
             if tmp != []:
                 del l1[i]
@@ -211,7 +211,7 @@ class Tokeniser(DefaultTokeniser):
                 continue
             del tmp[:]
             # dots and ending commas
-            if text[-1] in u".," and not (len(text) == 2 and text[0].isupper()):
+            if text and (text[-1] in u".," and not (len(text) == 2 and text[0].isupper())):
                 tmp = [(span[0], span[1]-1), (span[1]-1, span[1])]
             if tmp:
                 del l1[i]
@@ -219,8 +219,10 @@ class Tokeniser(DefaultTokeniser):
                     l1.insert(i, t)
                 continue
             i += 1
-
-        return [Span(s[0], s[1]) for s in l1]
+        
+        spans = [Span(s[0], s[1]) for s in l1]
+        spans = [span for span in spans if len(span) > 0]
+        return spans
     
     def sentence_bounds(self, content, token_spans):
         sent_bounds    = SpannedBounds()

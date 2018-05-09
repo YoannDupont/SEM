@@ -340,18 +340,27 @@ class Document(Holder):
         spans = self.segmentation("tokens").get_reference_spans()
         begin = 0
         i = 0
+        to_remove = [] # annotations that cannot be aligned with tokens will be removed
         for j, annotation in enumerate(annotations):
             start = annotation.lb
             end   = annotation.ub
-            while not(spans[i].lb <= start and start < spans[i].ub):
+            while (i > 0) and start < spans[i].lb:
+                i -= 1
+            while (i < len(spans)) and not(spans[i].lb <= start < spans[i].ub):
                 i += 1
-            begin = i
-            while spans[i].ub < end:
-                i += 1
-            annotation.lb = begin
-            annotation.ub = i + 1
-            i = max(begin-1, 0)
+            if i < len(spans):
+                begin = i
+                while spans[i].ub < end:
+                    i += 1
+                annotation.lb = begin
+                annotation.ub = i + 1
+            else:
+                document_logger.warn("cannot add annotation %s" %(annotation))
+                to_remove.append(j)
+            i = max(begin, 0)
             begin = 0
+        for i in to_remove[::-1]:
+            del annotations[i]
         
         if filter:
             annotations = filter(annotations)

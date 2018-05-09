@@ -4,6 +4,8 @@ All notable changes to SEM will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [SEM v3.2.0](https://github.com/YoannDupont/SEM/releases/tag/v3.2.0)
 ### Added
 - support for "whole word" matching when broadcasting annotation in annotation_gui
 - logging in GUI: output directory now logged
@@ -12,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - new section in manual: how to train a new model with SEM
 - explicit handling of annotated CoNLL files. Use attribute ```taggings``` for taggins such as POS and ```chunkings``` for BIO-formatted taggings such as chunking or NER: ```<file format="conll" fields="field1,field2,POS,NER" word_field="field1" taggings="POS" chunkings="NER" />```
 ### Changed
+- better matching between annotations and tokens in Document.add_to_corpus method
+- corrected a bug when comma was in the middle of a token
 - reordered and cleaned file hierarchy for manual
 - handling of a too long text when trying to match an abbreviation to a long form
 - improved speed when training a SEM model
@@ -91,7 +95,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
     - tests for modules
 
 ## changes compared to other versions:
-- unreleased: https://github.com/YoannDupont/SEM/compare/v3.1.2...HEAD
+- unreleased: https://github.com/YoannDupont/SEM/compare/v3.2.0...HEAD
+- 3.2.0: https://github.com/YoannDupont/SEM/compare/v3.1.2...3.2.0
 - 3.1.2: https://github.com/YoannDupont/SEM/compare/v3.1.1...3.1.2
 - 3.1.1: https://github.com/YoannDupont/SEM/compare/v3.1.0...v3.1.1
 - 3.1.0: https://github.com/YoannDupont/SEM/compare/v3.0.0...v3.1.0
