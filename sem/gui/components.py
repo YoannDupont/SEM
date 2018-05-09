@@ -49,6 +49,7 @@ import multiprocessing
 import time
 import codecs
 import shutil
+import logging
 
 import sem
 import sem.wapiti, sem.exporters.conll
@@ -56,6 +57,7 @@ import sem.importers
 from sem.storage import Holder, Document, SEMCorpus
 from sem.modules.tagger import load_master, main as tagger
 from sem.modules import EnrichModule
+from sem.logger import default_handler
 
 class SemTkMasterSelector(ttk.Frame):
     def __init__(self, root, resource_dir, lang="fr"):
@@ -237,10 +239,14 @@ class SemTkExportSelector(ttk.Frame):
 
 
 class SEMTkWapitiTrain(ttk.Frame):
-    def __init__(self, file_selector, master, annotation_name, top=None, main_frame=None, text="Algorithm-specific variables"):
+    def __init__(self, file_selector, master, annotation_name, top=None, main_frame=None, text="Algorithm-specific variables", log_level="INFO"):
         self.file_selector = file_selector
         self.master = master
         self.annotation_name = annotation_name
+        self.log_level = log_level
+        self.wapiti_train_logger = logging.getLogger("sem.wapiti_train")
+        self.wapiti_train_logger.addHandler(default_handler)
+        self.wapiti_train_logger.setLevel(self.log_level)
         
         self.current_train = os.path.join(sem.SEM_DATA_DIR, "train")
         if not os.path.exists(self.current_train):
@@ -405,6 +411,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         
         sem.wapiti.train(train_file, pattern=pattern_file, output=model_file, algorithm=alg, rho1=l1, rho2=l2, nthreads=nprocs, compact=compact)
         
+        self.wapiti_train_logger.info("files are located in: " + output_dir)
         tkMessageBox.showinfo("training SEM", "Everything went ok! files are located in: " + output_dir)
         
         if self.main_frame:

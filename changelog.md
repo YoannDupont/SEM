@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## Unreleased
 ### Added
+- support for "whole word" matching when broadcasting annotation in annotation_gui
+- logging in GUI: output directory now logged
 - added imports in sem/IO/__init__.py
 - module ```chunking_evaluate```: a module that will compute various metrics. Will replace the module ```chunking_fscore```
 - new section in manual: how to train a new model with SEM
@@ -26,6 +28,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - BRAT importer: better handling of annotation information
 - GUI: corrected bug when giving pattern file for training SEM
 - annotation_gui: user can now export annotated corpus as BRAT, GATE, TEI (Analec and REDEN), json
+### Removed
+- exporter "dispatch", used to load exporter from name
 ### Deprecated
 - module ```chunking_fscore```: will be replaced by ```chunking_evaluate``` which will be more thorough
 

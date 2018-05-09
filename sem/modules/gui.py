@@ -43,20 +43,24 @@ except ImportError:
 import Tkconstants, tkMessageBox
 
 import time
-
 import os.path
+import platform
+import logging
 
 import sem
 from sem.modules.tagger import load_master, main as tagger
 from sem.storage import Holder, SEMCorpus
 from sem.gui.components import SemTkMasterSelector, SemTkLangSelector, SemTkFileSelector, SemTkExportSelector, SEMTkWapitiTrain
+from sem.logger import default_handler
 
-import platform
 SYSTEM = platform.system().lower()
 ON_WINDOWS = (SYSTEM == "windows")
 
+gui_logger = logging.getLogger("sem.gui")
+gui_logger.addHandler(default_handler)
+
 class SemTkMainWindow(ttk.Frame):
-    def __init__(self, root, resource_dir):
+    def __init__(self, root, resource_dir, log_level="INFO"):
         """
         create the main window.
         """
@@ -64,6 +68,9 @@ class SemTkMainWindow(ttk.Frame):
         ttk.Frame.__init__(self, root)
         
         self.resource_dir = resource_dir
+        self.log_level = log_level
+        
+        gui_logger.setLevel(self.log_level)
         
         self.current_files = None
         self.current_output = os.path.join(sem.SEM_DATA_DIR, "outputs")
@@ -140,6 +147,7 @@ class SemTkMainWindow(ttk.Frame):
             tkMessageBox.showerror("launching SEM", "Error: " + e.message)
             raise
             return
+        gui_logger.info("files are located in: " + output_dir)
         tkMessageBox.showinfo("launching SEM", "Everything went ok! files are located in: " + output_dir)
         return
     
@@ -165,12 +173,14 @@ parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0],
 
 parser.add_argument("resources", nargs="?", default=os.path.join(sem.SEM_RESOURCE_DIR),
                     help="The directory where resources are. If not provided, will use current installation's resources.")
+parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="INFO",
+                    help="Increase log level (default: critical)")
 
 def main(args):
     root = tk.Tk()
     root.title("SEM")
     root.minsize(width=380, height=200)
     
-    SemTkMainWindow(root, args.resources).pack()
+    SemTkMainWindow(root, args.resources, log_level=args.log_level).pack()
     
     root.mainloop()

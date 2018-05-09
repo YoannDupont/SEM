@@ -170,6 +170,8 @@ class AnnotationTool(tk.Frame):
         self.annotation_row = ttk.PanedWindow(self, orient="horizontal")
         
         self.corpus_tree = ttk.Treeview(self.annotation_row)
+        self.corpus_tree_scrollbar = ttk.Scrollbar(self.annotation_row, command=self.corpus_tree.yview)
+        self.corpus_tree.configure(yscroll=self.corpus_tree_scrollbar.set)
         self.corpus_tree.heading("#0", text="corpus", anchor=tk.W)
         self.corpus_tree.bind("<<TreeviewSelect>>", self.load_document)
         self.corpus_documents = []
@@ -180,25 +182,34 @@ class AnnotationTool(tk.Frame):
         self.text.configure(state="disabled")
         self.text.bind("<Shift-Tab>", self.shift_tab)
         for char in self.available_chars_set:
-            self.text.bind_all("<%s>" %char, self.handle_char)
+            self.text.bind("<%s>" %char, self.handle_char)
+            self.parent.bind("<%s>" %char, self.handle_char)
             if char.islower():
-                self.text.bind_all("<%s>" %char.upper(), self.handle_char)
+                self.text.bind("<%s>" %char.upper(), self.handle_char)
+                self.parent.bind("<%s>" %char.upper(), self.handle_char)
         
         self.tree = ttk.Treeview(self.annotation_row)
+        self.tree_scrollbar = ttk.Scrollbar(self.annotation_row, command=self.tree.yview)
+        self.tree.configure(yscroll=self.tree_scrollbar.set)
         self.tree.heading("#0", text="annotation sets", anchor=tk.W)
         self.tree.bind("<<TreeviewSelect>>", self.select_from_tree)
         self.tree_ids = {}
         self.annot2treeitems = {}
         
         self.annotation_row.add(self.corpus_tree)
+        self.annotation_row.add(self.corpus_tree_scrollbar)
         self.annotation_row.add(self.text)
         self.annotation_row.add(self.tree)
+        self.annotation_row.add(self.tree_scrollbar)
         self.annotation_row.pack(side="left", fill="both", expand=True)
         
         self.text.bind("<Button-1>", self.click)
         self.text.bind("<Delete>", self.delete)
+        self.parent.bind("<Delete>", self.delete)
         self.text.bind("<Shift-Delete>", self.delete_all)
+        self.parent.bind("<Shift-Delete>", self.delete_all)
         self.text.bind("<Escape>", self.unselect)
+        self.parent.bind("<Escape>", self.unselect)
         
         self.tree.bind("<Delete>", self.delete)
         self.tree.bind("<Shift-Delete>", self.delete_all)
@@ -215,7 +226,17 @@ class AnnotationTool(tk.Frame):
         self.annot2treeitems = {}
         self.ner2history = {}
         
+        # preferences
+        self._whole_word = tk.BooleanVar()
+        self._whole_word.set(True)
+        self.wikinews_format = tk.BooleanVar()
+        self.wikinews_format.set(True)
+        
         #skip_auth=> self.auth()
+    
+    @property
+    def whole_word(self):
+        return bool(self._whole_word.get())
     
     def exit(self, event=None):
         self.destroy()
@@ -337,7 +358,7 @@ class AnnotationTool(tk.Frame):
     #
     
     def openfile(self, event=None):
-        filenames = tkFileDialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem")), ("text files", ".txt"), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
+        filenames = tkFileDialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")), ("text files", ".txt"), ("BRAT files", (".txt", ".ann")), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
         if filenames == []: return
         
         chunks_to_load = ([self.annotation_name] if self.annotation_name else None)
@@ -347,9 +368,14 @@ class AnnotationTool(tk.Frame):
             if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
                     docs = SEMCorpus.from_xml(filename, chunks_to_load=chunks_to_load, load_subtypes=True).documents
+                    for doc in docs: # using reference annotations
+                        for annotation_name in doc.annotations.keys():
+                            doc.add_annotation(Annotation(annotation_name, reference=None, annotations=doc.annotation(annotation_name).get_reference_annotations()))
                     documents.extend(docs)
                 except:
                     documents.append(Document.from_xml(filename, chunks_to_load=chunks_to_load, load_subtypes=True))
+                    for annotation_name in documents[-1].annotations.keys():
+                        documents[-1].add_annotation(Annotation(annotation_name, reference=None, annotations=documents[-1].annotation(annotation_name).get_reference_annotations()))
             else:
                 documents.append(sem.importers.load(filename, encoding="utf-8"))
         
@@ -364,7 +390,8 @@ class AnnotationTool(tk.Frame):
         
         self.load_document(document)
         
-        self.train_btn.configure(state=tk.NORMAL)
+        if self.adder is not None:
+            self.train_btn.configure(state=tk.NORMAL)
         self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
         self.file_menu.entryconfig("Save as...", state=tk.NORMAL)
         if self.adder is not None:
@@ -381,7 +408,7 @@ class AnnotationTool(tk.Frame):
             self.url.set("")
             toplevel.destroy()
         def ok(event=None):
-            document = sem.importers.from_url(self.url.get(), wikinews_format=True)
+            document = sem.importers.from_url(self.url.get(), wikinews_format=bool(self.wikinews_format.get()), strip_html=True)
             if document is None: return
         
             added = self.add_document(document)
@@ -389,7 +416,8 @@ class AnnotationTool(tk.Frame):
             
             self.load_document(document)
             
-            self.train_btn.configure(state=tk.NORMAL)
+            if self.adder is not None:
+                self.train_btn.configure(state=tk.NORMAL)
             self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
             cancel()
         
@@ -399,6 +427,9 @@ class AnnotationTool(tk.Frame):
         text = ttk.Entry(toplevel, textvariable=self.url)
         text.pack()
         text.focus_set()
+        
+        c = ttk.Checkbutton(toplevel, text="Use Wikinews format", variable=self.wikinews_format)
+        c.pack()
         
         toolbar = ttk.Frame(toplevel)
         toolbar.pack(side="top", fill="x")
@@ -491,14 +522,19 @@ class AnnotationTool(tk.Frame):
         notebook = ttk.Notebook(preferenceTop)
         
         frame1 = ttk.Frame(notebook)
-        notebook.add(frame1, text='shortcuts')
+        notebook.add(frame1, text='general')
+        frame2 = ttk.Frame(notebook)
+        notebook.add(frame2, text='shortcuts')
+
+        c = ttk.Checkbutton(frame1, text="Match whole word when broadcasting annotation", variable=self._whole_word)
+        c.pack()
         
         shortcuts_vars = []
         shortcuts_gui = []
         cur_row = 0
         j = -1
         frame_list = []
-        frame_list.append(ttk.LabelFrame(frame1, text="common shortcuts"))
+        frame_list.append(ttk.LabelFrame(frame2, text="common shortcuts"))
         frame_list[-1].pack(fill="both", expand="yes")
         for i, shortcut in enumerate(self.shortcuts):
             j += 1
@@ -509,8 +545,9 @@ class AnnotationTool(tk.Frame):
             entry = tk.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
             entry.grid(row=cur_row, column=1)
             cur_row += 1
-        for i, adder_list in enumerate(self.adders):
-            frame_list.append(ttk.LabelFrame(frame1, text="level %i shortcuts" %(i+1)))
+        # TODO: make following code work with self.adder
+        """for i, adder_list in enumerate(self.adders):
+            frame_list.append(ttk.LabelFrame(frame2, text="level %i shortcuts" %(i+1)))
             frame_list[-1].pack(fill="both", expand="yes")
             cur_row = 0
             for entity_type in sorted(adder_list.keys()):
@@ -519,7 +556,7 @@ class AnnotationTool(tk.Frame):
                 tk.Label(frame_list[-1], text=entity_type).grid(row=cur_row, column=0, sticky=tk.W)
                 entry = tk.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
                 entry.grid(row=cur_row, column=1)
-                cur_row += 1
+                cur_row += 1"""
         notebook.pack()
     
     #
@@ -533,7 +570,7 @@ class AnnotationTool(tk.Frame):
         from sem.gui.components import SemTkMasterSelector
         trainTop = tk.Toplevel()
         trainTop.focus_set()
-        vars_workflow = tk.StringVar(trainTop, value=r"C:\Users\Yoann\programmation\python\SEM-masteresources\master\fr\NER1-train.xml")
+        vars_workflow = tk.StringVar(trainTop, value="")
         CRF_algorithmString = tk.StringVar(trainTop, value="rprop")
         CRF_l1String = tk.StringVar(trainTop, value="0.5")
         CRF_l2String = tk.StringVar(trainTop, value="0.0001")
@@ -584,7 +621,7 @@ class AnnotationTool(tk.Frame):
             else:
                 start, end = ("sel.first", "sel.last")
             try:
-                for match in find_occurrences(self.text.get(start, end), self.doc.content):
+                for match in find_occurrences(self.text.get(start, end), self.doc.content, whole_word=self.whole_word):
                     cur_start, cur_end = self.charindex2position(match.start()), self.charindex2position(match.end())
                     if Tag(match.start(), match.end(), the_type) not in self.current_annotations:
                         self.wish_to_add = [the_type, cur_start, cur_end]
@@ -801,7 +838,7 @@ class AnnotationTool(tk.Frame):
             value = self.adder.current_annotation.value
             start = self.adder.current_annotation.lb
             end = self.adder.current_annotation.ub
-            for occ in find_occurrences(self.doc.content[start:end], self.doc.content):
+            for occ in find_occurrences(self.doc.content[start:end], self.doc.content, whole_word=False):
                 self.adder.current_annotation = Tag(occ.start(), occ.end(), value)
                 self.delete(event)
         self.adder.current_annotation = None
@@ -931,7 +968,7 @@ class AnnotationTool(tk.Frame):
         self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         self.annotation_name = tagset_name
         self.tagset = set(tagset)
-        self.adders = [{}]
+        #self.adders = [{}]
         
         for combo in self.type_combos:
             combo.destroy()
@@ -974,12 +1011,15 @@ class AnnotationTool(tk.Frame):
         self.update_level()
         self.doc = None
         self.load_document()
+        if self.doc is not None:
+            self.train_btn.configure(state=tk.NORMAL)
     
     def load_tagset_gui(self, event=None):
         filename = tkFileDialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")], initialdir=os.path.join(sem.SEM_DATA_DIR, "resources", "tagsets"))
         
-        if filename == "": return
+        if len(filename) == 0: return
         
+        print filename
         tagset_name = os.path.splitext(os.path.basename(filename))[0]
         tagset = []
         with codecs.open(filename, "rU", "utf-8") as I:

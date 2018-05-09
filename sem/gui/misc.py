@@ -51,11 +51,14 @@ def find_potential_separator(target):
         return found[0]
     return None
 
-def find_occurrences(target, content):
+def find_occurrences(target, content, whole_word=True):
     #1. regex = re.compile(u'((?<=\W)|(?<=^))' + target + u"(?=\W|$)", re.U + re.M)
     #2. regex = re.compile(u'\b' + target + u"\b", re.U + re.M)
     target = target.strip()
-    pattern = (u"\\b" if target[0].isalnum() else u"((?<=\\s)|(?<=^))") + re.escape(target) + (u"\\b" if target[-1].isalnum() else u"(?=\\s|$)")
+    if whole_word:
+        pattern = (u"\\b" if target[0].isalnum() else u"((?<=\\s)|(?<=^))") + re.escape(target) + (u"\\b" if target[-1].isalnum() else u"(?=\\s|$)")
+    else:
+        pattern = re.escape(target)
     regex = re.compile(pattern, re.U + re.M)
     for match in regex.finditer(content):
         yield match
