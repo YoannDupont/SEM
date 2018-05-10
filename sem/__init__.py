@@ -60,7 +60,7 @@ On a more NLP side, such changes could also include a change in corpora used in 
 If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
 """
 
-_version_minor = 1
+_version_minor = 2
 u"""
 The minor version number.
 Is only incremented when medium changes are made to the program.
@@ -68,7 +68,7 @@ Such changes include feature addition / deletion, creation of a new language ent
 If this number is incremented, _version_patch is to be reseted to 0.
 """
 
-_version_patch = 2
+_version_patch = 0
 u"""
 The patch version number.
 Is only incremented when shallow changes are made to the program.
