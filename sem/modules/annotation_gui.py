@@ -419,6 +419,7 @@ class AnnotationTool(tk.Frame):
             if self.adder is not None:
                 self.train_btn.configure(state=tk.NORMAL)
             self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
+            self.file_menu.entryconfig("Save as...", state=tk.NORMAL)
             cancel()
         
         label1 = tk.Label(toplevel, text="enter url:")
@@ -1019,7 +1020,6 @@ class AnnotationTool(tk.Frame):
         
         if len(filename) == 0: return
         
-        print filename
         tagset_name = os.path.splitext(os.path.basename(filename))[0]
         tagset = []
         with codecs.open(filename, "rU", "utf-8") as I:

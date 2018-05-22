@@ -63,17 +63,20 @@ class SemTkMasterSelector(ttk.Frame):
     def __init__(self, root, resource_dir, lang="fr"):
         ttk.Frame.__init__(self, root)
         
-        self._lang = lang
         self.resource_dir = resource_dir
+        self._lang = None
+        langs = os.listdir(os.path.join(self.resource_dir, "master"))
+        if langs:
+            self._lang = (lang if lang in langs else langs[0])
         
-        items = os.listdir(os.path.join(self.resource_dir, "master", self._lang))
-        items.sort(key=lambda x: x.lower())
-        max_length = max([len(item) for item in items])
+        self.items = (os.listdir(os.path.join(self.resource_dir, "master", self._lang)) if self._lang else [])
+        self.items.sort(key=lambda x: x.lower())
+        max_length = max([len(item) for item in self.items])
         
         self.select_workflow_label = ttk.Label(root, text=u"select workflow:")
-        self.masters = tk.Listbox(root, width=max_length+1, height=len(items))
+        self.masters = tk.Listbox(root, width=max_length+1, height=len(self.items))
 
-        for item in items:
+        for item in self.items:
             self.masters.insert(tk.END, item)
     
     def pack(self):
@@ -98,12 +101,13 @@ class SemTkMasterSelector(ttk.Frame):
     
     def set_lang(self, language):
         self._lang = language
-        items = os.listdir(os.path.join(self.resource_dir, "master", self._lang))
-        max_length = max([len(item) for item in items] + [0])
+        self.items = os.listdir(os.path.join(self.resource_dir, "master", self._lang))
+        self.items.sort(key=lambda x: x.lower())
+        max_length = max([len(item) for item in self.items] + [0])
         self.masters["height"] = len(items)
         
         self.masters.delete(0, tk.END)
-        for item in items:
+        for item in self.items:
             self.masters.insert(tk.END, item)
 
 
@@ -113,16 +117,20 @@ class SemTkLangSelector(ttk.Frame):
         
         self.master_selector = None
         self.resource_dir = resource_dir
-        items = os.listdir(os.path.join(self.resource_dir, "master"))
+        self.items = os.listdir(os.path.join(self.resource_dir, "master"))
         
         self.select_lang_label = ttk.Label(root, text=u"select language:")
-        self.langs = tk.Listbox(root, height=len(items), selectmode=tk.SINGLE)
+        self.langs = tk.Listbox(root, height=len(self.items), selectmode=tk.SINGLE)
+        self.cur_lang = None
 
-        for i, item in enumerate(items):
+        for i, item in enumerate(self.items):
             self.langs.insert(tk.END, item)
             if item == "fr":
                 self.langs.activate(i)
                 self.langs.selection_set(i)
+                self.langs.selection_anchor(i)
+                self.cur_lang = "fr"
+        self.cur_lang = self.cur_lang or self.items[0]
         
         self.langs.bind('<<ListboxSelect>>', self.select_lang)
     
@@ -143,10 +151,13 @@ class SemTkLangSelector(ttk.Frame):
         return self.langs.get(tk.ACTIVE)
     
     def select_lang(self, event):
-        selected = self.langs.curselection()[0]
-        self.langs.selection_set(selected)
-        self.langs.activate(selected)
-        self.master_selector.set_lang(self.lang())
+        lang = self.langs.get(tk.ANCHOR)
+        if lang != self.cur_lang:
+            self.cur_lang = lang
+            selected = self.items.index(lang)
+            self.langs.selection_set(selected)
+            self.langs.activate(selected)
+            self.master_selector.set_lang(self.lang())
 
 
 class SemTkFileSelector(ttk.Frame):
