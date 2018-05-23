@@ -568,7 +568,7 @@ class AnnotationTool(tk.Frame):
         if self.doc_is_modified:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
         
-        from sem.gui.components import SemTkMasterSelector
+        from sem.gui.components import SemTkLangSelector, SemTkMasterSelector
         trainTop = tk.Toplevel()
         trainTop.focus_set()
         vars_workflow = tk.StringVar(trainTop, value="")
@@ -578,6 +578,8 @@ class AnnotationTool(tk.Frame):
         
         varsFrame = ttk.LabelFrame(trainTop, text="Global variables")
         master_selector = SemTkMasterSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
+        lang_selector = SemTkLangSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
+        lang_selector.master_selector = master_selector
         
         algsFrame = ttk.LabelFrame(trainTop, text="Algorithm-specific variables")
         
@@ -590,6 +592,7 @@ class AnnotationTool(tk.Frame):
         
         varsFrame.pack(fill="both", expand="yes")
         vars_cur_row = 0
+        vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
         vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
         
         for _ in range(5):

@@ -104,7 +104,7 @@ class SemTkMasterSelector(ttk.Frame):
         self.items = os.listdir(os.path.join(self.resource_dir, "master", self._lang))
         self.items.sort(key=lambda x: x.lower())
         max_length = max([len(item) for item in self.items] + [0])
-        self.masters["height"] = len(items)
+        self.masters["height"] = len(self.items)
         
         self.masters.delete(0, tk.END)
         for item in self.items:

@@ -4,6 +4,8 @@ All notable changes to SEM will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- user can now select language when training from annotation_gui
 ### Changed
 - corrected a bug when there was no french language defined in SEM data
 - corrected a bug disallowing user to "save as..." in certain context
