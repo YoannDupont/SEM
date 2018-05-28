@@ -375,31 +375,36 @@ class SEMTkWapitiTrain(ttk.Frame):
             files = self.file_selector.files()
         except:
             files = self.file_selector
-        documents = []
-        for filename in files:
-            document = sem.importers.load(filename, encoding="utf-8")
-            args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
-            if isinstance(document, SEMCorpus):
-                for doc in document:
-                    args.infile = doc
-                    doc = tagger(args)
+        fields = []
+        names = set()
+        with codecs.open(train_file, "w", "utf-8") as O:
+            for filename in files:
+                document = sem.importers.load(filename, encoding="utf-8")
+                args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
+                if isinstance(document, SEMCorpus):
+                    for doc in document:
+                        if doc.name in names:
+                            continue
+                        args.infile = doc
+                        doc = tagger(args)
+                        
+                        if self.annotation_name is not None:
+                            doc.add_to_corpus(self.annotation_name)
+                            O.write(unicode(doc.corpus))
+                            O.write(u"\n")
+                        if not fields:
+                            fields = doc.corpus.fields[:-1]
+                else:
+                    document = tagger(args)
+                    if document.name in names:
+                        continue
                     
                     if self.annotation_name is not None:
-                        doc.add_to_corpus(self.annotation_name)
-                    if not any([doc.name == d.name for d in documents]):
-                        documents.append(doc)
-            else:
-                document = tagger(args)
-                
-                if self.annotation_name is not None:
-                    document.add_to_corpus(self.annotation_name)
-                if not any([document.name == d.name for d in documents]):
-                    documents.append(document)
-        
-        with codecs.open(train_file, "w", "utf-8") as O:
-            for document in documents:
-                O.write(unicode(document.corpus))
-                O.write(u"\n")
+                        document.add_to_corpus(self.annotation_name)
+                        O.write(unicode(document.corpus))
+                        O.write(u"\n")
+                        if not fields:
+                            fields = document.corpus.fields[:-1]
         
         pattern_file = os.path.join(output_dir, "pattern.txt")
         if pattern:
@@ -407,7 +412,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         else:
             with codecs.open(os.path.join(output_dir, "pattern.txt"), "w", "utf-8") as O:
                 O.write("u\n\n")
-                for i, field in enumerate(documents[0].corpus.fields[:-1]):
+                for i, field in enumerate(fields):
                     for shift in range(-2,3):
                         O.write("u:%s %+i=%%x[%i,%i]\n" %(field, shift, shift, i))
                     O.write(u"\n")
