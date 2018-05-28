@@ -1,0 +1,21 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+The \emph{trigger} \textit{string feature} allows to define a trigger before evaluating another feature. It has two children: \textit{trigger} which is the \emph{boolean feature} to check beforehand and then any \textit{token feature}. An example is given in figure \ref{fig:feature-triggered}.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{trigger}{ \xfield{name}{Substitute-Numbers-Triggered}}{\\
+    \xmarker{regexp}{ \xfield{action}{check}}{[0-9]}\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[0-9]+}\\
+        \xmarker{replace}{}{0}\\
+    }\\
+}
+\end{xml}
+\caption{example of the \textit{trigger} feature.}
+\label{fig:feature-triggered}
+\end{figure}
+
+\end{document}

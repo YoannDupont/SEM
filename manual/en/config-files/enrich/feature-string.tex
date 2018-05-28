@@ -1,0 +1,21 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\emph{String} \textit{token features} define operations on strings. The following actions are available:
+\begin{itemize}
+    \item equal (\textit{boolean feature}): checks the equality between the string and the one given in argument. Defines the following options:
+    \begin{itemize}
+        \item casing="(sensitive|s|insensitive|i)": defines case sensitivity of the operation (default: "sensitive").
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{string}{ \xfield{action}{equal} \xfield{casing}{sensitive}}{O}
+\end{xml}
+\caption{example of the "equal" \textit{string} feature.}
+\label{fig:feature-string-equal}
+\end{figure}
+
+\end{document}

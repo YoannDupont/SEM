@@ -1,0 +1,29 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Directory features allow to use a directory of lexica as described in \cite{dupont2017exploration}. Two features are defined:
+\begin{itemize}
+    \item directory (\textit{sequence feature}): apply a directory of features. Unmatched tokens are replaced by "O". This \textit{feature} expects a "path" argument that is the path to the folder where all the lexica are located;
+    \item fill (\textit{string feature}): replace elements by those given in the entry "filler-entry" if and only if it is matched by a \textit{boolean feature} given in argument.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{directory}{\xfield{name}{NER-ontology} \xfield{path}{../../dictionaries/fr/NER-ontology}}
+\end{xml}
+\caption{Example of a \textit{directory} feature.}
+\label{fig:feature-directory}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{fill}{ \xfield{name}{NER-ontology-POS} \xfield{entry}{NER-ontology} \xfield{filler-entry}{POS}}{\\
+    \xmarker{string}{ \xfield{action}{equal}}{O}\\
+}
+\end{xml}
+\caption{example of a \textit{directory} feature.}
+\label{fig:feature-directory-fill}
+\end{figure}
+\end{document}

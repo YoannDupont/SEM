@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## Unreleased
 ### Added
+- first version of the manual in English
 - user can now select language when training from annotation_gui
 ### Changed
 - corrected a bug when there was no french language defined in SEM data

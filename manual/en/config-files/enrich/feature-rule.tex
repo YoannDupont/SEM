@@ -1,0 +1,35 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+The \textit{sequence feature} "rule" allows to add simple rules as features. Arguments of a rule feature are always \textit{boolean features} and all have a "card" field to indicare their cardinality. Different values for "card" are:
+\begin{itemize}
+    \item ?: 0 or once
+    \item *: 0 or an unlimited number of times
+    \item +: 1 or an unlimited number of times
+    \item [int]: exactly [int] times
+    \item "min,max": at least min times and at most max times.
+\end{itemize}
+
+a specific argument for rule features is "orrule" that allows to match a rule within a set of rules. An example of a rule feature is given in the figure \ref{fig:feature-rule}.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{rule}{ \xfield{name}{amount}}{\\
+    \xmarker{list}{ \xfield{action}{some}}{\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{word}}{\^{}[0-9]+\$}\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{lower}}{\^{}(une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix
+|onze|douze|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt|trente|quarante|cinquante|soixante
+|soixante-dix|quatre-vingt|quatre-vingt-dix|cents?|mille|millions?|milliards?)\$}\\
+    }\\
+    \xmarker{orrule}{}{\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{chunking} \xfield{card}{+}}{-NP\$}\\
+        \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{chunking} \xfield{card}{+}}{-PP\$}\\
+    }\\
+}
+\end{xml}
+\caption{example of the \textit{rule} feature.}
+\label{fig:feature-rule}
+\end{figure}
+
+\end{document}

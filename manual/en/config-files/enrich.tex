@@ -1,0 +1,62 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+The enrich module configuration file allows to add informations to a vectorised file. It first describres entries that are present then the informations to add.
+
+It is and XML file of the document type "enrich". It has two parts: an "entries" defining entries that are already present and a "features" one to enrich the file.\\
+
+Each entry (present or added) has to have a name (using the \emph{name} attribute). Two different entries cannot have the same name. An example of an enrich module configuration file is given in the figure \ref{fig:sem-features}. Each entry has a mode allowing \SEM\ to only consider it in certain contexts. The \emph{train} mode allows to use an entry only when the aim is to train the model. The default mode, \emph{label}, considers the entry no matter the context.\\
+
+Most features have the following attributes:
+\begin{itemize}
+    \item name="string": the name of the feature. Mandatory for root features.
+    \item action="string": for features of the same nature (eg: evaluating a regular expression), select the kind of result or a different computation.
+    \item x="integer": the shift according to the current token (default: 0).
+    \item entry="string" : the entry used by the feature (default: word or token, otherwise the first feature defined in entries).
+    \item display="(yes|no)": whether the feature should be displayed or not. It is possible to not display a feature used as a temporary result.
+\end{itemize}
+
+There are multiple kinds features according to the kind of results they compute or the arguments they take into account:
+\begin{itemize}
+    \item \emph{token features} : they process each token independently. There are two kinds of token features:
+    \begin{itemize}
+        \item \emph{string features}: they return a string
+        \item \emph{boolean features}: they return a boolean
+    \end{itemize}
+    \item \emph{sequence features}: they process the whole sequence and return a sequence
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xheader{xml version="1.0" encoding="UTF-8"}\\
+\xmarker{information}{}{\\
+  \xmarker{entries}{}{\\
+    \xmarker{before}{}{\\
+      \xunit{entry}{\xfield{name}{word}}\\
+      \xunit{entry}{\xfield{name}{POS}}\\
+    }\\
+    \xmarker{after}{}{\\
+      \xunit{entry}{\xfield{name}{NE} \xfield{mode}{train}}\\
+    }\\
+  }\\
+  \xmarker{features}{}{\\
+    \xunit{nullary}{\xfield{name}{lower} \xfield{action}{lower} \xfield{display}{no}}\\
+    \xunit{ontology}{\xfield{name}{NER-ontology} \xfield{path}{dictionaries/NER-ontology} \xfield{display}{no}}\\
+    \xmarker{fill}{ \xfield{name}{NER-ontology-POS} \xfield{entry}{NER-ontology} \xfield{filler-entry}{POS}}{\\
+      \xmarker{string}{ \xfield{action}{equal}}{O}\\
+    }\\
+    \xmarker{find}{ \xfield{name}{NounBackward} \xfield{action}{backward} \xfield{return\_entry}{word}}{\\
+      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}N}\\
+    }\\
+    \xmarker{find}{ \xfield{name}{NounForward} \xfield{action}{forward} \xfield{return\_entry}{word}}{\\
+      \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{POS}}{\^{}N}\\
+    }\\
+  }\\
+}
+\end{xml}
+\caption{enrich module configuration file example. It allows to add descriptors that will be used for machine leaning.}
+\label{fig:sem-features}
+\end{figure}
+
+\end{document}

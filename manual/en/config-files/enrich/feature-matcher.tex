@@ -1,0 +1,37 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\emph{Regexp} \textit{token features} evaluate regular expressions. The following actions, illustrated on figures \ref{fig:feature-matcher-check}, \ref{fig:feature-matcher-subsequence} and \ref{fig:feature-matcher-token} are available:
+\begin{itemize}
+    \item action="check" (\textit{boolean feature}): check whether the regexp is matched on the token or not.
+    \item action="subsequence" (\textit{string feature}): check whether the regexp is matched on the token or not and return the matched substring.
+    \item action="token" (\textit{string feature}): check whether the regexp is matched on the token or not and return the token if it is the case.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{only-first-upper} \xfield{action}{check}}{\^{}[A-Z][\^{}A-Z]*\$}
+\end{xml}
+\caption{example of the \textit{matcher} feature "check".}
+\label{fig:feature-matcher-check}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{after-hyphen} \xfield{action}{subsequence}}{-.+\$}
+\end{xml}
+\caption{example of the \textit{matcher} feature "subsequence".}
+\label{fig:feature-matcher-subsequence}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{regexp}{ \xfield{name}{ends-with-isme} \xfield{action}{token}}{isme\$}
+\end{xml}
+\caption{example of the \textit{matcher} feature "token".}
+\label{fig:feature-matcher-token}
+\end{figure}
+\end{document}

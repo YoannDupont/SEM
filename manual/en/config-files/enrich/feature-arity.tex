@@ -1,0 +1,116 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\emph{Arity} features are defined based on the number of arguments they take as input. There are multiple kinds of \emph{arity} features.\\
+
+The first one \emph{arity token feature} is \emph{nullary}. The kind of feature takes no arguments. Examples of \emph{Nullary} feature are given in figures \ref{fig:feature-nullary-BOS}, \ref{fig:feature-nullary-EOS}, \ref{fig:feature-nullary-lower} and \ref{fig:feature-nullary-substring}. The available actions are:
+\begin{itemize}
+    \item BOS (\textit{boolean feature}): is the word at the Beginning Of Sequence ?
+    \item EOS (\textit{boolean feature}): is the word at the End Of Sequence ?
+    \item lower (\textit{string feature}): transforms the token in lowercase;
+    \item substring (\textit{string feature}): Provide a substring of the token. Defines the following options (xml attributes):
+    \begin{itemize}
+        \item from="[int]": the beginning index for the substring (default: 0)
+        \item to="[int]": the end index for the substring. If 0 is given, "to" is the end of the string (default: 0)
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{nullary}{\xfield{name}{IsFirstWord?} \xfield{action}{BOS}}
+\end{xml}
+\caption{example of the \textit{nullary} feature "BOS".}
+\label{fig:feature-nullary-BOS}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{nullary}{\xfield{name}{IsLastWord?} \xfield{action}{EOS}}
+\end{xml}
+\caption{example of the \textit{nullary} feature "EOS".}
+\label{fig:feature-nullary-EOS}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{nullary}{\xfield{name}{lower} \xfield{action}{lower}}
+\end{xml}
+\caption{example of the \textit{nullary} feature "lower".}
+\label{fig:feature-nullary-lower}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{nullary}{\xfield{name}{radical-3} \xfield{action}{substring} \xfield{to}{-3}}
+\end{xml}
+\caption{example of the \textit{nullary} feature "substring".}
+\label{fig:feature-nullary-substring}
+\end{figure}
+
+The second kind of \emph{token feature} is \emph{unary}. They take a single argument. An example is provided in figure \ref{fig:feature-unary-isUpper}. The available actions are:
+\begin{itemize}
+    \item isUpper: checks if the letter at the given index is in upper case.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{unary}{ \xfield{name}{StartsWithUpper?} \xfield{action}{isUpper}}{0}
+\end{xml}
+\caption{example of the \textit{unary} feature "isUpper".}
+\label{fig:feature-unary-isUpper}
+\end{figure}
+
+The third \textit{token feature} is \textit{binary}. It takes two arguments. An example is given in figure \ref{fig:feature-binary-substitute}. The available actions are:
+\begin{itemize}
+    \item substitute: substitute a string by another one. The first argument is \textit{pattern} and the second is \textit{replace}.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{binary}{ \xfield{name}{To-Greek-Alpha} \xfield{action}{substitute}}{\\
+    \xmarker{pattern}{}{alpha}\\
+    \xmarker{replace}{}{$\alpha$}\\
+}
+\end{xml}
+\caption{example of the \textit{binary} feature "substitue".}
+\label{fig:feature-binary-substitute}
+\end{figure}
+
+The fourth kind of \textit{token feature} is \textit{n-ary}. It takes an arbitrary number of elements. An example is given in figure \ref{fig:feature-nary-sequencer}. The available actions are:
+\begin{itemize}
+    \item sequencer: performs a sequence of processes. They are always \textit{string features}, the last one can be either a \textit{string feature} or a \textit{boolean feature}.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{nary}{ \xfield{name}{CharacterClass} \xfield{action}{sequencer}}{\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[A-Z]}\\
+        \xmarker{replace}{}{A}\\
+    }\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[a-z]}\\
+        \xmarker{replace}{}{a}\\
+    }\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[0-9]}\\
+        \xmarker{replace}{}{0}\\
+    }\\
+    \xmarker{binary}{ \xfield{action}{substitute}}{\\
+        \xmarker{pattern}{}{[\^{}Aa0]}\\
+        \xmarker{replace}{}{x}\\
+    }\\
+}
+\end{xml}
+\caption{exmaple of the \textit{n-ary} feature "sequencer". The example here implements character classes (called \textit{word shapes} in \cite{finkel2004exploiting}).}
+\label{fig:feature-nary-sequencer}
+\end{figure}
+
+\end{document}

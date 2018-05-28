@@ -1,0 +1,74 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            %\item[] Transforme des données du format CoNLL vers un autre format spécifié en argument.
+            \item[] Convert CoNLL file to another format.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] infile
+                \begin{itemize}
+                    \item[] the input file, vectorized format.
+                \end{itemize}
+            \item[] exporter\_name
+                \begin{itemize}
+                    \item[] the name of the exporter.
+                \end{itemize}
+            \item[] outfile
+                \begin{itemize}
+                    \item[] the output file.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h: switch
+                \begin{itemize}
+                    \item[] displays help
+                \end{itemize}
+            \item[] --pos-column ou -p
+                \begin{itemize}
+                    \item[] the column where POS tags are located.
+                \end{itemize}
+            \item[] --chunk-column ou -c
+                \begin{itemize}
+                    \item[] the column where chunking tags are located.
+                \end{itemize}
+            \item[] --ner-column ou -n
+                \begin{itemize}
+                    \item[] the column where NER tags are located.
+                \end{itemize}
+            \item[] --lang
+                \begin{itemize}
+                    \item[] the language of the document (default: fr)
+                \end{itemize}
+            \item[] --lang-style ou -s
+                \begin{itemize}
+                    \item[] the CSS stylesheet to use for HTML export (default: default.css)
+                \end{itemize}
+            \item[] --input-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the input file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --output-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the output file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --encoding: string
+                \begin{itemize}
+                    \item[] Encoding of both the input and the output files. Does not have priority (default: UTF-8).
+                \end{itemize}
+            \item[] --log ou -l: string
+                \begin{itemize}
+                    \item[] the log level: info, warn or critical (default: critical).
+                \end{itemize}
+            \item[] --log-file: file
+                \begin{itemize}
+                    \item[] the file where to log (default: terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

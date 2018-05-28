@@ -1,0 +1,34 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+The tagger module configuration file is called the master file. It allows to defined pipelines and global options that apply to the input files and modules.
+
+The master file is an XML file of document type "master". It has two parts: a \emph{pipeline} that is a list of modules and an "option" part that allows to define global options. An example of such a file is given in figure \ref{fig:sem-pipeline}.\\
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xheader{xml version="1.0" encoding="UTF-8"}\\
+\xmarker{master}{}{\\
+  \xmarker{pipeline}{}{\\
+    \xunit{segmentation}{\xfield{tokeniser}{fr}}\\
+    \xunit{enrich}{\xfield{informations}{pos.xml} \xfield{mode}{label}}\\
+    \xunit{annotate}{\xfield{model}{models/POS} \xfield{field}{POS}}\\
+    \xunit{clean}{\xfield{to-keep}{word,POS}}\\
+    \xunit{enrich}{\xfield{informations}{NER.xml} \xfield{mode}{label}}\\
+    \xunit{annotate}{\xfield{model}{models/NER} \xfield{field}{NER}}\\
+    \xunit{clean}{\xfield{to-keep}{word,POS,NER}}\\
+  }\\
+\\
+  \xmarker{options}{}{\\
+    \xunit{encoding}{\xfield{input-encoding}{utf-8} \xfield{output-encoding}{utf-8}}\\
+    \xunit{log}{\xfield{log\_level}{INFO}}\\
+    \xunit{export}{\xfield{format}{html} \xfield{pos}{POS} \xfield{ner}{NER} \xfield{lang}{fr} \xfield{lang\_style}{default.css}}\\
+  }\\
+}
+\end{xml}
+\caption{Specification of a \SEM\ pipeline.}
+\label{fig:sem-pipeline}
+\end{figure}
+
+\end{document}

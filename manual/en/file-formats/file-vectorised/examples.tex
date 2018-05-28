@@ -1,0 +1,15 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+	\item[] example 1 : vectorised raw text\\
+	\begin{tabular}{l}Le \\ chat \\ dort \\ .\end{tabular}
+	\item[] example 2 : vectorised text enriched with the information "does the word start with an uppercase?"\\
+	\begin{tabular}{ll}Le & oui \\ chat & non \\ dort & non \\ . & non\end{tabular}
+	\item[] example 3 : vectorised text with POS annotation\\
+	\begin{tabular}{ll}Le & DET \\ chat & NC \\ dort & V \\ . & PONCT\end{tabular}
+	\item[] example 4 : vectorised text with POS and chunking\\
+	\begin{tabular}{lll}Le & DET & B-NP\\ chat & NC & I-NP\\ dort & V & B-VN\\ . & PONCT & 0\end{tabular}
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,48 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+A SEM-XML example is given in the figure \ref{fig:xml-sem-example}. The same file in JSON format will not be provided as they have the same informations.
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xheader{xml version="1.0" encoding="UTF-8"}\\
+\xmarker{document}{ \xfield{name}{exemple.txt}}{\\
+  \xunit{metadata}{ \xfield{encoding}{utf-8}}\\
+  \xmarker{content}{}{SEM est un programme bien documenté.\\
+\\
+SEM est écrit par Yoann Dupont.}\\
+  \xmarker{segmentation}{ \xfield{name}{tokens}}{\\
+    \xunit{s}{\xfield{s}{0} \xfield{l}{3}}\\
+    \xunit{s}{\xfield{s}{4} \xfield{l}{3}}\\
+    \xunit{s}{\xfield{s}{8} \xfield{l}{2}}\\
+    \xunit{s}{\xfield{s}{11} \xfield{l}{9}}\\
+    \xunit{s}{\xfield{s}{21} \xfield{l}{4}}\\
+    \xunit{s}{\xfield{s}{26} \xfield{l}{9}}\\
+    \xunit{s}{\xfield{s}{35} \xfield{l}{1}}\\
+    \xunit{s}{\xfield{s}{38} \xfield{l}{3}}\\
+    \xunit{s}{\xfield{s}{42} \xfield{l}{3}}\\
+    \xunit{s}{\xfield{s}{46} \xfield{l}{2}}\\
+    \xunit{s}{\xfield{s}{49} \xfield{l}{9}}\\
+    \xunit{s}{\xfield{s}{59} \xfield{l}{5}}\\
+    \xunit{s}{\xfield{s}{65} \xfield{l}{3}}\\
+    \xunit{s}{\xfield{s}{69} \xfield{l}{5}}\\
+    \xunit{s}{\xfield{s}{75} \xfield{l}{6}}\\
+    \xunit{s}{\xfield{s}{81} \xfield{l}{1}}\\
+  }\\
+  \xmarker{segmentation}{ \xfield{name}{sentences} \xfield{reference}{tokens}}{\\
+    \xunit{s}{\xfield{s}{0} \xfield{l}{7}}\\
+    \xunit{s}{\xfield{s}{7} \xfield{l}{9}}\\
+  }\\
+  \xmarker{segmentation}{ \xfield{name}{paragraphs} \xfield{reference}{sentences}}{\\
+    \xunit{s}{\xfield{s}{0} \xfield{l}{1}}\\
+    \xunit{s}{\xfield{s}{1} \xfield{l}{1}}\\
+  }\\
+}\\
+}
+\end{xml}
+\caption{exemple de fichier XML-SEM.}
+\label{fig:xml-sem-example}
+\end{figure}
+
+\end{document}

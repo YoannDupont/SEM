@@ -1,0 +1,31 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+\SEM\ has independent modules, the main program can be used as a dispatcher to the right module to launch.\\
+
+To get the list of available modules, launch:
+
+\begin{lstlisting}[style=pieceofcode,frame=single]
+python -m sem (--help ou -h)
+\end{lstlisting}
+
+To get the \SEM\ version:
+
+\begin{lstlisting}[style=pieceofcode,frame=single]
+python -m sem (--version ou -v)
+\end{lstlisting}
+
+To get the informations about the last release of \SEM:
+
+\begin{lstlisting}[style=pieceofcode,frame=single]
+python -m sem (--informations ou -i)
+\end{lstlisting}
+
+To launch a specific module, the overall syntax is:
+
+\begin{lstlisting}[style=pieceofcode,frame=single]
+python -m sem <module\_name> <module\_arguments\_and\_options>
+\end{lstlisting}
+
+The different modules will be explained one by one.
+
+\end{document}

@@ -1,0 +1,65 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            %\item[] Améliore la cohérence des annotations en diffusant dans le document les annotations faites par le système. Les éléments non-annotés identiques à des éléments annotés seront annotés selon la catégorie la plus fréquente.
+            \item[] Improves consistency of the annotations by broadcasting the system's annotations in the whole document. Unannotated elements that are identical to tagged elements will have the most common category.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] infile
+                \begin{itemize}
+                    \item[] input file, vectorized format.
+                \end{itemize}
+        \end{itemize}
+        \begin{itemize}
+            \item[] outfile
+                \begin{itemize}
+                    \item[] output file, vectorized format.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h: switch
+                \begin{itemize}
+                    \item[] displays help
+                \end{itemize}
+            \item[] --token-column ou -t
+                \begin{itemize}
+                    \item[] the column where tokens are located.
+                \end{itemize}
+            \item[] --tag-column ou -c
+                \begin{itemize}
+                    \item[] the column where tags are located.
+                \end{itemize}
+            \item[] --label-consistency (choice: non-overriding, overriding)
+                \begin{itemize}
+                    %\item[] l'heuristique de diffusion. "non-overriding" laisse les annotations du systèmes telles quelles. "overriding" écrase les annotations du système si une annotation plus longue a est trouvée.
+                    \item[] broadcasting heuristic. "non-overriding" keeps system output in case of conflict. "overriding" overrides system annotations if a longer one is found.
+                \end{itemize}
+            \item[] --input-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the input file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --output-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the output file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --encoding: string
+                \begin{itemize}
+                    \item[] Encoding of both the input and the output files. Does not have priority (default: UTF-8).
+                \end{itemize}
+            \item[] --log ou -l: string
+                \begin{itemize}
+                    \item[] the log level: info, warn or critical (default: critical).
+                \end{itemize}
+            \item[] --log-file: file
+                \begin{itemize}
+                    \item[] the file where to log (default: terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,54 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            %\item[] Calcule la f-mesure sur des données étiquetées selon un schéma BIO. Fournit une f-mesure par classe, une micro f-mesure globale et une macro f-mesure globale.
+            \item[] Compute the f-score over data tagged using IOB scheme. Gives f-score over each class, a micro- and a macro- global f-score.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] infile
+                \begin{itemize}
+                    \item[] The input file. Should follow the CoNLL format.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h: switch
+                \begin{itemize}
+                    \item[] displays help
+                \end{itemize}
+            \item[] --reference-column ou -r: int
+                \begin{itemize}
+                    \item[] the index of the column where reference tags are located (default: -2).
+                \end{itemize}
+            \item[] --tagging-column ou -t: int
+                \begin{itemize}
+                    \item[] the index of the column where hypothesis tags given by the system are located (default: -1).
+                \end{itemize}
+            \item[] --input-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the input file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --output-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the output file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --encoding: string
+                \begin{itemize}
+                    \item[] Encoding of both the input and the output files. Does not have priority (default: UTF-8).
+                \end{itemize}
+            \item[] --log ou -l: string
+                \begin{itemize}
+                    \item[] the log level: info, warn or critical (default: critical).
+                \end{itemize}
+            \item[] --log-file: file
+                \begin{itemize}
+                    \item[] the file where to log (default: terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}

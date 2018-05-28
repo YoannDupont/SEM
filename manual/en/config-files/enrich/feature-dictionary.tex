@@ -1,0 +1,28 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+Dictionary \textit{features} are features absed on lexica. The available actions are:
+\begin{itemize}
+    \item token (\textit{boolean feature}): checks whether a token belongs to a lexicon or not;
+    \item multiword (\textit{sequence feature}): looks for sequences of tokens belonging to the lexicon.
+\end{itemize}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{dictionary}{\xfield{name}{token-dictionary} \xfield{action}{token} \xfield{path}{path/to/token-dictionary}}
+\end{xml}
+\caption{example of the "token" \textit{dictionary} feature.}
+\label{fig:feature-dictionary-token}
+\end{figure}
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xunit{dictionary}{\xfield{name}{multiword-dictionary} \xfield{action}{multiword} \xfield{path}{path/to/multiword-dictionary}}
+\end{xml}
+\caption{exmaple of the "multiword" \textit{dictionary} feature.}
+\label{fig:feature-dictionary-multiword}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,17 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+The \textit{list} feature is a boolean feature that allows to define a list of boolean features that will be evaluated. The following actions are available: \textit{none} (all features should evaluate to false), \textit{some} (at least one feature should evaluate to true) et \textit{all} (all features should evaluate to true).
+
+\begin{figure}[ht!]
+\footnotesize
+\begin{xml}
+\xmarker{list}{ \xfield{name}{top-of-hierarchy} \xfield{action}{some}}{\\
+    \xmarker{string}{ \xfield{action}{equal}}{PDG}\\
+    \xmarker{regexp}{ \xfield{action}{check} \xfield{entry}{lower}}{\^{}(président|directeur)\$}\\
+}
+\end{xml}
+\caption{Exmaple of the \textit{list} feature "some".}
+\label{fig:feature-list-some}
+\end{figure}
+\end{document}

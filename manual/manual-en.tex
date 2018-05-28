@@ -1,0 +1,252 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+\usepackage[usenames,dvipsnames]{color}
+
+\usepackage[colorlinks=true, citecolor=blue, linkcolor=ForestGreen]{hyperref}
+
+\usepackage{macros}
+\usepackage[many]{tcolorbox}
+
+\usepackage[top=1in, bottom=1.5in, left=1in, right=1in]{geometry}
+
+\usepackage{listings}
+\lstdefinestyle{pieceofcode}{ 
+  basicstyle=\bfseries\color{white},
+  backgroundcolor=\color{black},
+  stepnumber=2,
+  identifierstyle=\color{white},
+  stringstyle=\color{white},
+  keywordstyle=\color{white},
+  commentstyle=\color{white},
+}
+
+\usepackage{subfiles}
+
+\title{\SEMFull}
+\date{}
+
+\begin{document}
+    \maketitle
+    
+    \tableofcontents
+    \newpage
+    
+    \section{Preface}
+    \label{sec:preface}
+    
+        \subsection{\SEM\ presentation}
+        \label{subsec:presentation}
+        \subfile{en/preface/presentation}
+    
+    \section{Installation}
+    \label{sec:installation}
+    \subfile{en/installation}
+
+        \subsection{If GIT is installed}
+        \label{ssubec:git-installed}
+        \subfile{en/installation/git-installed}
+
+        \subsection{If GIT is not installed}
+        \label{subsec:git-not-installed}
+        \subfile{en/installation/git-not-installed}
+
+        \subsection{\Wapiti}
+        \label{subsec:wapiti}
+        \subfile{en/installation/wapiti}
+    
+    \section{Corpus, annotations and linguistic ressources}
+    \label{sec:corpus-annotations-resources}
+
+        \subsection{\FTBFull}
+        \label{subsec:ftb}
+        \subfile{en/corpus-annotations-resources/ftb}
+
+        \subsection{PoS tagset}
+        \label{subsec:tags-pos}
+        \subfile{en/corpus-annotations-resources/tags-pos}
+
+        \subsection{Chunking tagset}
+        \label{subsec:tags-chunking}
+        \subfile{en/corpus-annotations-resources/tags-chunking}
+
+        \subsection{Named Entity Recognition tagset}
+        \label{subsec:tags-ner}
+        \subfile{en/corpus-annotations-resources/tags-ner}
+
+        \subsection{\LeFFFFull}
+        \label{subsec:lefff}
+        \subfile{en/corpus-annotations-resources/lefff}
+    
+    \section{File formats}
+    \label{sec:file-formats}
+    \subfile{en/file-formats}
+
+        \subsection{Linear files}
+        \label{subsec:file-linear}
+        \subfile{en/file-formats/file-linear}
+
+            \subsubsection{Examples}
+            \label{subsubsec:file-linear-examples}
+            \subfile{en/file-formats/file-linear/examples}
+
+        \subsection{Vectorised files}
+        \label{subsec:file-vectorised}
+        \subfile{en/file-formats/file-vectorised}
+
+            \subsubsection{Examples}
+            \label{subsubsec:file-vectorised-examples}
+            \subfile{en/file-formats/file-vectorised/examples}
+
+        \subsection{SEM files}
+        \label{subsec:file-sem}
+        \subfile{en/file-formats/file-sem}
+
+            \subsubsection{Examples}
+            \label{subsubsec:file-sem-examples}
+            \subfile{en/file-formats/file-sem/examples}
+    
+    \section{Usage}
+    \label{sec:usage}
+    \subfile{en/usage}
+
+        \subsection{annotate}
+        \label{subsec:module-annotate}
+        \subfile{en/usage/module-annotate}
+
+        \subsection{chunking\_fscore}
+        \label{subsec:module-chunking-fscore}
+        \subfile{en/usage/module-chunking-fscore}
+
+        \subsection{clean}
+        \label{subsec:module-clean}
+        \subfile{en/usage/module-clean}
+
+        \subsection{enrich}
+        \label{subsec:module-enrich}
+        \subfile{en/usage/module-enrich}
+
+        \subsection{export}
+        \label{subsec:module-export}
+        \subfile{en/usage/module-export}
+
+        \subsection{label\_consistency}
+        \label{subsec:module-label-consistency}
+        \subfile{en/usage/module-label-consistency}
+
+        \subsection{tagging}
+        \label{subsec:module-tagging}
+        \subfile{en/usage/module-tagging}
+
+        \subsection{segmentation}
+        \label{subsec:module-segmentation}
+        \subfile{en/usage/module-segmentation}
+
+        \subsection{compile}
+        \label{subsec:module-compile}
+        \subfile{en/usage/module-compile}
+
+        \subsection{decompile}
+        \label{subsec:module-decompile}
+        \subfile{en/usage/module-decompile}
+
+        \subsection{tagger}
+        \label{subsec:module-tagger}
+        \subfile{en/usage/module-tagger}
+
+        \subsection{gui}
+        \label{subsec:module-gui}
+        \subfile{en/usage/module-gui}
+
+        \subsection{annotation\_gui}
+        \label{subsec:module-annotation-gui}
+        \subfile{en/usage/module-annotation_gui}
+    
+    \section{Configuration files}
+    \label{sec:config-files}
+
+        \subsection{For the enrich module}
+        \label{subsec:config-enrich}
+        \subfile{en/config-files/enrich}
+
+            \subsubsection{\textit{Arity} features}
+            \label{subsubsec:feature-arity}
+            \subfile{en/config-files/enrich/feature-arity}
+
+            \subsubsection{\textit{Boolean} features}
+            \label{subsubsec:feature-boolean}
+            \subfile{en/config-files/enrich/feature-boolean}
+
+            \subsubsection{\textit{Dictionary} features}
+            \label{subsubsec:feature-dictionary}
+            \subfile{en/config-files/enrich/feature-dictionary}
+
+            \subsubsection{\textit{Directory} features}
+            \label{subsubsec:feature-directory}
+            \subfile{en/config-files/enrich/feature-directory}
+
+            \subsubsection{\textit{List} features}
+            \label{subsubsec:feature-list}
+            \subfile{en/config-files/enrich/feature-list}
+
+            \subsubsection{\textit{Matcher} features}
+            \label{subsubsec:feature-matcher}
+            \subfile{en/config-files/enrich/feature-matcher}
+
+            \subsubsection{\textit{Rule} features}
+            \label{subsubsec:feature-rule}
+            \subfile{en/config-files/enrich/feature-rule}
+
+            \subsubsection{\textit{String} features}
+            \label{subsubsec:feature-string}
+            \subfile{en/config-files/enrich/feature-string}
+
+            \subsubsection{\textit{Trigger} features}
+            \label{subsubsec:feature-triggered}
+            \subfile{en/config-files/enrich/feature-triggered}
+
+        \subsection{For the tagger module}
+        \label{sec:config-tagger}
+        \subfile{en/config-files/tagger}
+    
+    \section{Retrain \SEM}
+    \label{sec:retrain-sem}
+    \subfile{en/retrain-sem}
+    
+        \subsection{Retrain SEM from annotated files}
+        \label{subsec:retrain-sem-annotated}
+        
+            \subsubsection{Launch SEM GUI}
+            \label{subsec:launch-sem-gui}
+            \subfile{en/retrain-sem/annotated/launch-sem-gui}
+            
+            \subsubsection{Select data and preprocesses}
+            \label{subsec:data-and-preprocess}
+            \subfile{en/retrain-sem/annotated/data-and-preprocess}
+            
+            \subsubsection{Launch training}
+            \label{subsubsec:train-SEM-from-annotated}
+            \subfile{en/retrain-sem/annotated/train-sem}
+        
+        \subsection{Retrain SEM from unannotated files}
+        \label{sec:retrain-sem-unannotated}
+        \subfile{en/retrain-sem/unannotated}
+        
+            \subsubsection{Launch SEM GUI for manual annotation}
+            \label{subsubsec:launch-sem-annotation-gui}
+            \subfile{en/retrain-sem/unannotated/launch-sem-annotation-gui}
+        
+            \subsubsection{Manually annotate with SEM annotation GUI}
+            \label{subsubsec:manually-annotate-with-sem}
+            \subfile{en/retrain-sem/unannotated/manually-annotate-with-sem}
+        
+        \subsection{Use the new model}
+        \label{subsec:use-new-model}
+        \subfile{en/retrain-sem/use-new-model}
+    
+    \bibliographystyle{apa}
+    \bibliography{biblio}
+\end{document}

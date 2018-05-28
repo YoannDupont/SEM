@@ -1,0 +1,53 @@
+\documentclass[manual-fr.tex]{subfiles}
+\begin{document}
+
+\begin{itemize}
+    \item[] \textbf{description}
+        \begin{itemize}
+            \item[] clean allows to remove columns that are not useful.
+        \end{itemize}
+    \item[] \textbf{arguments}
+        \begin{itemize}
+            \item[] infile: file
+                \begin{itemize}
+                    \item[] The input file. Follows the CoNLL-2003 format.
+                \end{itemize}
+            \item[] outfile: file
+                \begin{itemize}
+                    \item[] The output file.
+                \end{itemize}
+            \item[] ranges: string
+                \begin{itemize}
+                    \item[] columns to keep. The user can give either a number or a range. A range is a couple of number separated by a colon. Multiple ranges can be given, they have to be separated by a comma.
+                \end{itemize}
+        \end{itemize}
+    \item[] \textbf{options}
+        \begin{itemize}
+            \item[] --help ou -h: switch
+                \begin{itemize}
+                    \item[] displays help
+                \end{itemize}
+            \item[] --input-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the input file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --output-encoding: string
+                \begin{itemize}
+                    \item[] The encoding of the output file. Has priority over --encoding (default: --encoding).
+                \end{itemize}
+            \item[] --encoding: string
+                \begin{itemize}
+                    \item[] Encoding of both the input and the output files. Does not have priority (default: UTF-8).
+                \end{itemize}
+            \item[] --log ou -l: string
+                \begin{itemize}
+                    \item[] the log level: info, warn or critical (default: critical).
+                \end{itemize}
+            \item[] --log-file: file
+                \begin{itemize}
+                    \item[] the file where to log (default: terminal).
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+\end{document}
