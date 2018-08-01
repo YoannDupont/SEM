@@ -34,7 +34,7 @@ SOFTWARE.
 
 import codecs
 
-_NUL = u"" # end of sequence marker
+from sem.constants import NUL
 
 class Trie(object):
     """
@@ -62,11 +62,11 @@ class Trie(object):
         # Depth First Search
         def dfs(dic):
             keys  = set(dic.keys())
-            found = _NUL in keys
+            found = NUL in keys
             
             if found:
-                keys.remove(_NUL)
-                if dic[_NUL]:
+                keys.remove(NUL)
+                if dic[NUL]:
                     yield seq
             keys = list(keys)
             keys.sort()
@@ -104,7 +104,7 @@ class Trie(object):
         except StopIteration:
             pass
         
-        d[_NUL] = {}
+        d[NUL] = {}
     
     def add_with_value(self, sequence, value):
         iterator = iter(sequence)
@@ -121,7 +121,7 @@ class Trie(object):
         except StopIteration:
             pass
         
-        d[_NUL] = value
+        d[NUL] = value
     
     def contains(self, sequence):
         iterator = iter(sequence)
@@ -140,7 +140,7 @@ class Trie(object):
         except StopIteration:
             pass
         
-        return result and (_NUL in d)
+        return result and (NUL in d)
     
     def remove(self, sequence):
         def remove(dic, iterator):
@@ -151,8 +151,8 @@ class Trie(object):
                     if dic[elt] == {}:
                         del dic[elt]
             except StopIteration:
-                if _NUL in dic:
-                    del dic[_NUL]
+                if NUL in dic:
+                    del dic[NUL]
 
         remove(self._data, iter(sequence))
     

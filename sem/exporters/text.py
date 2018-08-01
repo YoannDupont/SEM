@@ -72,13 +72,13 @@ class Exporter(DefaultExporter):
             
             if "chunking" in lower and corpus.has_key(lower["chunking"]):
                 for annotation in get_chunks(sentence, lower["chunking"]):
-                    tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
-                    tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])
+                    tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
+                    tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
             
             if "ner" in lower and corpus.has_key(lower["ner"]):
                 for annotation in get_chunks(sentence, lower["ner"]):
-                    tokens[annotation.lb] = "(%s %s" %(annotation.value, tokens[annotation.lb])
-                    tokens[annotation.ub-1] = "%s )" %(tokens[annotation.ub-1])
+                    tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
+                    tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
             
             tokens = [token for token in tokens if token != ""] # if regrouping tokens, some are empty and would generate superfluous spaces
             data.append(u" ".join(tokens[:]))

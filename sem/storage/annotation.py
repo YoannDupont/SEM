@@ -31,14 +31,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.span import Span
+from .span import Span
+from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 
-class Tag(Span):
-    def __init__(self, lb, ub, value, length=-1):
-        super(Tag, self).__init__(lb, ub, length=length)
+class Tag(object):
+    def __init__(self, value, lb, ub, length=-1):
+        self._span = Span(lb, ub, length=length)
         self._value = value
         self.levels = value.strip(u".").split(u".")
         self.ids = {}
+    
+    def __len__(self):
+        return len(self._span)
+    
+    def __eq__(self, tag):
+        return self.value == tag.value and self.lb == tag.lb and self.ub == tag.ub
+    
+    def __str__(self):
+        return "{0},{1:s}".format(self.value, self.span)
     
     @property
     def value(self):
@@ -46,17 +56,31 @@ class Tag(Span):
     
     @value.setter
     def value(self, value):
-        self._value = value
+        self._value = value.strip()
         self.levels = value.strip(u".").split(u".")
     
-    def __eq__(self, tag):
-        return self.value == tag.value and self.lb == tag.lb and self.ub == tag.ub
+    @property
+    def span(self):
+        return Span(self._span.lb, self._span.ub)
     
-    def __str__(self):
-        return "%s,%s" %(self.value, super(Tag,self).__str__())
+    @property
+    def lb(self):
+        return self._span.lb
+    
+    @lb.setter
+    def lb(self, lb):
+        self._span.lb = lb
+    
+    @property
+    def ub(self):
+        return self._span.ub
+    
+    @ub.setter
+    def ub(self, ub):
+        self._span.ub = ub
     
     def toXML(self):
-        return '<tag v="%s" s="%i" l="%s" />' %(self.value, self.lb, self.ub)
+        return '<tag v="{tag.value}" s="{tag.lb}" l="{tag.ub}" />'.format(tag=self)
     
     def kind(self):
         return u"chunking"
@@ -129,7 +153,9 @@ class Annotation(object):
         i = 0
         if after is None:
             while i < len(self._annotations):
-                if annotation.lb > self._annotations[i].ub:
+                if annotation.lb > self._annotations[i].lb:
+                    None
+                elif annotation.lb > self._annotations[i].ub:
                     None
                 elif annotation.lb > self._annotations[i].ub:
                     break
@@ -167,10 +193,10 @@ class Annotation(object):
     
     def get_reference_annotations(self):
         if self.reference is None:
-            return self.annotations
+            return [Tag(a.value, a.lb, a.ub) for a in self.annotations]
         else:
             reference_spans = self.reference.get_reference_spans()
-            return [Tag(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub, element.value) for element in self.annotations]
+            return [Tag(element.value, reference_spans[element.lb].lb, reference_spans[element.ub-1].ub) for element in self.annotations]
     
 def get_top_level(annotations):
     result = annotations[:]
@@ -196,13 +222,12 @@ def get_bottom_level(annotations):
                 break
     return result
 
+str2filter = {
+    "top level": get_top_level,
+    "bottom level": get_bottom_level
+}
+
 def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
-    BEGIN  = "B"  # begin flags
-    IN     = "I"  # in flags
-    LAST   = "LE" # end flags
-    SINGLE = "US" # single flags
-    OUT    = "O"
-    
     annotation = Annotation("")
     start      = 0
     length     = 0
@@ -214,28 +239,28 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
         
         if tag in OUT:
             if value != "": # we just got out of a chunk
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
             value  = ""
             length = 0
         
         elif flag in BEGIN:
             if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
             value  = tag[2:]
             start  = index
             length = 1
             if index == last: # last token ==> add annotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
         
         elif flag in IN:
             if value != tag[2:] and strict:
-                raise ValueError('Got different values for same chunk: "%s" <> "%s"' %(tag[2:], value))
+                raise ValueError('Got different values for same chunk: "{0}" <> "{1}"'.format(tag[2:], value))
             length += 1
             if index == last: # last token ==> add annotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
         
         elif flag in LAST:
-            annotation.append(Tag(start+shift, 0, value, length=length+1))
+            annotation.append(Tag(value, start+shift, 0, length=length+1))
             value  = ""
             length = 0
         
@@ -244,7 +269,7 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
                 annotation.append(Tag(value, start+shift, 0, length=length))
                 value  = ""
                 length = 0
-            annotation.append(Tag(index+shift, 0, tag[2:], length=1))
+            annotation.append(Tag(tag[2:], index+shift, 0, length=1))
     return annotation
 
 def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
@@ -257,12 +282,6 @@ def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=Fa
     
     we define a general approach to handle the three at the same time.
     """
-    
-    BEGIN  = "B"  # begin flags
-    IN     = "I"  # in flags
-    LAST   = "LE" # end flags
-    SINGLE = "US" # single flags
-    OUT    = "O"
     
     annotation = Annotation(name, reference=reference)
     shift      = 0
@@ -286,22 +305,22 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
         
         if is_begin(tag):
             if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
             value  = tag
             start  = index
             length = 1
             if index == last: # last token ==> add annotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
         
         else:
             if value != tag[1:]:
                 if strict:
-                    raise ValueError('Got different values for same POS: "%s" <> "%s"' %(tag[1:], value))
+                    raise ValueError('Got different values for same POS: "{0}" <> "{1}"'.format(tag[1:], value))
                 else:
                     value = tag[1:] # most probable tag at the end.
             length += 1
             if index == last: # last token ==> add annotation
-                annotation.append(Tag(start+shift, 0, value, length=length))
+                annotation.append(Tag(value, start+shift, 0, length=length))
     return annotation
 
 def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
@@ -319,3 +338,15 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
         annotation.extend(tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations)
         shift += len(sentence)
     return annotation
+
+def annotation_from_sentence(sentence, column, shift=0, strict=False):
+    """
+    Return an Annotation object for sentence. Checks sentence before
+    calling either tag_annotation_from_sentence
+    or chunk_annotation_from_sentence
+    """
+    flags = BEGIN + IN + LAST + SINGLE + OUT
+    if all([token[column][0] in flags for token in sentence]):
+        return chunk_annotation_from_sentence(sentence, column, shift=shift, strict=strict)
+    else:
+        return tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict)

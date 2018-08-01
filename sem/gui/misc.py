@@ -29,7 +29,8 @@ SOFTWARE.
 import re
 
 from sem.storage.annotation import Tag
-from sem.trie import Trie, _NUL
+from sem.storage import Trie
+from sem.constants import NUL
 
 try:
     import Tkinter as tk
@@ -38,10 +39,10 @@ except ImportError:
 
 def fill_with(t, value):
     def fill_rec(t1):
-        keys = [key for key in t1 if key != _NUL]
+        keys = [key for key in t1 if key != NUL]
         for key in keys:
             fill_rec(t1[key])
-        t1[_NUL] = value[:]
+        t1[NUL] = value[:]
     fill_rec(t.data)
 
 def find_potential_separator(target):
@@ -77,11 +78,11 @@ def random_color():
         return hx
     def to_color(r,g,b):
         cs = [to_hex(c) for c in [r,g,b]]
-        return "#%s%s%s" %(cs[0],cs[1],cs[2])
+        return "#{cs[0]}{cs[1]}{cs[2]}".format(cs=cs)
     def darker(r,g,b):
         h,l,s = colorsys.rgb_to_hls(r/256.0, g/256.0, b/256.0)
         cs = [to_hex(256.0*c) for c in colorsys.hls_to_rgb(h,l/2.5,s)]
-        return "#%s%s%s" %(cs[0],cs[1],cs[2])
+        return "#{cs[0]}{cs[1]}{cs[2]}".format(cs=cs)
     
     return {"background":to_color(red,green,blue),"foreground":darker(red,green,blue)}
 
@@ -124,13 +125,13 @@ class Adder():
             if found:
                 available[level].remove(target)
                 self.shortcut = target
-                self.label = self.label + u" [%s or Shift+%s]" %(self.label[i], self.label[i])
+                self.label = self.label + u" [{0} or Shift+{0}]".format(self.label[i])
                 break
         if not found and len(available[level]) > 0:
             char = available[level][0]
             available[level].remove(char)
             self.shortcut = char
-            self.label += " [%s or Shift+%s]" %(char, char)
+            self.label += " [{0} or Shift+{0}]".format(char)
         if self.level not in Adder.l2t:
             Adder.l2t[self.level] = {}
             Adder.t2l[self.level] = {}
@@ -140,7 +141,7 @@ class Adder():
     def add(self, event, remove_focus=False):
         if self.frame.current_selection is not None:
             f_cs = self.frame.current_selection
-            tag = Tag(f_cs.lb, f_cs.ub, self.type)
+            tag = Tag(self.type, f_cs.lb, f_cs.ub)
             first = self.frame.charindex2position(f_cs.lb)
             last = self.frame.charindex2position(f_cs.ub)
             if tag in self.frame.current_annotations and self.frame.current_type_hierarchy_level == 0:
@@ -163,7 +164,7 @@ class Adder():
             regex = re.compile(pattern, re.U + re.M)
             for match in regex.finditer(self.frame.doc.content):
                 cur_start, cur_end = self.frame.charindex2position(match.start()), self.frame.charindex2position(match.end())
-                if Tag(match.start(), match.end(), self.type) not in self.frame.current_annotations:
+                if Tag(self.type, match.start(), match.end()) not in self.frame.current_annotations:
                     self.frame.wish_to_add = [self.type, cur_start, cur_end]
                     self.frame.add_annotation(None, remove_focus=False)
         except tk.TclError:
@@ -201,7 +202,7 @@ class Adder2(object):
                     hierarchy.append(sublevel)
                     continue
                 sub = trie.goto(hierarchy)
-                available = sub[_NUL]
+                available = sub[NUL]
                 for c in sublevel.lower():
                     found =  c in available
                     if found:
@@ -239,5 +240,5 @@ class Adder2(object):
         path = (self.current_annotation.levels[ : self.current_hierarchy_level] if self.current_annotation else [])
         sub = self.shortcut_trie.goto(path)
         for key,val in sub.items():
-            if key != _NUL and val[_NUL] == letter:
+            if key != NUL and val[NUL] == letter:
                 return key

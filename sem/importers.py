@@ -52,7 +52,7 @@ from sem.storage import Corpus
 from sem.storage import Document, SEMCorpus
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
-from sem.span import Span
+from sem.storage import Span
 
 def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False, logger=None, strip_html=False, *args, **kwargs):
     if type(filename) in (Document, SEMCorpus):
@@ -154,9 +154,9 @@ def from_url(url, strip_html=False, wikinews_format=False):
     base_url = (escaped_url[:]+u"/" if parts == [] else parts[0]).decode("iso-8859-1")
     
     content = content.replace(u'="//', u'="http://')
-    content = content.replace(u'="/', u'="%s' %base_url)
+    content = content.replace(u'="/', u'="{0}'.format(base_url))
     content = content.replace(u'=\\"//', u'=\\"http://')
-    content = content.replace(u'=\\"/', u'=\\"%s' %base_url)
+    content = content.replace(u'=\\"/', u'=\\"{0}'.format(base_url))
     content = content.replace(u'\r', u'')
     content = content.replace(u'</p>', u'</p>\n\n')
     
@@ -207,7 +207,7 @@ def brat_file(filename, encoding="utf-8"):
                 lb, ub = bound.split()
                 lb = int(lb)
                 ub = int(ub)
-                annotations.append(Tag(lb=lb, ub=ub, value=value))
+                annotations.append(Tag(value=value, lb=lb, ub=ub))
     annotations.sort()
     document.add_annotation(annotations)
     
@@ -237,7 +237,7 @@ def gate_data(data, name=None):
         for annotation in annotation_set:
             lb = nodes[int(annotation.attrib["StartNode"])]
             ub = nodes[int(annotation.attrib["EndNode"])]
-            sem_annotation.append(Tag(lb, ub, annotation.attrib["Type"]))
+            sem_annotation.append(Tag(annotation.attrib["Type"], lb, ub))
         document.add_annotation(sem_annotation)
     
     return document
@@ -258,6 +258,6 @@ def json_data(data):
     
     for annotation_name in data.get(u"annotations", {}):
         d = data[u"annotations"][annotation_name]
-        annotations = [Tag(lb=annotation[u"s"], ub=0, length=annotation[u"l"], value=annotation[u"v"]) for annotation in d[u"annotations"]]
+        annotations = [Tag(value=annotation[u"v"], lb=annotation[u"s"], ub=0, length=annotation[u"l"]) for annotation in d[u"annotations"]]
         annotation = Annotation(annotation_name, reference=document.segmentation(d[u"reference"]), annotations=annotations)
         document.add_annotation(annotation)

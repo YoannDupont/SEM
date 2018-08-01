@@ -47,7 +47,7 @@ from sem.features import MultiwordDictionaryFeature, NUL
 
 from sem.storage.annotation import chunk_annotation_from_sentence
 
-from sem.trie import Trie
+from sem.storage import Trie
 
 def compile_chunks(sentence, column=-1):
     return [[a.value, a.lb, a.ub] for a in chunk_annotation_from_sentence(sentence, column).annotations]

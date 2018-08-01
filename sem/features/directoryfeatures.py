@@ -32,7 +32,10 @@ SOFTWARE.
 
 import os
 
-import xml.etree.ElementTree
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 from . import Feature
 from . import DEFAULT_GETTER, DictGetterFeature
@@ -66,12 +69,12 @@ class DirectoryFeature(Feature):
         self.order = self.order[::-1]
         
         for name in self.order:
-            self.features.append(x2f.parse(xml.etree.ElementTree.fromstring(open(os.path.join(self.path, name), "rU").read())))
+            self.features.append(x2f.parse(ET.fromstring(open(os.path.join(self.path, name), "rU").read())))
             self.features[-1]._name = name
             if not (self.features[-1].is_boolean or self.features[-1].is_sequence or isinstance(self.features[-1], MapperFeature) or (isinstance(self.features[-1], TriggeredFeature) and isinstance(self.features[-1].operation, MapperFeature)) or (isinstance(self.features[-1], SubsequenceFeature))):
-                raise ValueError("In %s feature: %s is neither boolean nor sequence" %(self.name, name))
+                raise ValueError("In {0} feature: {0} is neither boolean nor sequence".format(self.name, name))
             if isinstance(self.features[-1], MultiwordDictionaryFeature):
-                self.features[-1]._appendice = "-%s" %(name)
+                self.features[-1]._appendice = "-{0}".format(name)
     
     def __call__(self, list2dict, *args, **kwargs):
         data = ["O"]*len(list2dict)
@@ -109,7 +112,7 @@ class FillerFeature(Feature):
         self.condition._getter.entry = entry
         
         if not self.condition.is_boolean:
-            raise ValueError("In %s: condition is not boolean." %self.name)
+            raise ValueError("In {0}: condition is not boolean.".format(self.name))
     
     def __call__(self, *args, **kwargs):
         if self.condition(*args, **kwargs):

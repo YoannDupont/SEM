@@ -235,20 +235,20 @@ class XML2Feature(object):
                 except:
                     pass
                 if f.min_match < 0 or f.max_match <= 0:
-                    raise ValueError('Invalid cardinality for %s feature: "%s"' %(e.tag, card))
+                    raise ValueError('Invalid cardinality for {0} feature: "{1}"'.format(e.tag, card))
             if xml.tag == "rule":
                 return RuleFeature(features, **xml.attrib)
             elif xml.tag == "orrule":
                 return OrRuleFeature(features, **xml.attrib)
         
         else:
-            raise ValueError("unknown tag: %s" %(xml.tag))
+            raise ValueError("unknown tag: {0}".format(xml.tag))
     
     def check_entry(self, entry, attrib):
         used_entry = self._entries.get(entry, None)
         if not used_entry:
             used_entry = self._features.get(entry, None)
         if not used_entry:
-            raise ValueError(u'Node "%s", entry not found: "%s"' %(attrib.get("name", "unnamed"), entry))
+            raise ValueError(u'Node "{0}", entry not found: "{0}"'.format(attrib.get("name", "unnamed"), entry))
         elif used_entry.is_train:
-            raise ValueError(u'Node "%s" uses train-only entry: "%s"' %(attrib.get("name", "unnamed"), used_entry.name))
+            raise ValueError(u'Node "{0}" uses train-only entry: "{0}"'.format(attrib.get("name", "unnamed"), used_entry.name))

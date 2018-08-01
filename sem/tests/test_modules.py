@@ -111,7 +111,7 @@ class TestModules(unittest.TestCase):
         self.assertEquals(sentence[3]["the_new_field"], u"A")
         self.assertEquals(sentence[4]["the_new_field"], u"O")
     
-    def test_wapiti_label(self):
+    def test_label_consistency(self):
         corpus = Corpus([u"word", u"tag"], sentences=[
             [
                 {u"word":u"Ceci", u"tag":u"B-tag"},

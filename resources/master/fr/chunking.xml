@@ -13,6 +13,6 @@
         <encoding input-encoding="utf-8" output-encoding="utf-8" />
         <file format="guess" strip-html="yes" />
         <log log_level="INFO"/>
-        <export format="tei" pos="POS" chunking="chunking" lang="fr" lang_style="default.css" />
+        <export format="tei_analec" pos="POS" chunking="chunking" lang="fr" lang_style="default.css" />
     </options>
 </master>

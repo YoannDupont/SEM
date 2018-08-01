@@ -32,9 +32,8 @@ SOFTWARE.
 
 import re
 
-from sem.span               import Span
-from sem.spannedbounds      import SpannedBounds
-from sem.tokenisers.default import Tokeniser as DefaultTokeniser
+from sem.storage import Span, SpannedBounds
+from .default import Tokeniser as DefaultTokeniser
 
 class Tokeniser(DefaultTokeniser):
     def __init__(self):

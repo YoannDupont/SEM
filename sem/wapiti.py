@@ -82,7 +82,7 @@ def train(inputfile, pattern=None, output=None, algorithm=None, nthreads=1, maxi
     
     if exit_status != 0:
         if output is None: output = "*stdout"
-        raise RuntimeError("Wapiti exited with status %i.\n%10s: %s\n%10s: %s\n%10s: %s" %(exit_status, "input", inputfile, "pattern", pattern, "output", output))
+        raise RuntimeError("Wapiti exited with status {0}.\n{1:>6}: {2}\n{3:>6}: {4}\n{5:>6}: {6}".format(exit_status, "input", inputfile, "pattern", pattern, "output", output))
 
 def label(input, model, output=None, only_labels=False, nbest=None):
     """

@@ -32,9 +32,8 @@ SOFTWARE.
 
 import re
 
-from sem.span               import Span
-from sem.spannedbounds      import SpannedBounds
-from sem.tokenisers.default import Tokeniser as DefaultTokeniser
+from sem.storage import Span, SpannedBounds
+from .default import Tokeniser as DefaultTokeniser
 
 class Tokeniser(DefaultTokeniser):
     def __init__(self):
@@ -49,6 +48,14 @@ class Tokeniser(DefaultTokeniser):
         self._forbidden.append(self._abbrev)
         
         self._force.append(self._cls)
+        
+        self._spaces = re.compile(u"\s+", re.U+re.M)
+        self._word = re.compile(u"^[^\W\d]+$", re.U + re.M)
+        self._number_with_unit = re.compile(u"([0-9][^0-9,.])|([^0-9,.][0-9])")
+        self._atomic = re.compile(u"[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
+        self._comma_not_number = re.compile(u"(?<=[^0-9]),(?![0-9])", re.U + re.M)
+        self._apostrophe = re.compile(u"(?=['ʼ’])", re.U + re.M)
+        self._clitics = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))$", re.U + re.I)
     
     def word_bounds(self, s):
         bounds = SpannedBounds()
@@ -109,22 +116,25 @@ class Tokeniser(DefaultTokeniser):
         return bounds
     
     def word_spans(self, content):
-        spaces = re.compile(u"\s+", re.U+re.M)
+        spaces = self._spaces
 
         l = [match.span() for match in spaces.finditer(content)]
         l1 = [(l[i][1],l[i+1][0]) for i in range(len(l)-1)]
+        
+        if not l: # content is a single non-space token
+            return [Span(0, len(content))]
 
         if l[0][0] != 0:
             l1.insert(0, (0, l[0][0]))
         if l[-1][1] != len(content):
             l1.append((l[-1][1], len(content)))
         
-        word = re.compile(u"^[^\W\d]+$", re.U + re.M)
-        number_with_unit = re.compile(u"([0-9][^0-9,.])|([^0-9,.][0-9])")
-        atomic = re.compile(u"[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
-        comma_not_number = re.compile(u"(?<=[^0-9]),(?![0-9])", re.U + re.M)
-        apostrophe = re.compile(u"(?=['ʼ’])", re.U + re.M)
-        clitics = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))$", re.U + re.I)
+        word = self._word
+        number_with_unit = self._number_with_unit
+        atomic = self._atomic
+        comma_not_number = self._comma_not_number
+        apostrophe = self._apostrophe
+        clitics = self._clitics
         i = 0
         while i < len(l1):
             span = l1[i]

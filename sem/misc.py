@@ -34,6 +34,15 @@ import re
 import os.path
 import tarfile
 
+def find_suggestions(target, candidates, case_sensitive=True):
+    suggestions = []
+    for i, candidate in enumerate(candidates if case_sensitive else [cand.lower() for cand in candidates]):
+        shortest = (candidate if len(candidate) < len(target) else target)
+        longest = (target if shortest == candidate else candidate)
+        if shortest in longest:
+            suggestions.append(candidates[i])
+    return suggestions
+
 def ranges_to_set(ranges, length, include_zero=False):
     """
     Returns a set of integers based of ranges over a reference list. Ranges are
@@ -105,25 +114,33 @@ def check_model_available(model, logger=None):
     if not os.path.exists(model):
         if os.path.exists(model + ".tar.gz"):
             if logger is not None:
-                logger.info("Model not extracted, extracting %s" %(os.path.normpath(model + ".tar.gz")))
+                logger.info("Model not extracted, extracting {0}".format(os.path.normpath(model + ".tar.gz")))
             with tarfile.open(model + ".tar.gz", "r:gz") as tar:
                 tar.extractall(os.path.dirname(model))
         else:
-            raise IOError("Cannot find model file: %s" %model)
+            raise IOError("Cannot find model file: {0}".format(model))
 
 def strip_html(html, keep_offsets=False):
-    hs = re.compile(u"<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL)
-    paragraphs = re.compile(u"<p.*?>.+?</p>", re.M + re.U + re.DOTALL)
-    # div_beg = re.compile(u"<div.*?>", re.M + re.U + re.DOTALL)
-    # div_end = re.compile(u"</div>", re.M + re.U + re.DOTALL)
-    # lis = re.compile(u"<li.*?>.+?</div>", re.M + re.U + re.DOTALL)
+    def replace_same_size(m):
+        return u" " * (m.end() - m.start())
+    
+    preprocessed_html = html[:]
+    to_remove = []
+    to_remove.append(re.compile(u"<script.*?>.+?</script>", re.M + re.U + re.DOTALL))
+    to_remove.append(re.compile(u"<head>.+?</head>", re.M + re.U + re.DOTALL))
+    to_remove.append(re.compile(u"<nav.*?>.+?</nav>", re.M + re.U + re.DOTALL))
+    for remove in to_remove:
+        preprocessed_html = remove.sub(replace_same_size, preprocessed_html)
+    
+    to_keep = []
+    to_keep.append(re.compile(u"<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL))
+    to_keep.append(re.compile(u"<p.*?>.+?</p>", re.M + re.U + re.DOTALL))
     
     parts = []
     s_e = []
-    for finding in hs.finditer(html):
-        s_e.append([finding.start(), finding.end()])
-    for finding in paragraphs.finditer(html):
-        s_e.append([finding.start(), finding.end()])
+    for keep in to_keep:
+        for finding in keep.finditer(html):
+            s_e.append([finding.start(), finding.end()])
     s_e.sort(key=lambda x: (x[0], -x[1]))
     ref = s_e[0]
     i = 1
@@ -142,17 +159,12 @@ def strip_html(html, keep_offsets=False):
         non_space = re.compile("[^ \n\r]+")
     for i in range(len(s_e)):
         if i > 0:
-            parts.append(non_space.sub(u" ", html[s_e[i-1][1] : s_e[i][0]]))
-        parts.append(html[s_e[i][0] : s_e[i][1]])
+            parts.append(non_space.sub(u" ", preprocessed_html[s_e[i-1][1] : s_e[i][0]]))
+        parts.append(preprocessed_html[s_e[i][0] : s_e[i][1]])
     stripped_html = u"".join(parts)
     
     tag = re.compile("<.+?>", re.U + re.M + re.DOTALL)
-    if keep_offsets:
-        def repl(m):
-            return u" " * (m.end() - m.start())
-    else:
-        repl = u""
-    
+    repl = (replace_same_size if keep_offsets else u"")
     if keep_offsets:
         stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", u"      ").replace(u"&#160;", u"      ")
     else:
@@ -164,7 +176,7 @@ def str2bool(s):
     s = s.lower()
     res = {"yes":True,"y":True,"true":True, "no":False,"n":False,"false":False}.get(s, None)
     if res is None:
-        raise ValueError(u'Cannot convert to boolean: "%s"' %s)
+        raise ValueError(u'Cannot convert to boolean: "{0}"'.format(s))
     return res
 
 def longest_common_substring(a, b, casesensitive=True, lastchance=False):

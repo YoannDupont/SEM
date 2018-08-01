@@ -26,12 +26,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from enrich import SEMModule as EnrichModule
-from label_consistency import SEMModule as LabelConsistencyModule
-from segmentation import SEMModule as SegmentationModule
-from annotate import SEMModule as AnnotateModule
-from wapiti_label import SEMModule as WapitiLabelModule
-from clean import SEMModule as CleanModule
+from .enrich import SEMModule as EnrichModule
+from .label_consistency import SEMModule as LabelConsistencyModule
+from .segmentation import SEMModule as SegmentationModule
+from .annotate import SEMModule as AnnotateModule
+from .wapiti_label import SEMModule as WapitiLabelModule
+from .clean import SEMModule as CleanModule
+from .map_annotations import SEMModule as MapAnnotationsModule
 
 
 try:
@@ -41,14 +42,9 @@ except ImportError: # backward compatibility for python < 2.7
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
 
 def get_package(name):
-    module = import_module("sem.modules.%s" %name)
+    module = import_module("sem.modules.{0}".format(name))
     return module
 
 def get_module(name):
-    module = import_module("sem.modules.%s" %name)
+    module = import_module("sem.modules.{0}".format(name))
     return module.SEMModule
-    """try:
-        module = import_module("sem.exporters.%s" %name)
-        return module.Exporter
-    except ImportError, e:
-        raise ImportError('Could import exporter "%s": %s' %(name,e))"""

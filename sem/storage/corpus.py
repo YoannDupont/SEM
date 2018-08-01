@@ -65,12 +65,12 @@ class Corpus(object):
         return corpus
     
     def unicode(self, fields, separator=u"\t"):
-        fmt       = u"\t".join([u"%%(%s)s" %field for field in fields])
+        fmt       = u"\t".join([u"{{{0}}}".format(field) for field in fields])
         sentences = []
         for sentence in self:
             sentences.append([])
             for token in sentence:
-                sentences[-1].append((fmt %token) + u"\n")
+                sentences[-1].append((fmt.format(**token)) + u"\n")
         return u"\n".join([u"".join(sentence) for sentence in sentences])
     
     def to_matrix(self, sentence):

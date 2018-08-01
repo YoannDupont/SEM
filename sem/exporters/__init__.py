@@ -46,10 +46,5 @@ except ImportError: # backward compatibility for python < 2.7
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
 
 def get_exporter(name):
-    module = import_module("sem.exporters.%s" %name)
+    module = import_module("sem.exporters.{0}".format(name))
     return module.Exporter
-    """try:
-        module = import_module("sem.exporters.%s" %name)
-        return module.Exporter
-    except ImportError, e:
-        raise ImportError('Could import exporter "%s": %s' %(name,e))"""

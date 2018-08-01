@@ -36,10 +36,5 @@ except ImportError: # backward compatibility for python < 2.7
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
 
 def get_tokeniser(name):
-    module = import_module("sem.tokenisers.%s" %name)
+    module = import_module("sem.tokenisers.{0}".format(name))
     return module.Tokeniser
-    """try:
-        module = import_module("sem.tokenisers.%s" %name)
-        return module.Tokeniser
-    except ImportError:
-        raise ImportError('Could not find tokeniser "%s".' %name)"""

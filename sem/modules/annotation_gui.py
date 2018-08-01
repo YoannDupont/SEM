@@ -49,13 +49,14 @@ import tkMessageBox
 import Tkconstants
 
 import sem
-from sem.trie import _NUL
+from sem.constants import NUL
 from sem.storage.document import Document, SEMCorpus
 from sem.storage.annotation import Tag, Annotation
 from sem.logger import extended_handler
 import sem.importers
 from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder2
-from sem.gui.components import SEMTkWapitiTrain, SemTkFileSelector
+from sem.gui.components import SEMTkWapitiTrain, SemTkFileSelector, SearchFrame
+from sem.storage.annotation import str2filter
 
 annotate_logger = logging.getLogger("sem.annotation_gui")
 annotate_logger.addHandler(extended_handler)
@@ -102,6 +103,7 @@ class AnnotationTool(tk.Frame):
             ["Ctrl+Shift+o", ["open url", self.openurl], [[self, True]]], # True = bind_all
             ["Ctrl+s", ["save", self.save], [[self, True]]], # True = bind_all
             ["Ctrl+t", ["train", self.train], [[self, True]]], # True = bind_all
+            ["Ctrl+f", ["find", self.find_in_text], [[self, True]]], # True = bind_all
         ]
         
         
@@ -130,6 +132,10 @@ class AnnotationTool(tk.Frame):
         self.edit_menu = tk.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="Edit", menu=self.edit_menu)
         self.edit_menu.add_command(label="Preferences...", command=self.preferences)
+        # ? menu
+        self.qm_menu = tk.Menu(self.global_menu, tearoff=False)
+        self.global_menu.add_cascade(label="?", menu=self.qm_menu)
+        self.qm_menu.add_command(label="About SEM...", command=self.about_sem)
         # final
         self.parent.config(menu=self.global_menu)
         
@@ -143,6 +149,7 @@ class AnnotationTool(tk.Frame):
         self.bind_all("<Control-O>", self.openurl)
         self.bind_all("<Control-s>", self.save)
         self.bind_all("<Control-t>", self.train)
+        self.bind_all("<Control-f>", self.find_in_text)
         self.focus_set()
         
         self.bind_all("<Tab>", self.tab)
@@ -181,12 +188,13 @@ class AnnotationTool(tk.Frame):
         self.text = ScrolledText.ScrolledText(self.annotation_row, wrap=tk.WORD, font="Helvetica")
         self.text.configure(state="disabled")
         self.text.bind("<Shift-Tab>", self.shift_tab)
+        self.search = SearchFrame(self.text)
         for char in self.available_chars_set:
-            self.text.bind("<%s>" %char, self.handle_char)
-            self.parent.bind("<%s>" %char, self.handle_char)
+            self.text.bind("<{0}>".format(char), self.handle_char)
+            self.parent.bind("<{0}>".format(char), self.handle_char)
             if char.islower():
-                self.text.bind("<%s>" %char.upper(), self.handle_char)
-                self.parent.bind("<%s>" %char.upper(), self.handle_char)
+                self.text.bind("<{0}>".format(char.upper()), self.handle_char)
+                self.parent.bind("<{0}>".format(char.upper()), self.handle_char)
         
         self.tree = ttk.Treeview(self.annotation_row)
         self.tree_scrollbar = ttk.Scrollbar(self.annotation_row, command=self.tree.yview)
@@ -230,7 +238,7 @@ class AnnotationTool(tk.Frame):
         self._whole_word = tk.BooleanVar()
         self._whole_word.set(True)
         self.wikinews_format = tk.BooleanVar()
-        self.wikinews_format.set(True)
+        self.wikinews_format.set(False)
         
         #skip_auth=> self.auth()
     
@@ -275,7 +283,7 @@ class AnnotationTool(tk.Frame):
                 checked = login + pw in content
                 if checked:
                     self.user = auth_login.get()[:]
-                    tkMessageBox.showinfo("Login success","Logged succesfuly as %s" %self.user)
+                    tkMessageBox.showinfo("Login success","Logged succesfuly as {0}".format(self.user))
                     
                     if self.user == "admin":
                         self.add_user_btn = ttk.Button(self.toolbar, text="add user", command=self.add_user)
@@ -328,12 +336,12 @@ class AnnotationTool(tk.Frame):
                 pw = h.hexdigest()
                 for line in lines:
                     if line.startswith(login):
-                        tkMessageBox.showerror("Cannot add user", "User %s already exists" %(auth_login.get()))
+                        tkMessageBox.showerror("Cannot add user", "User {0} already exists".format(auth_login.get()))
                         return
                 
                 with codecs.open(".users", "a") as O:
-                    O.write("%s%s\n" %(login, pw))
-                tkMessageBox.showinfo("New user","Succesfuly added user %s" %auth_login.get())
+                    O.write("{0}{1}\n".format(login, pw))
+                tkMessageBox.showinfo("New user","Succesfuly added user {0}".format(auth_login.get()))
                 authTop.destroy()
             except IOError:
                 with codecs.open(".users", "w") as O:
@@ -484,7 +492,7 @@ class AnnotationTool(tk.Frame):
         couples = {"ner":self.annotation_name}
         for document in corpus:
             name = os.path.basename(document.name).replace(":", "")
-            out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(name)[0], exporter.extension()))
+            out_path = os.path.join(output_directory, "{0}.{1}".format(os.path.splitext(name)[0], exporter.extension()))
             if fmt == "brat":
                 if not name.endswith(".txt"):
                     name += ".txt"
@@ -546,19 +554,41 @@ class AnnotationTool(tk.Frame):
             entry = tk.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
             entry.grid(row=cur_row, column=1)
             cur_row += 1
-        # TODO: make following code work with self.adder
-        """for i, adder_list in enumerate(self.adders):
-            frame_list.append(ttk.LabelFrame(frame2, text="level %i shortcuts" %(i+1)))
-            frame_list[-1].pack(fill="both", expand="yes")
-            cur_row = 0
-            for entity_type in sorted(adder_list.keys()):
-                j += 1
-                shortcuts_vars.append(tk.StringVar(frame_list[-1], value=adder_list[entity_type].shortcut))
-                tk.Label(frame_list[-1], text=entity_type).grid(row=cur_row, column=0, sticky=tk.W)
-                entry = tk.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
-                entry.grid(row=cur_row, column=1)
-                cur_row += 1"""
         notebook.pack()
+    
+    #
+    # ? menu methods
+    #
+    
+    def about_sem(self, event=None):
+        options = {"background":"white"}
+        aboutTop = tk.Toplevel(**options)
+        aboutTop.title("About SEM")
+        aboutTop.focus_set()
+        
+        two_cols = []
+        two_cols.append(("author:", "Yoann Dupont"))
+        two_cols.append(("mail:", "yoa.dupont@gmail.com"))
+        two_cols.append(("website:", "http://www.lattice.cnrs.fr/sites/itellier/SEM.html"))
+        two_cols.append(("github:", "https://github.com/YoannDupont/SEM"))
+        two_cols.append(("online app:", "apps.lattice.cnrs.fr/sem"))
+        
+        x = 0
+        label = ttk.Label(aboutTop, text=sem.full_name(), **options)
+        label.grid(row=x, column=0)
+        x += 1
+        ttk.Label(aboutTop, text="", **options).grid(row=x, column=0)
+        x += 1
+        ttk.Label(aboutTop, text="", **options).grid(row=x, column=0)
+        x += 1
+        for key, val in two_cols:
+            label = ttk.Label(aboutTop, text=key, **options)
+            label.grid(row=x, column=0, sticky="w")
+            label = ttk.Label(aboutTop, text=val, **options)
+            label.grid(row=x, column=1, sticky="w")
+            x += 1
+            ttk.Label(aboutTop, text="", **options).grid(row=x, column=0)
+            x += 1
     
     #
     # global methods
@@ -577,6 +607,11 @@ class AnnotationTool(tk.Frame):
         CRF_l2String = tk.StringVar(trainTop, value="0.0001")
         
         varsFrame = ttk.LabelFrame(trainTop, text="Global variables")
+        annotation_level_label = ttk.Label(varsFrame, text=u"annotation level:")
+        annotation_level_var = tk.StringVar(varsFrame, value="top level")
+        annotation_level = ttk.Combobox(varsFrame, textvariable=annotation_level_var)
+        annotation_level["values"] = str2filter.keys()
+        annotation_level.current(0)
         master_selector = SemTkMasterSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
         lang_selector = SemTkLangSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
         lang_selector.master_selector = master_selector
@@ -592,6 +627,10 @@ class AnnotationTool(tk.Frame):
         
         varsFrame.pack(fill="both", expand="yes")
         vars_cur_row = 0
+        annotation_level_label.grid(row=vars_cur_row, column=0)
+        vars_cur_row += 1
+        annotation_level.grid(row=vars_cur_row, column=0)
+        vars_cur_row += 1
         vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
         vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
         
@@ -604,11 +643,16 @@ class AnnotationTool(tk.Frame):
         
         crf_cur_row = 0
         
-        crf_train = SEMTkWapitiTrain(self.corpus_documents, master_selector, self.annotation_name, top=frame1, main_frame=trainTop, text="CRF-specific variables")
+        crf_train = SEMTkWapitiTrain(self.corpus_documents, master_selector, self.annotation_name, annotation_level=annotation_level_var, top=frame1, main_frame=trainTop, text="CRF-specific variables")
     
     def handle_char(self, event):
         if self.adder is None:
             return
+        try:
+            self.text.index("sel.first")
+        except tk.TclError:
+            return
+        
         the_type = self.adder.type_from_letter(event.keysym)
         the_type = the_type or self.adder.type_from_letter(event.keysym.lower())
         if the_type is None:
@@ -627,7 +671,7 @@ class AnnotationTool(tk.Frame):
             try:
                 for match in find_occurrences(self.text.get(start, end), self.doc.content, whole_word=self.whole_word):
                     cur_start, cur_end = self.charindex2position(match.start()), self.charindex2position(match.end())
-                    if Tag(match.start(), match.end(), the_type) not in self.current_annotations:
+                    if Tag(the_type, match.start(), match.end()) not in self.current_annotations:
                         self.wish_to_add = [the_type, cur_start, cur_end]
                         self.add_annotation(None, remove_focus=False)
             except tk.TclError:
@@ -653,15 +697,14 @@ class AnnotationTool(tk.Frame):
             if last == "sel.last":
                 last = self.text.index("sel.last")
             
-        except tk.TclError:
-            print "error"
-            return # no selection
+        except tk.TclError: # no selection
+            return
         
         self.doc_is_modified = True
         if self.adder.current_hierarchy_level == 0:
             pos = (self.position2charindex(first), self.position2charindex(last))
             greater = [annot for annot in self.current_annotations if annot.lb<=pos[0] and annot.ub>=pos[1] and value==annot.value]
-            tag = Tag(pos[0], pos[1], value)
+            tag = Tag(value, pos[0], pos[1])
             tag.levels = [value]
             if tag not in self.current_annotations and len(greater)==0:
                 self.text.tag_add(value, first, last)
@@ -672,11 +715,11 @@ class AnnotationTool(tk.Frame):
                         break
                     index += 1
                 key = unicode(tag)
-                item = self.tree.insert(self.tree_ids[self.annotation_name], index, text=u'%s "%s" [%i:%i]' %(value, self.doc.content[pos[0] : pos[1]], pos[0], pos[1]))
+                item = self.tree.insert(self.tree_ids[self.annotation_name], index, text=u'{0} "{1}" [{2}:{3}]'.format(value, self.doc.content[pos[0] : pos[1]], pos[0], pos[1]))
                 self.treeitem2annot[item] = tag
                 self.annot2treeitems[self.annotation_name][key] = item
                 self.current_annotations.add(tag)
-                item2 = self.tree.insert(self.tree_ids["history"], 0, text='%s "%s" [%i:%i]' %(value, self.doc.content[pos[0] : pos[1]], pos[0], pos[1]))
+                item2 = self.tree.insert(self.tree_ids["history"], 0, text=u'{0} "{1}" [{2}:{3}]'.format(value, self.doc.content[pos[0] : pos[1]], pos[0], pos[1]))
                 self.treeitem2annot[item2] = tag
                 self.annot2treeitems["history"][key] = item2
                 self.ner2history[item] = item2
@@ -696,7 +739,7 @@ class AnnotationTool(tk.Frame):
                         tree_item =  self.tree.item(tree_item_str)
                         if check_in_tagset(annot.getValue(), self.tagset):
                             annot.setLevel(self.adder.current_hierarchy_level, self.wish_to_add[0])
-                            new_text = u'%s "%s" [%i:%i]' %(annot.getValue(), self.doc.content[annot.lb : annot.ub], lb, ub)
+                            new_text = u'{0} "{1}" [{2}:{3}]'.format(annot.getValue(), self.doc.content[annot.lb : annot.ub], lb, ub)
                             self.tree.item(tree_item_str, text=new_text)
                             prev_item = self.ner2history.get(tree_item_str)
                             if prev_item:
@@ -705,7 +748,7 @@ class AnnotationTool(tk.Frame):
                             new_item = self.tree.insert(self.tree_ids["history"], 0, text=new_text)
                             self.ner2history[tree_item_str] = new_item
                             self.treeitem2annot[new_item] = self.treeitem2annot[tree_item_str]
-                            self.annot2treeitems["history"][unicode(Tag(lb, ub, annot.getLevel(0)))] = new_item
+                            self.annot2treeitems["history"][unicode(Tag(annot.getLevel(0), lb, ub))] = new_item
         if remove_focus:
             self.wish_to_add = None
             self.adder.current_annotation = None
@@ -722,7 +765,7 @@ class AnnotationTool(tk.Frame):
         prev_selection = self.adder.current_annotation
         self.adder.current_annotation = None
         self.wish_to_add = None
-        index = event.widget.index("@%s,%s" % (event.x, event.y))
+        index = event.widget.index("@{0},{1}".format(event.x, event.y))
         names = list(self.text.tag_names(index))
         charindex = self.position2charindex(index)
         try:
@@ -771,7 +814,7 @@ class AnnotationTool(tk.Frame):
         ner_root = self.tree.get_children()[0]
         id = None
         value = self.adder.current_annotation.getLevel(0)
-        bounds = "[%i:%i]" %(lb, ub)
+        bounds = "[{}:{}]".format(lb, ub)
         for child in self.tree.get_children(ner_root):
             text = self.tree.item(child)["text"]
             ok = text.startswith(value) and text.endswith(bounds)
@@ -820,7 +863,7 @@ class AnnotationTool(tk.Frame):
         for annotation in matching:
             if len(greater) == 0:
                 self.text.tag_remove(self.adder.current_annotation.getLevel(0), self.charindex2position(annotation.lb), self.charindex2position(annotation.ub))
-            tag = Tag(annotation.lb, annotation.ub, self.adder.current_annotation.getLevel(0))
+            tag = Tag(self.adder.current_annotation.getLevel(0), annotation.lb, annotation.ub)
             key = unicode(tag)
             for v in self.annot2treeitems.values():
                 item = v.get(key, None)
@@ -843,7 +886,7 @@ class AnnotationTool(tk.Frame):
             start = self.adder.current_annotation.lb
             end = self.adder.current_annotation.ub
             for occ in find_occurrences(self.doc.content[start:end], self.doc.content, whole_word=False):
-                self.adder.current_annotation = Tag(occ.start(), occ.end(), value)
+                self.adder.current_annotation = Tag(value, occ.start(), occ.end())
                 self.delete(event)
         self.adder.current_annotation = None
         self.adder.current_hierarchy_level = 0
@@ -863,7 +906,7 @@ class AnnotationTool(tk.Frame):
             cur += lengths[line]
             line += 1
         offset = charindex - cur
-        return "%i.%i" %(line, offset)
+        return "{0}.{1}".format(line, offset)
     
     def tab(self, event=None):
         self.adder.up_one_level()
@@ -880,10 +923,10 @@ class AnnotationTool(tk.Frame):
             else:
                 levels = (self.adder.current_annotation.levels if self.adder.current_annotation is not None else [])
                 subtrie = self.adder.shortcut_trie.goto(levels)
-                keys = sorted([key for key in subtrie if key != _NUL])
+                keys = sorted([key for key in subtrie if key != NUL])
                 for j in range(len(keys)):
-                    shortcut = subtrie[keys[j]][_NUL]
-                    keys[j] += " (%s or Shift+%s)" %(shortcut, shortcut)
+                    shortcut = subtrie[keys[j]][NUL]
+                    keys[j] += " ({0} or Shift+{0})".format(shortcut)
                 self.type_combos[i]["values"] = [self.SELECT_TYPE] + keys
                 self.type_combos[i].configure(state="readonly")
     
@@ -950,7 +993,7 @@ class AnnotationTool(tk.Frame):
                 for nth_annot, annot in enumerate(annots):
                     annot.levels = annot.value.split(u".")
                     self.add_tag(annot.levels[0], annot.lb, annot.ub)
-                    item = self.tree.insert(self.tree_ids[self.annotation_name], len(self.annot2treeitems[self.annotation_name])+1, text=u'%s "%s" [%i:%i]' %(annot.value, self.doc.content[annot.lb : annot.ub], annot.lb, annot.ub))
+                    item = self.tree.insert(self.tree_ids[self.annotation_name], len(self.annot2treeitems[self.annotation_name])+1, text=u'{0} "{1}" [{2}:{3}]'.format(annot.value, self.doc.content[annot.lb : annot.ub], annot.lb, annot.ub))
                     self.annot2treeitems[self.annotation_name][str(annot)] = item
                     annot.ids[self.annotation_name] = item
                     self.treeitem2annot[item] = annot
@@ -972,7 +1015,6 @@ class AnnotationTool(tk.Frame):
         self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         self.annotation_name = tagset_name
         self.tagset = set(tagset)
-        #self.adders = [{}]
         
         for combo in self.type_combos:
             combo.destroy()
@@ -996,7 +1038,7 @@ class AnnotationTool(tk.Frame):
         self.adder = Adder2.from_tagset(tagset)
         for depth in range(self.adder.max_depth()):
             ## label
-            self.add_type_lbls.append(ttk.Label(self.toolbar, text="add %stype:" %("sub"*(depth))))
+            self.add_type_lbls.append(ttk.Label(self.toolbar, text="add {0}type:".format("sub"*(depth))))
             self.add_type_lbls[depth].pack(side="left")
             # combobox
             self.type_combos.append(ttk.Combobox(self.toolbar))
@@ -1032,6 +1074,9 @@ class AnnotationTool(tk.Frame):
         tagset = [tag for tag in tagset if tag != u""]
         
         self.load_tagset(tagset, tagset_name)
+    
+    def find_in_text(self, event=None):
+        self.search.find_in_text(event=event)
 
 _subparsers = sem.argument_subparsers
 
@@ -1042,5 +1087,6 @@ parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WA
 
 def main(args):
     root = tk.Tk()
+    root.title("SEM")
     AnnotationTool(root).pack(expand=1, fill="both")
     root.mainloop()

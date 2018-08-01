@@ -61,9 +61,9 @@ def decompile_dictionary(infile, outfile, kind="token",
     decompile_dictionary_logger.setLevel(log_level)
     
     if kind not in _choices:
-        raise RuntimeError("Invalid kind: %s" %kind)
+        raise RuntimeError("Invalid kind: {0}".format(kind))
     
-    compile_dictionary_logger.info(u'compiling %s dictionary from "%s" to "%s"' %(kind, infile, outfile))
+    compile_dictionary_logger.info(u'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile))
     
     resource = cPickle.load(open(infile))
     entry    = _entry[kind]

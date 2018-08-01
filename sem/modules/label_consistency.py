@@ -32,15 +32,13 @@ import sys, codecs, logging, re
 
 from .sem_module import SEMModule as RootModule
 
-from sem.trie import Trie
+from sem.storage import Tag, Trie
 
 from sem.IO.columnIO import Reader
 
 from sem.features import MultiwordDictionaryFeature, NUL
 
 from sem.misc import longest_common_substring
-
-from sem.storage import Tag
 
 def normalize(token):
     apostrophes = re.compile(u"[\u2019]", re.U)
@@ -169,7 +167,7 @@ def detect_abbreviations(document, field):
         for match in regexp.finditer(content):
             lo_tok = word_spans.spans.index([t for t in word_spans if t.lb == match.start()][0])
             hi_tok = word_spans.spans.index([t for t in word_spans if t.ub == match.end()][0])+1
-            new_tags.append(Tag(lo_tok, hi_tok, fav_type))
+            new_tags.append(Tag(fav_type, lo_tok, hi_tok))
     
     to_remove_tags = []
     for new_tag in new_tags:
@@ -191,11 +189,11 @@ def detect_abbreviations(document, field):
             nth_sent += 1
         start = new_tag.lb - nth_word
         end = new_tag.ub - nth_word
-        document.corpus.sentences[nth_sent][start][field] = u"B-%s" %new_tag.value
-        all_tags[nth_sent][start] = u"B-%s" %new_tag.value
+        document.corpus.sentences[nth_sent][start][field] = u"B-{}".format(new_tag.value)
+        all_tags[nth_sent][start] = u"B-{0}".format(new_tag.value)
         for index in range(start+1, end):
-            document.corpus.sentences[nth_sent][index][field] = u"I-%s" %new_tag.value
-            all_tags[nth_sent][index] = u"I-%s" %new_tag.value
+            document.corpus.sentences[nth_sent][index][field] = u"I-{0}".format(new_tag.value)
+            all_tags[nth_sent][index] = u"I-{0}".format(new_tag.value)
     
     document.add_annotation_from_tags(all_tags, field, field)
 
@@ -220,7 +218,6 @@ def compile_chunks(sentence, column=-1):
         elif ne[0] == "I":
             None
         else:
-            print sentence
             raise ValueError(ne)
     if label:
         entity_chunks.append([label, start, len(sentence)])

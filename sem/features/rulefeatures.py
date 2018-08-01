@@ -104,9 +104,9 @@ class RuleFeature(Feature):
                 remain_min = feat.min_match
                 remain_max = feat.max_match
         for lo,hi in matches:
-            l[lo] = "B-%s" %self.name
+            l[lo] = "B-{0}".format(self.name)
             for i in range(lo+1, hi):
-                l[i] = "I-%s" %self.name
+                l[i] = "I-{0}".format(self.name)
         return l
     
     def step(self, list2dict, i):

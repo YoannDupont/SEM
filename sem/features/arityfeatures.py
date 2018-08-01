@@ -130,7 +130,7 @@ class SequencerFeature(NaryFeature):
         super(SequencerFeature, self).__init__(*args, **kwargs)
         
         if len(args) == 0:
-            raise ValueError("%s cannot have less than 1 feature" %(self.__class__.__name__))
+            raise ValueError("{0} cannot have less than 1 feature".format(self.__class__.__name__))
         
         self._features = args
         for i in range(1, len(self._features)): # ensuring that we can call the different features sequentially

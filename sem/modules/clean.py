@@ -85,7 +85,7 @@ class SEMModule(RootModule):
         document.corpus.fields = [field for field in document.corpus.fields if field not in to_remove]
         
         if len(allowed - fields) > 0:
-            clean_info_logger.warn(u"the following fields are not present in document, this might cause an error sometime later: %s" %(u", ".join(allowed - fields)))
+            clean_info_logger.warn(u"the following fields are not present in document, this might cause an error sometime later: {0}".format(u", ".join(allowed - fields)))
         
         for i in range(len(document.corpus.sentences)):
             for j in range(len(document.corpus.sentences[i])):
@@ -93,7 +93,7 @@ class SEMModule(RootModule):
                     del document.corpus.sentences[i][j][field]
         
         laps = time.time() - start
-        clean_info_logger.info(u'done in %s' %timedelta(seconds=laps))
+        clean_info_logger.info(u'done in {0}'.format(timedelta(seconds=laps)))
 
 def main(args):
     """
@@ -125,12 +125,12 @@ def main(args):
     nelts = len(codecs.open(args.infile, "rU", ienc).readline().strip().split())
     
     if nelts < max_abs:
-        clean_info_logger.error(u'asked to keep up to %i field(s), yet only %i are present in the "%s"' %(max_abs, nelts, args.infile))
-        raise runtimeError(u'asked to keep up to %i field(s), yet only %i are present in the "%s"' %(max_abs, nelts, args.infile))
+        clean_info_logger.error(u'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(max_abs, nelts, args.infile))
+        raise runtimeError(u'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(max_abs, nelts, args.infile))
     
-    clean_info_logger.info(u'cleaning "%s"' %(args.infile))
-    clean_info_logger.info(u'keeping columns: %s' %(u", ".join([str(s) for s in sorted(allowed)])))
-    clean_info_logger.info(u'writing "%s"' %(args.outfile))
+    clean_info_logger.info(u'cleaning "{0}"'.format(args.infile))
+    clean_info_logger.info(u'keeping columns: {0}'.format(u", ".join([str(s) for s in sorted(allowed)])))
+    clean_info_logger.info(u'writing "{0}"'.format(args.outfile))
         
     with codecs.open(args.outfile, "w", oenc) as O:
         for line in codecs.open(args.infile, "rU", ienc):

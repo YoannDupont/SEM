@@ -36,8 +36,8 @@ SOFTWARE.
 
 import codecs, cPickle, logging
 
-from sem.logger       import default_handler, file_handler
-from sem.dictionaries import compile_token, compile_multiword
+from sem.logger               import default_handler, file_handler
+from sem.storage.dictionaries import compile_token, compile_multiword
 
 compile_dictionary_logger = logging.getLogger("sem.compile_dictionary")
 compile_dictionary_logger.addHandler(default_handler)
@@ -54,14 +54,14 @@ def compile_dictionary(infile, outfile, kind="token",
     compile_dictionary_logger.setLevel(log_level)
     
     if kind not in _choices:
-        raise RuntimeError("Invalid kind: %s" %kind)
+        raise RuntimeError("Invalid kind: {0}".format(kind))
     
-    compile_dictionary_logger.info(u'compiling %s dictionary from "%s" to "%s"' %(kind, infile, outfile))
+    compile_dictionary_logger.info(u'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile))
     
     try:
         dictionary_compile = _compile[kind]
     except KeyError: # invalid kind asked
-        compile_dictionary_logger.exception("Invalid kind: %s. Should be in: %s" %(kind, u", ".join(_compile.keys())))
+        compile_dictionary_logger.exception("Invalid kind: {0}. Should be in: {1}".format(kind, u", ".join(_compile.keys())))
         raise
     
     cPickle.dump(dictionary_compile(infile, ienc), open(outfile, "w"))

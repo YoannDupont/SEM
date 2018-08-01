@@ -43,7 +43,7 @@ class Feature(object):
         self._display = str2bool(self._display)
     
     def __call__(self, *args, **kwargs):
-        raise TypeError('Cannot call %s object' %self.__class__.__name__)
+        raise TypeError('Cannot call {0} object'.format(self.__class__.__name__))
     
     @property
     def is_boolean(self):

@@ -39,10 +39,9 @@ except ImportError:
 import logging
 from sem.logger import logging_format, default_handler
 
-from sem.span import Span
-
 from sem.exporters.exporter import Exporter as DefaultExporter
 from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
+from sem.storage import Span
 
 tei_np_logger = logging.getLogger("sem.tagger")
 tei_np_logger.addHandler(default_handler)
@@ -159,10 +158,10 @@ class Exporter(DefaultExporter):
                 #add_text(p, content[paragraph.lb : nps[0].lb])
                 for i,np in enumerate(nps):
                     nth += 1
-                    np_start = ET.SubElement(p,"anchor",{"xml:id":"u-MENTION-%i-start" %nth, "type":"AnalecDelimiter", "subtype":"UnitStart"})
+                    np_start = ET.SubElement(p,"anchor",{"xml:id":"u-MENTION-{0}-start".format(nth), "type":"AnalecDelimiter", "subtype":"UnitStart"})
                     np_start.tail = content[np.lb : np.ub]
                     #add_tail(np_start, content[np.lb : np.ub])
-                    np_end = ET.SubElement(p,"anchor",{"xml:id":"u-MENTION-%i-end" %nth, "type":"AnalecDelimiter", "subtype":"UnitEnd"})
+                    np_end = ET.SubElement(p,"anchor",{"xml:id":"u-MENTION-{0}-end".format(nth), "type":"AnalecDelimiter", "subtype":"UnitEnd"})
                     if i < len(nps)-1:
                         np_end.tail = content[np.ub : nps[i+1].lb]
                         #add_tail(np_end, content[np.ub : nps[i+1].lb])
@@ -175,14 +174,14 @@ class Exporter(DefaultExporter):
         spanGrp.set("type", "AnalecUnit")
         spanGrp.set("n","MENTION")
         for i, np in enumerate(np_chunks):
-            ET.SubElement(spanGrp, "span", {"xml:id":"u-MENTION-%i"%(i+1), "from":"#u-MENTION-%i-start"%(i+1), "to":"#u-MENTION-%i-end"%(i+1), "ana":"#u-MENTION-%i-fs"%(i+1)})
+            ET.SubElement(spanGrp, "span", {"xml:id":"u-MENTION-{0}".format(i+1), "from":"#u-MENTION-{0}-start".format(i+1), "to":"#u-MENTION-{0}-end".format(i+1), "ana":"#u-MENTION-{0}-fs".format(i+1)})
         
         fvLib = ET.SubElement(back,"fvLib")
         fvLib.set("n","AnalecElementProperties")
         for i, np in enumerate(np_chunks):
             value = pronoun2analec.get(pos[i][0].value, u"GN")
             
-            fs = ET.SubElement(fvLib,"fs",{"xml:id": "u-MENTION-%i-fs" %(i+1)})
+            fs = ET.SubElement(fvLib,"fs",{"xml:id": "u-MENTION-{0}-fs".format(i+1)})
             f = ET.SubElement(fs,"f")
             f.set("name","REF")
             ET.SubElement(f,"string")

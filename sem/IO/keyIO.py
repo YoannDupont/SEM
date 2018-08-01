@@ -90,7 +90,7 @@ class KeyWriter(object):
         if None == self._joiner:
             self._joiner = ""
         
-        self._format = self._joiner.join(["%%(%s)s" %key for key in self._keys])
+        self._format = self._joiner.join(["{{{0}}}".format(key) for key in self._keys])
     
     def __enter__(self):
         return self
@@ -101,18 +101,18 @@ class KeyWriter(object):
     def write(self, entries):
         for p in entries:
             for l in p:
-                self._fd.write(self._format %l)
+                self._fd.write(self._format.format(l))
                 self._fd.write(u"\n")
             self._fd.write(u"\n")
     
     def write_p(self, p):
         for l in p:
-            self._fd.write(self._format %l)
+            self._fd.write(self._format.format(l))
             self._fd.write(u"\n")
         self._fd.write(u"\n")
     
     def write_l(self, l):
-        self._fd.write(self._format %l)
+        self._fd.write(self._format.format(l))
         self._fd.write(u"\n")
     
     def close(self):

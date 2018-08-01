@@ -30,8 +30,7 @@ SOFTWARE.
 
 import sem.constants
 
-from sem.span          import Span
-from sem.spannedbounds import SpannedBounds
+from sem.storage import Span, SpannedBounds
 
 class Tokeniser(object):
     def __init__(self):

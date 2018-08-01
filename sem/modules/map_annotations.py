@@ -43,7 +43,7 @@ import sem.misc
 
 from sem.storage import Document, Annotation, Tag
 from sem.logger import default_handler, file_handler
-from sem.dictionaries import compile_map
+from sem.storage import compile_map
 
 map_annotations_logger = logging.getLogger("sem.map_annotations")
 map_annotations_logger.addHandler(default_handler)
@@ -84,12 +84,12 @@ class SEMModule(RootModule):
         ref_annotation = document.annotation(self._annotation_name)
         ref_annotations = ref_annotation.annotations
         values = set([a.value for a in ref_annotations])
-        new_annotations = [Tag(annotation.lb, annotation.ub, self._mapping.get(annotation.value, annotation.value)) for annotation in ref_annotations if self._mapping.get(annotation.value, None) != u""]
+        new_annotations = [Tag(self._mapping.get(annotation.value, annotation.value), annotation.lb, annotation.ub) for annotation in ref_annotations if self._mapping.get(annotation.value, None) != u""]
         
         document.add_annotation(Annotation(self._annotation_name, reference=ref_annotation.reference, annotations=new_annotations))
         
         laps = time.time() - start
-        map_annotations_logger.info('in %s' %(timedelta(seconds=laps)))
+        map_annotations_logger.info('in %s', timedelta(seconds=laps))
 
 def main(args):
     pass

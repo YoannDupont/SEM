@@ -45,7 +45,7 @@ class ListFeature(Feature):
         
         for element in self._elements:
             if not element.is_boolean:
-                raise TypeError("Non boolean element in list node: %s" %(element.__class__.__name__))
+                raise TypeError("Non boolean element in list node: {0}".format(element.__class__.__name__))
 
 class SomeFeature(ListFeature):
     def __init__(self, *args, **kwargs):

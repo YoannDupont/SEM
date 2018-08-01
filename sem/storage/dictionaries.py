@@ -34,9 +34,9 @@ SOFTWARE.
 
 import codecs, cPickle
 
-from sem.trie import Trie
+from .trie import Trie
 
-NUL = u""
+from sem.constants import NUL
 
 def compile_token(infile, encoding):
     tokens = set()

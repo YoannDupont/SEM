@@ -31,8 +31,8 @@ SOFTWARE.
 import time, codecs
 import itertools
 
-from sem.coder import Coder
-from template  import ListPattern
+from sem.storage import Coder
+from template    import ListPattern
 
 class Model(object):
     def __init__(self, constraints={}):
@@ -246,21 +246,21 @@ class Model(object):
     
     def write(self, filename, encoding="utf-8"):
         with codecs.open(filename, "w", "utf-8") as O:
-            O.write("#mdl#2#%i\n" %(len([w for w in self.weights if w !=0.0])))
-            O.write("#rdr#%i/%i/0\n" %(len(self._templates), self._max_col))
+            O.write("#mdl#2#{0}\n".format(len([w for w in self.weights if w !=0.0])))
+            O.write("#rdr#{0}/{1}/0\n".format(len(self._templates), self._max_col))
             for pattern in self._templates:
                 uni_pattern = unicode(pattern)
-                O.write("%i:%s,\n" %(len(uni_pattern), uni_pattern))
-            O.write(u"#qrk#%i\n" %(len(self._tagset)))
+                O.write("{0}:{1},\n".format(len(uni_pattern), uni_pattern))
+            O.write(u"#qrk#{0}\n".format(len(self._tagset)))
             for tag in self.tagset:
-                O.write(u"%i:%s\n" %(len(tag), tag))
+                O.write(u"{0}:{1}\n".format(len(tag), tag))
             # observations
-            O.write(u"#qrk#%i\n" %(len(self._observations)))
+            O.write(u"#qrk#{0}\n".format(len(self._observations)))
             for obs in self._observations:
-                O.write(u"%i:%s\n" %(len(obs), obs))
+                O.write(u"{0}:{1}\n".format(len(obs), obs))
             for index, w in enumerate(self.weights):
                 if w != 0.0:
-                    O.write(u"%i=%s\n" %(index, float.hex(w)))
+                    O.write(u"{0}={1}\n".format(index, float.hex(w)))
     
     def dump(self, filename):
         ntags = len(self.tagset)
@@ -273,7 +273,7 @@ class Model(object):
                     for y in range(ntags):
                         w = self.weights[off+y]
                         if w != 0:
-                            O.write(u"%s\t%s\t%s\t%.5f\n" %(o, u'#', self.tagset.decode(y), w))
+                            O.write(u"{0}\t{1}\t{2}\t{3:.5f}\n".format(o, u'#', self.tagset.decode(y), w))
                             written = True
                 else:
                     off = self.boff[i]
@@ -282,7 +282,7 @@ class Model(object):
                         for y in range(ntags):
                             w = self.weights[off+d]
                             if w != 0:
-                                O.write(u"%s\t%s\t%s\t%.5f\n" %(o, self.tagset.decode(yp), self.tagset.decode(y), w))
+                                O.write(u"{0}\t{1}\t{2}\t{3:.5f}\n".format(o, self.tagset.decode(yp), self.tagset.decode(y), w))
                                 written = True
                             d += 1
                 if written:

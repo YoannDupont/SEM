@@ -3,7 +3,7 @@
 """
 file: span.py
 
-Description: defines the SpannedBounds object.
+Description: defines the Span object.
 
 author: Yoann Dupont
 
@@ -30,11 +30,82 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.span import Span
+try:
+    from xml.etree.cElementTree import ElementTree as ET
+except ImportError:
+    from xml.etree.ElementTree import ElementTree as ET
+
+class Span(object):
+    """
+    The Span object.
+    
+    Attributes
+    ----------
+    _lb : int
+        the lower bound of a Span.
+    _ub : int
+        the upper bound of a Span.
+    """
+    
+    def __init__(self, lb, ub, length=-1):
+        self._lb = (min(lb, ub) if length<0 else lb)
+        self._ub = (max(lb, ub) if length<0 else lb+length)
+    
+    def __eq__(self, span):
+        return self.lb == span.lb and self.ub == span.ub
+    
+    def __contains__(self, i):
+        return self._lb <= i and i < self.ub
+    
+    def __len__(self):
+        return self._ub - self._lb
+    
+    def __str__(self):
+        return "[{span.lb}:{span.ub}]".format(span=self)
+    
+    @property
+    def lb(self):
+        return self._lb
+    
+    @property
+    def ub(self):
+        return self._ub
+    
+    @lb.setter
+    def lb(self, lb):
+        self._lb = min(lb, self._ub)
+    
+    @ub.setter
+    def ub(self, ub):
+        self._ub = max(ub, self._lb)
+    
+    def toXML(self):
+        return '<span s="{0}" l="{1}" />'.format(self._lb, len(self))
+    
+    @classmethod
+    def fromXML(cls, xml):
+        if type(node) in (str, unicode):
+            node = ET.fromstring(xml)
+        else:
+            node = xml
+        start  = node.attrib.get(u"start", node.attrib[u"s"])
+        end    = node.attrib.get(u"end", node.attrib.get(u"e", start))
+        length = node.attrib.get(u"length", node.attrib.get(u"l", -1))
+        return Span(start, end, length=length)
+    
+    def strictly_contains(self, i):
+        return i > self._lb and i < self.ub
+    
+    def expand_lb(self, length):
+        self._lb -= length
+    
+    def expand_ub(self, length):
+        self._ub += length
+
 
 class SpannedBounds(object):
     """
-    The SpanBounds object. Its purpose is to represent (word, sentence, etc.)
+    The SpannedBounds object. Its purpose is to represent (word, sentence, etc.)
     bounds as spans to later produce (word, sentence, etc.) spans.
     
     Attributes

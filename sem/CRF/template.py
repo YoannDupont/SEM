@@ -71,22 +71,22 @@ class IdentityPattern(Pattern):
         self._column = column
     
     def __str__(self):
-        return '%%x[%i,%i]' %(self.x, self.y)
+        return '%x[{p.x},{p.y}]'.format(p=self)
     
     def __unicode__(self):
-        return u'%%x[%i,%i]' %(self.x, self.y)
+        return u'%x[{p.x},{p.y}]'.format(self.x, self.y)
     
     def instanciate(self, matrix, index):
         x = index + self.x
         if x < 0:
             if x > -5:
-                return "_x%+d" %x
+                return "_x{0:+d}".format(x)
             else:
                 return "_x-#"
         if x >= len(matrix):
             diff = x - len(matrix) + 1
             if diff < 5:
-                return "_x%+d" %diff
+                return "_x{0:+d}".format(diff)
             else:
                 return u"_x+#"
         
@@ -111,18 +111,18 @@ class IdentityPattern(Pattern):
         return IdentityPattern(int(groups[0]),int(groups[1]), case_insensitive=case_insensitive, column=column)
 
 class RegexPattern(IdentityPattern):
-    __sub = {u"\\l":u"[%s]" %UNICODE_LOWERS,
-             u"\\L":u"[^%s]" %UNICODE_LOWERS,
-             u"\\u":u"[%s]" %UNICODE_UPPERS,
-             u"\\U":u"[^%s]" %UNICODE_UPPERS,
-             u"\\d":u"[%s]" %UNICODE_DIGITS,
-             u"\\D":u"[^%s]" %UNICODE_DIGITS,
-             u"\\p":u"[%s]" %UNICODE_PUNCTS,
-             u"\\P":u"[^%s]" %UNICODE_PUNCTS,
-             u"\\a":u"[%s]" %UNICODE_ALPHAS,
-             u"\\A":u"[^%s]" %UNICODE_ALPHAS,
-             u"\\w":u"[%s]" %UNICODE_ALPHANUMS,
-             u"\\W":u"[^%s]" %UNICODE_ALPHANUMS
+    __sub = {u"\\l":u"[{0}]".format(UNICODE_LOWERS),
+             u"\\L":u"[^{0}]".format(UNICODE_LOWERS),
+             u"\\u":u"[{0}]".format(UNICODE_UPPERS),
+             u"\\U":u"[^{0}]".format(UNICODE_UPPERS),
+             u"\\d":u"[{0}]".format(UNICODE_DIGITS),
+             u"\\D":u"[^{0}]".format(UNICODE_DIGITS),
+             u"\\p":u"[{0}]".format(UNICODE_PUNCTS),
+             u"\\P":u"[^{0}]".format(UNICODE_PUNCTS),
+             u"\\a":u"[{0}]".format(UNICODE_ALPHAS),
+             u"\\A":u"[^{0}]".format(UNICODE_ALPHAS),
+             u"\\w":u"[{0}]".format(UNICODE_ALPHANUMS),
+             u"\\W":u"[^{0}]".format(UNICODE_ALPHANUMS)
              }
     
     def __init__(self, x, y, pattern, case_insensitive=False, *args):
@@ -148,13 +148,13 @@ class TestPattern(RegexPattern):
         p = self._pattern.pattern[:]
         for x,y in RegexPattern.sub().items():
             p = p.replace(y, x)
-        return u'%%t[%i,%i,"%s"]' %(self.x, self.y, p)
+        return u'%t[{p.x},{p.y},"{pat}"]'.format(p=self, pat=p)
     
     def __unicode__(self):
         p = self._pattern.pattern[:]
         for x,y in RegexPattern.sub().items():
             p = p.replace(y, x)
-        return u'%%t[%i,%i,"%s"]' %(self.x, self.y, p)
+        return u'%t[{p.x},{p.y},"{pat}"]'.format(p=self, pat=p)
     
     def instanciate(self, matrix, index, case_insensitive=False):
         cell = super(TestPattern, self).instanciate(matrix, index)
@@ -174,13 +174,13 @@ class MatchPattern(RegexPattern):
         p = self._pattern.pattern[:]
         for x,y in RegexPattern.sub().items():
             p = p.replace(y, x)
-        return u'%%m[%i,%i,"%s"]' %(self.x, self.y, p)
+        return u'%m[{p.x},{p.y},"{pat}"]'.format(p=self, pat=p)
     
     def __unicode__(self):
         p = self._pattern.pattern[:]
         for x,y in RegexPattern.sub().items():
             p = p.replace(y, x)
-        return u'%%m[%i,%i,"%s"]' %(self.x, self.y, p)
+        return u'%m[{p.x},{p.y},"{pat}"]'.format(p=self, pat=p)
     
     def instanciate(self, matrix, index, case_insensitive=False):
         cell = super(MatchPattern, self).instanciate(matrix, index)

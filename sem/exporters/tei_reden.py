@@ -35,10 +35,9 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from sem.span import Span
-
 from sem.exporters.exporter import Exporter as DefaultExporter
 from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
+from sem.storage import Span
 
 def add_text(node, text):
     parts = text.split(u"\n")

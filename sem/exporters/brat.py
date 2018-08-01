@@ -50,7 +50,7 @@ class Exporter(DefaultExporter):
         content = document.content
         parts = []
         for id, annotation in enumerate(document.annotation(lowers["ner"]).get_reference_annotations(), 1):
-            parts.append(u"T%i\t%s %i %i\t%s" %(id, annotation.value, annotation.lb, annotation.ub, content[annotation.lb : annotation.ub].replace(u"\r",u"").replace(u"\n",u" ")))
+            parts.append(u"T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(id=id, annotation=annotation, txt=content[annotation.lb : annotation.ub].replace(u"\r",u"").replace(u"\n",u" ")))
         return u"\n".join(parts)
     
     def corpus_to_unicode(self, corpus, couples, **kwargs):

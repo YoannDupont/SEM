@@ -71,7 +71,7 @@ class Exporter(DefaultExporter):
         json_dict[u"annotations"] = {}
         for annotation in document.annotations.values():
             json_dict[u"annotations"][annotation.name] = {}
-            reference = ("" if not annotation.reference else u"%s" %(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+            reference = ("" if not annotation.reference else (annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
             if reference:
                 json_dict[u"annotations"][annotation.name][u"reference"] = reference
             json_dict[u"annotations"][annotation.name]["annotations"] = [{u"v":tag.value, u"s":tag.lb, u"l":len(tag)} for tag in annotation]

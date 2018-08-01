@@ -73,12 +73,12 @@ class Exporter(DefaultExporter):
             position2html[ub].insert(0, u'</span>')
             if lb not in position2html:
                 position2html[lb] = []
-            position2html[lb].append(u'<span id="%s" title="%s">' %(value, value))
+            position2html[lb].append(u'<span id="{0}" title="{0}">'.format(value))
         
         for index in reversed(sorted(position2html.keys())):
             content = content[:index] + u"".join(position2html[index]) + content[index:]
         
-        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="%s" />' %(self._lang))
-        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="%s" />' %(self._lang_style))
+        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(self._lang))
+        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(self._lang_style))
         
         return content

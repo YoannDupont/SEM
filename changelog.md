@@ -5,12 +5,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## Unreleased
 ### Added
+- install.md file for installation instructions
+- SEM may copy a newly trained model into the right folder in sem_data in order to use it immidiately
+- support for SEM documents in ```chunking_evaluate```
+- method ```annotation_from_sentence``` to generate annotations (used to remove dupes)
+- ability to search text added to annotation_gui, supports regular expression and case insensitivity (shortcut: ctrl+f)
+- user can now select to train on either top level annotations or bottom level annotations when annotations are nested
 - first version of the manual in English
 - user can now select language when training from annotation_gui
 ### Changed
+- most string formatting with "%" now replaced with string.format method
+- improving french tokeniser performance on numerous little texts: regexp are now compiled once and for all
+- corrected bug in french tokeniser when document only had one token and no spaces
+- ```chunking_evaluate``` now also works for POS => renaming module ```evaluate```
+- corrected a bug when training in ```annotation_gui``` that could break annotations in some cases
 - improved memory consumption when training a new SEM model
 - corrected a bug when there was no french language defined in SEM data
 - corrected a bug disallowing user to "save as..." in certain context
+### Removed
+- code refactoring: removal of duplicated methods for generating Annotation from CoNLL files.
 
 ## [SEM v3.2.0](https://github.com/YoannDupont/SEM/releases/tag/v3.2.0)
 ### Added

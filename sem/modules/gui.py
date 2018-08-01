@@ -144,7 +144,7 @@ class SemTkMainWindow(ttk.Frame):
                     args.infile = current_file
                     tagger(args)
         except Exception,e:
-            tkMessageBox.showerror("launching SEM", "Error: " + e.message)
+            tkMessageBox.showerror("launching SEM", "Error: " + str(e.message)) # handling ExpatError from etree
             raise
             return
         gui_logger.info("files are located in: " + output_dir)

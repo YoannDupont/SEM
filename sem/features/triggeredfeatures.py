@@ -43,7 +43,7 @@ class TriggeredFeature(Feature):
         self.default   = default
         
         if not self.trigger.is_boolean:
-            raise ValueError("Trigger for %s is not boolean." %self.name)
+            raise ValueError("Trigger for {0} is not boolean.".format(self.name))
         
         self._is_boolean = self.operation._is_boolean
     

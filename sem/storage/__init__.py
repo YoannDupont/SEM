@@ -26,8 +26,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from holder import Holder
 from annotation import Tag, Annotation
+from coder import Coder
 from corpus import Corpus
+from dictionaries import NUL, compile_token, compile_multiword, compile_map
 from document import Document, SEMCorpus
+from holder import Holder
 from segmentation import Segmentation
+from span import Span, SpannedBounds
+from trie import Trie

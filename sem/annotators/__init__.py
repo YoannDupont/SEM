@@ -39,14 +39,9 @@ except ImportError: # backward compatibility for python < 2.7
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
 
 def get_package(name):
-    module = import_module("sem.annotators.%s" %name)
+    module = import_module("sem.annotators.{0}".format(name))
     return module
 
 def get_annotator(name):
-    module = import_module("sem.annotators.%s" %name)
+    module = import_module("sem.annotators.{0}".format(name))
     return module.Annotator
-    """try:
-        module = import_module("sem.exporters.%s" %name)
-        return module.Exporter
-    except ImportError, e:
-        raise ImportError('Could import exporter "%s": %s' %(name,e))"""

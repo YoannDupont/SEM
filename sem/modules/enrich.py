@@ -44,7 +44,7 @@ from sem.IO import KeyReader, KeyWriter
 from sem.logger import default_handler, file_handler
 
 import os.path
-enrich_logger = logging.getLogger("sem.%s" %os.path.basename(__file__).split(".")[0])
+enrich_logger = logging.getLogger("sem.{0}".format(os.path.basename(__file__).split(".")[0]))
 enrich_logger.addHandler(default_handler)
 
 class SEMModule(RootModule):
@@ -55,7 +55,7 @@ class SEMModule(RootModule):
         self._source = informations
         
         if type(informations) in (str, unicode):
-            enrich_logger.info('loading %s' %informations)
+            enrich_logger.info('loading {0}'.format(informations))
             self._informations = Informations(self._source, mode=self._mode)
         else:
             self._informations = self._source
@@ -73,7 +73,7 @@ class SEMModule(RootModule):
         if type(self._source) not in (str, unicode):
             raise RuntimeError("cannot change mode for Enrich module: source for informations is not a file.")
         self._mode = mode
-        enrich_logger.info('loading %s' %self._source)
+        enrich_logger.info('loading {0}'.format(self._source))
         self._informations = Informations(self._source, mode=self._mode)
     
     def process_document(self, document, **kwargs):
@@ -103,9 +103,9 @@ class SEMModule(RootModule):
         missing_fields = set([I.name for I in informations.bentries + informations.aentries]) - set(document.corpus.fields)
         
         if len(missing_fields) > 0:
-            raise ValueError("Missing fields in input corpus: %s" %u",".join(sorted(missing_fields)))
+            raise ValueError("Missing fields in input corpus: {0}".format(u",".join(sorted(missing_fields))))
         
-        enrich_logger.debug('enriching file "%s"' %document.name)
+        enrich_logger.debug('enriching file "{0}"'.format(document.name))
         
         new_fields = [feature.name for feature in informations.features if feature.display]
         document.corpus.fields += new_fields
@@ -113,11 +113,11 @@ class SEMModule(RootModule):
         for i, sentence in enumerate(informations.enrich(document.corpus)):
             nth += 1
             if (0 == nth % 1000):
-                enrich_logger.debug('%i sentences enriched' %nth)
-        enrich_logger.debug('%i sentences enriched' %nth)
+                enrich_logger.debug('{0} sentences enriched'.format(nth))
+        enrich_logger.debug('{0} sentences enriched'.format(nth))
         
         laps = time.time() - start
-        enrich_logger.info("done in %s" %timedelta(seconds=laps))
+        enrich_logger.info("done in {0}".format(timedelta(seconds=laps)))
 
 def main(args):
     """
@@ -146,11 +146,11 @@ def main(args):
     if args.log_file is not None:
         enrich_logger.addHandler(file_handler(args.log_file))
     enrich_logger.setLevel(args.log_level)
-    enrich_logger.info('parsing enrichment file "%s"' %args.infofile)
+    enrich_logger.info('parsing enrichment file "{0}"'.format(args.infofile))
     
     informations = Informations(path=args.infofile, mode=args.mode)
     
-    enrich_logger.debug('enriching file "%s"' %args.infile)
+    enrich_logger.debug('enriching file "{0}"'.format(args.infile))
     
     bentries = [entry.name for entry in informations.bentries]
     aentries = [entry.name for entry in informations.aentries]
@@ -161,11 +161,11 @@ def main(args):
             O.write_p(p)
             nth += 1
             if (0 == nth % 1000):
-                enrich_logger.debug('%i sentences enriched' %nth)
-        enrich_logger.debug('%i sentences enriched' %nth)
+                enrich_logger.debug('{0} sentences enriched'.format(nth))
+        enrich_logger.debug('{0} sentences enriched'.format(nth))
     
     laps = time.time() - start
-    enrich_logger.info("done in %s", timedelta(seconds=laps))
+    enrich_logger.info("done in {0}".format(timedelta(seconds=laps)))
 
 
 

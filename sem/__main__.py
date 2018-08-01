@@ -40,20 +40,12 @@ import sem
 import sem.modules
 
 from sem.logger import logging_format
+from sem.misc import find_suggestions
 
 sem_logger = logging.getLogger("sem")
 
 def valid_module(m):
     return m.endswith(".py") and not (m.startswith(u"_") or m in ["sem_module.py", "pipeline.py"])
-
-def find_suggestions(operation, ids):
-    suggestions = []
-    for name in ids:
-        shortest = (name if len(name) < len(operation) else operation)
-        longest = (operation if shortest == name else name)
-        if shortest in longest:
-            suggestions.append(name)
-    return suggestions
 
 def main(args=None):
     def banter():
@@ -64,7 +56,7 @@ def main(args=None):
         l = [
             u"Do thou mockest me?",
             u"Try again?",
-            u"I'm sorry %s, I'm afraid I can't do that." %username(),
+            u"I'm sorry {0}, I'm afraid I can't do that.".format(username()),
             u'The greatest trick this module ever pulled what convincing the users it did not exist.',
             u"It's just a typo."
         ]
@@ -83,10 +75,10 @@ def main(args=None):
         module = modules[operation]
         module.main(sem.argument_parser.parse_args())
     elif operation in ["-h", "--help"]:
-        print "Usage: %s <module> [module arguments]\n" %name
+        print "Usage: {0} <module> [module arguments]\n".format(name)
         print "Module list:"
         for module in modules:
-            print "\t%s" %module
+            print "\t{0}".format(module)
         print
         print "for SEM's current version: -v or --version\n"
         print "for informations about the last revision: -i or --informations"
@@ -108,7 +100,7 @@ def main(args=None):
         if len(suggestions) > 0:
             print "Did you mean one of the following?"
             for suggestion in suggestions:
-                print "\t%s" %suggestion
+                print "\t{0}".format(suggestion)
         else:
             print "No suggestions found...", banter()
 

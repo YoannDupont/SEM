@@ -42,7 +42,7 @@ import os.path
 
 tmp                = os.path.normpath(__file__).split(os.sep)
 tmp                = u'.'.join(tmp[tmp.index("sem") : ]).rsplit(".",1)[0]
-xml2feature_logger = logging.getLogger("sem.%s" %tmp)
+xml2feature_logger = logging.getLogger("sem.{0}".format(tmp))
 xml2feature_logger.addHandler(default_handler)
 xml2feature_logger.setLevel("WARN")
 del tmp
@@ -60,7 +60,7 @@ class Entry(object):
     """
     def __init__(self, name, mode=u"label"):
         if mode not in _modes:
-            raise ValueError("Unallowed mode for entry: %s" %mode)
+            raise ValueError("Unallowed mode for entry: {0}".format(mode))
         self._name = name
         self._mode = mode
     
@@ -114,23 +114,23 @@ class Informations(object):
         
         children = parsing.getroot().getchildren()
         
-        if len(children) != 2: raise RuntimeError("Enrichment file requires exactly 2 fields, %i given." %len(children))
+        if len(children) != 2: raise RuntimeError("Enrichment file requires exactly 2 fields, {0} given.".format(len(children)))
         else:
             if children[0].tag != "entries":
-                raise RuntimeError('Expected "entries" as first field, got "%s".' %children[0].tag)
+                raise RuntimeError('Expected "entries" as first field, got "{0}".'.format(children[0].tag))
             if children[1].tag != "features":
-                raise RuntimeError('Expected "features" as second field, got "%s".' %children[1].tag)
+                raise RuntimeError('Expected "features" as second field, got "{0}".'.format(children[1].tag))
         
         entries = list(children[0])
         if len(entries) not in (1,2):
-            raise RuntimeError("Entries takes exactly 1 or 2 fields, %i given" %len(entries))
+            raise RuntimeError("Entries takes exactly 1 or 2 fields, {0} given".format(len(entries)))
         else:
             entry1 = entries[0].tag.lower()
             entry2 = (entries[1].tag.lower() if len(entries)==2 else None)
             if entry1 not in ("before", "after"):
-                raise RuntimeError('For entry position, expected "before" or "after", got "%s".' %entry1)
+                raise RuntimeError('For entry position, expected "before" or "after", got "{0}".'.format(entry1))
             if entry2 and entry2 not in ("before", "after"):
-                raise RuntimeError('For entry position, expected "before" or "after", got "%s".' %entry2)
+                raise RuntimeError('For entry position, expected "before" or "after", got "{0}".'.format(entry2))
             if entry1 == entry2:
                 raise RuntimeError('Both entry positions are the same, they should be different')
         

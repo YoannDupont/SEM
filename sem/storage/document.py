@@ -32,8 +32,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .holder import Holder
-
 from os.path import basename
 import cgi
 import codecs
@@ -50,12 +48,13 @@ except ImportError:
     from html.parser import HTMLParser
 
 import sem
-from sem.storage.segmentation import Segmentation
-from sem.storage.corpus       import Corpus
-from sem.storage.annotation   import Tag, Annotation, tag_annotation_from_corpus, chunk_annotation_from_corpus, get_top_level
-from sem.span                 import Span
-from sem.misc                 import correct_pos_tags
-from sem.logger               import default_handler
+from sem.misc import correct_pos_tags
+from sem.logger import default_handler
+from .holder import Holder
+from .segmentation import Segmentation
+from .corpus import Corpus
+from .annotation import Tag, Annotation, tag_annotation_from_corpus, chunk_annotation_from_corpus, get_top_level
+from .span import Span
 
 document_logger = logging.getLogger("sem.storage.document")
 document_logger.addHandler(default_handler)
@@ -149,7 +148,7 @@ class Document(Holder):
         elif isinstance(xml, type(ET.Element("a"))): # did not ind a better way to do this
             data = xml
         else:
-            raise TypeError("Invalid type for loading XML-SEM document: %s" %(type(xml)))
+            raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
         
         if isinstance(data, ET.ElementTree):
             root = data.getroot()
@@ -159,7 +158,7 @@ class Document(Holder):
         if root.tag == "sem":
             root = list(root)[0]
         elif root.tag != "document":
-            raise TypeError("Invalid XML document type for XML-SEM document: %s" %(root.tag))
+            raise TypeError("Invalid XML document type for XML-SEM document: {0}".format(root.tag))
         
         htmlparser = HTMLParser()
         document = Document(root.attrib.get("name", u"_DOCUMENT_"))
@@ -182,7 +181,7 @@ class Document(Holder):
                         value = tag.attrib.get(u"value",tag.attrib[u"v"])
                         if not load_subtypes:
                             value = value.strip(type_separator).split(type_separator)[0]
-                        tags.append(Tag(lb=int(tag.attrib.get("start", tag.attrib["s"])), ub=0, length=int(tag.attrib.get("length", tag.attrib["l"])), value=value))
+                        tags.append(Tag(value=value, lb=int(tag.attrib.get("start", tag.attrib["s"])), ub=0, length=int(tag.attrib.get("length", tag.attrib["l"]))))
                     reference = annotation.get(u"reference", None)
                     if reference:
                         reference = document.segmentation(reference)
@@ -212,9 +211,9 @@ class Document(Holder):
                             i += 1
                         l = [u"O" for _ in range(len(sentence))]
                         for annot in annots:
-                            l[annot.lb-shift] = u"B-%s" %annot.value
+                            l[annot.lb-shift] = u"B-{0}".format(annot.value)
                             for j in range(annot.lb+1-shift, annot.ub-shift):
-                                l[j] = u"I-%s" %annot.value
+                                l[j] = u"I-{}".format(annot.value)
                         for j in range(len(l)):
                             sent[j]["NER"] = l[j]
                         shift += len(sentence)
@@ -264,51 +263,51 @@ class Document(Holder):
     
     def write(self, f, depth=0, indent=4, add_header=False):
         if add_header:
-            f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or u"ASCII"))
-        f.write(u'%s<document name="%s">\n' %(depth*indent*u" ", self.name))
+            f.write(u'<?xml version="1.0" encoding="{0}" ?>\n'.format(f.encoding or u"ASCII"))
+        f.write(u'{0}<document name="{1}">\n'.format(depth*indent*u" ", self.name))
         depth += 1
-        f.write(u'%s<metadata' %(depth*indent*" "))
+        f.write(u'{}<metadata'.format(depth*indent*" "))
         for metakey, metavalue in sorted(self._metadatas.items()):
-            f.write(u' %s="%s"' %(metakey, metavalue))
+            f.write(u' {0}="{1}"'.format(metakey, metavalue))
         f.write(u' />\n')
-        f.write(u'%s<content>%s</content>\n' %(depth*indent*" ", cgi.escape(self.content)))
+        f.write(u'{0}<content>{1}</content>\n'.format(depth*indent*" ", cgi.escape(self.content)))
         
         if len(self.segmentations) > 0:
-            f.write(u'%s<segmentations>\n' %(depth*indent*" "))
+            f.write(u'{0}<segmentations>\n'.format(depth*indent*" "))
             refs = [seg.reference for seg in self.segmentations.values() if seg.reference]
             for seg in sorted(self.segmentations.values(), key=lambda x: (x.reference and x.reference.reference in refs, x.name)): # TODO: create a sort_segmentations method to order them in terms of reference.
                 depth += 1
                 ref     = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
-                ref_str = ("" if ref is None else ' reference="%s"'%ref)
-                f.write(u'%s<segmentation name="%s"%s>' %(depth*indent*" ", seg.name, ref_str))
+                ref_str = ("" if ref is None else ' reference="{0}"'.format(ref))
+                f.write(u'{0}<segmentation name="{1}"{2}>'.format(depth*indent*" ", seg.name, ref_str))
                 depth += 1
                 for i, element in enumerate(seg):
                     lf = i == 0 or (i % 5 == 0)
                     if lf:
-                        f.write(u'\n%s' %(depth*indent*" "))
-                    f.write(u'%s<s s="%i" l="%i" />' %(("" if lf else " "), element.lb, len(element)))
+                        f.write(u'\n{0}'.format(depth*indent*" "))
+                    f.write(u'{0}<s s="{1}" l="{2}" />'.format(("" if lf else " "), element.lb, len(element)))
                 f.write(u"\n")
                 depth -= 1
-                f.write(u'%s</segmentation>\n' %(depth*indent*" "))
+                f.write(u'{0}</segmentation>\n'.format(depth*indent*" "))
                 depth -= 1
-            f.write(u'%s</segmentations>\n' %(depth*indent*" "))
+            f.write(u'{0}</segmentations>\n'.format(depth*indent*" "))
         
         if len(self.annotations) > 0:
-            f.write(u'%s<annotations>\n' %(depth*indent*" "))
+            f.write(u'{0}<annotations>\n'.format(depth*indent*" "))
             for annotation in self.annotations.values():
                 depth += 1
-                reference = ("" if not annotation.reference else u' reference="%s"' %(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
-                f.write(u'%s<annotation name="%s"%s>\n' %(depth*indent*" ", annotation.name, reference))
+                reference = ("" if not annotation.reference else u' reference="{0}"'.format(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+                f.write(u'{0}<annotation name="{1}"{2}>\n'.format(depth*indent*" ", annotation.name, reference))
                 depth += 1
                 for tag in annotation:
-                    f.write(u'%s<tag v="%s" s="%i" l="%i"/>\n' %(depth*indent*" ", tag.getValue(), tag.lb, len(tag)))
+                    f.write(u'{0}<tag v="{1}" s="{2}" l="{3}"/>\n'.format(depth*indent*" ", tag.getValue(), tag.lb, len(tag)))
                 depth -= 1
-                f.write(u'%s</annotation>\n' %(depth*indent*" "))
+                f.write(u'{0}</annotation>\n'.format(depth*indent*" "))
                 depth -= 1
-            f.write(u'%s</annotations>\n' %(depth*indent*" "))
+            f.write(u'{0}</annotations>\n'.format(depth*indent*" "))
         
         depth -= 1
-        f.write(u'%s</document>\n' %(depth*indent*" "))
+        f.write(u'{0}</document>\n'.format(depth*indent*" "))
     
     def set_reference(self, annotation_name, reference_name, add_to_corpus=False, filter=get_top_level):
         annot = self.annotation(annotation_name)
@@ -335,7 +334,10 @@ class Document(Holder):
             self.add_to_corpus(annotation_name, filter=filter)
     
     def add_to_corpus(self, annotation_name, filter=get_top_level):
-        annotations = self.annotation(annotation_name).get_reference_annotations()
+        base_annotations = self.annotation(annotation_name)
+        if not base_annotations:
+            raise KeyError('{0} annotation not found.'.format(annotation_name))
+        annotations = base_annotations.get_reference_annotations()
         
         spans = self.segmentation("tokens").get_reference_spans()
         begin = 0
@@ -355,7 +357,7 @@ class Document(Holder):
                 annotation.lb = begin
                 annotation.ub = i + 1
             else:
-                document_logger.warn("cannot add annotation %s" %(annotation))
+                document_logger.warn("cannot add annotation {0}".format(annotation))
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
@@ -378,16 +380,16 @@ class Document(Holder):
             for token in sentence:
                 token[annotation_name] = u"O"
             while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
-                sentence[cur_annot.lb -shift][annotation_name] = u"B-%s" %cur_annot.value
+                sentence[cur_annot.lb -shift][annotation_name] = u"B-{0}".format(cur_annot.value)
                 for k in range(cur_annot.lb+1, cur_annot.ub):
-                    sentence[k - shift][annotation_name] = u"I-%s" %cur_annot.value
+                    sentence[k - shift][annotation_name] = u"I-{0}".format(cur_annot.value)
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]
                 except IndexError:
                     cur_annot = None
             if cur_annot is not None and ((span.lb <= cur_annot.lb < span.ub) and cur_annot.ub > span.ub): # annotation spans over at least two sentences
-                document_logger.warn("Annotation %s spans over multiple sentences, ignoring" %(cur_annot))
+                document_logger.warn("Annotation {0} spans over multiple sentences, ignoring".format(cur_annot))
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]
@@ -426,7 +428,7 @@ class Document(Holder):
                     if change:
                         tags[i] = current
                     
-                    annotation.insert(index, Tag(nth_token+i, 0, tags[i], length=n+1))
+                    annotation.insert(index, Tag(tags[i], nth_token+i, 0, length=n+1))
                     current = None
                     n       = 0
                 else:
@@ -463,6 +465,9 @@ class SEMCorpus(Holder):
         else:
             self._documents = documents
     
+    def __getitem__(self, index):
+        return self._documents[index]
+    
     def __len__(self):
         return len(self._documents)
     
@@ -482,11 +487,11 @@ class SEMCorpus(Holder):
         elif isinstance(xml, type(ET.Element("a"))): # did not ind a better way to do this
             data = xml
         else:
-            raise TypeError("Invalid type for loading XML-SEM document: %s" %(type(xml)))
+            raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
         
         root = data.getroot()
         if root.tag != "sem":
-            raise ValueError("Not sem xml file type: '%s'" %root.tag)
+            raise ValueError("Not sem xml file type: '{0}'".format(root.tag))
         doc_list = []
         for document in list(root):
             doc_list.append(Document.from_xml(document))
@@ -498,7 +503,7 @@ class SEMCorpus(Holder):
             self._documents.append(document)
     
     def write(self, f, indent=4):
-        f.write(u'<?xml version="1.0" encoding="%s" ?>\n' %(f.encoding or "ASCII"))
+        f.write(u'<?xml version="1.0" encoding="{0}" ?>\n'.format(f.encoding or "ASCII"))
         f.write(u"<sem>\n")
         for document in self._documents:
             document.write(f, depth=1, indent=indent, add_header=False)

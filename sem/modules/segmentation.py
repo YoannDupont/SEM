@@ -54,7 +54,7 @@ class SEMModule(RootModule):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
         if type(tokeniser) in (str, unicode):
-            segmentation_logger.info('Getting tokeniser "%s"' %(tokeniser))
+            segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
             Tokeniser = get_tokeniser(tokeniser)
             self._tokeniser = Tokeniser()
         else:
@@ -99,11 +99,11 @@ class SEMModule(RootModule):
             sentence_spans = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
             paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
         else:
-            segmentation_logger.info('%s already has segmenation, not computing' %(document.name))
+            segmentation_logger.info('{0} already has segmenation, not computing'.format(document.name))
             token_spans = document.segmentation("tokens").spans
             sentence_spans = document.segmentation("sentences").spans
             paragraph_spans = document.segmentation("paragraphs").spans
-        segmentation_logger.info('"%s" segmented in %i sentences, %i tokens' %(document.name, len(sentence_spans), len(token_spans)))
+        segmentation_logger.info('"{0}" segmented in {1} sentences, {2} tokens'.format(document.name, len(sentence_spans), len(token_spans)))
         
         if document.segmentation("tokens") is None:
             document.add_segmentation(Segmentation("tokens", spans=token_spans))
@@ -115,7 +115,7 @@ class SEMModule(RootModule):
             document.corpus.from_segmentation(document.content, document.segmentation("tokens"), document.segmentation("sentences"))
 
         laps = time.time() - start
-        segmentation_logger.info('in %s' %(timedelta(seconds=laps)))
+        segmentation_logger.info('in {0}'.format(timedelta(seconds=laps)))
 
 def main(args):
     if args.log_file is not None:

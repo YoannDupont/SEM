@@ -46,8 +46,6 @@ class MatchFeature(Feature):
     
     def __call__(self, *args, **kwargs):
         got = self._getter(*args, **kwargs)
-        if not got:
-            print args[0][args[1]]
         return self._regexp.search(self._getter(*args, **kwargs))
 
 class CheckFeature(MatchFeature):

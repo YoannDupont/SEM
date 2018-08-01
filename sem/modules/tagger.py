@@ -102,13 +102,13 @@ def load_master(master, force_format="default"):
             couples = dict(options.items("export"))
             export_format = couples["format"]
             if force_format is not None and force_format != "default":
-                sem_tagger_logger.info("using forced format: %s" %force_format)
+                sem_tagger_logger.info("using forced format: {0}".format(force_format))
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
     
     if get_option(options, "log", "log_file") is not None:
         sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
-    sem_tagger_logger.setLevel(get_option(options, "log", "level", "WARNING"))
+    sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
     
     classes = {}
     pipes = []
@@ -132,8 +132,8 @@ def load_master(master, force_format="default"):
                 if key not in arguments:
                     arguments[key] = value
                 else:
-                    sem_tagger_logger.warn('Not adding already existing option: %s' %(key))
-        sem_tagger_logger.info("loading %s" %xmlpipe.tag)
+                    sem_tagger_logger.warn('Not adding already existing option: {0}'.format(key))
+        sem_tagger_logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes)
     
@@ -193,10 +193,10 @@ def main(args):
     # info cleaning). They will be used for wapiti
     
     if isinstance(infile, Document):
-        sem_tagger_logger.info("Reading %s" %(infile.name))
+        sem_tagger_logger.info("Reading {0}".format(infile.name))
         document = infile
     else:
-        sem_tagger_logger.info("Reading %s" %(infile))
+        sem_tagger_logger.info("Reading {0}".format(infile))
         file_shortname, _ = os.path.splitext(os.path.basename(infile))
         export_name = os.path.join(output_directory, file_shortname)
         file_format = get_option(options, "file", "format", "guess")
@@ -212,7 +212,7 @@ def main(args):
         elif file_format == "guess":
             document = sem.importers.load(infile, logger=sem_tagger_logger, **opts)
         else:
-            raise ValueError(u"unknown format: %s" %file_format)
+            raise ValueError(u"unknown format: {0}".format(file_format))
     
     pipeline.process_document(document)
     
@@ -222,19 +222,16 @@ def main(args):
             shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", "tabs.css"), output_directory)
             shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, get_option(options, "export", "lang_style", "default.css")), output_directory)
         
+        shortname, ext = os.path.splitext(name)
+        out_path = os.path.join(output_directory, "{0}.{1}".format(shortname, exporter.extension()))
         if exporter.extension() == "ann":
-            out_path = os.path.join(output_directory, "%s.%s" %(os.path.splitext(name)[0], exporter.extension()))
-            filename = name
-            if not filename.endswith(".txt"):
-                filename += ".txt"
+            filename = shortname + ".txt"
             with codecs.open(os.path.join(output_directory, filename), "w", oenc) as O:
                 O.write(document.content)
-        else:
-            out_path = os.path.join(output_directory, "%s.%s" %(name, exporter.extension()))
         exporter.document_to_file(document, couples, out_path, encoding=oenc)
     
     laps = time.time() - start
-    sem_tagger_logger.info('done in %s' %(timedelta(seconds=laps)))
+    sem_tagger_logger.info('done in {0}'.format(timedelta(seconds=laps)))
     
     return document
 

@@ -34,6 +34,22 @@ SOFTWARE.
 import re
 
 #
+# Chunking flags.
+#
+    
+BEGIN  = "B"  # begin flags
+IN     = "I"  # in flags
+LAST   = "LE" # end flags
+SINGLE = "US" # single flags
+OUT    = "O"
+
+#
+# Some useful constants for tries.
+#
+
+NUL = u""
+
+#
 # Some useful regular expressions.
 #
 
@@ -44,17 +60,17 @@ import re
 protocol = u"(?:http|ftp|news|nntp|telnet|gopher|wais|file|prospero)"
 mailto   = u"mailto"
 url_body = u"\S+[0-9A-Za-z/]"
-url      = u"<?(?:%s://|%s:|www\.)%s>?" %(protocol, mailto, url_body)
+url      = u"<?(?:{0}://|{1}:|www\.){2}>?".format(protocol, mailto, url_body)
 url_re   = re.compile(url, re.I)
 
 # email addresses recognition. See URLs.
 localpart_border = u"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]"
 localpart_inside = u"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]"
-localpart        = u"%s%s*" %(localpart_border, localpart_inside)
+localpart        = u"{0}{1}*".format(localpart_border, localpart_inside)
 subdomain_start  = u"[A-Za-z]"
 subdomain_inside = u"[A-Za-z0-9\\-]"
 subdomain_end    = u"[A-Za-z0-9]"
-subdomain        = u"%s%s*%s" %(subdomain_start, subdomain_inside, subdomain_end)
-domain           = u"%s(?:\\.%s)*" %(subdomain, subdomain)
-email_str        = u"%s@%s" %(localpart, domain)
+subdomain        = u"{0}{1}*{2}".format(subdomain_start, subdomain_inside, subdomain_end)
+domain           = u"{0}(?:\\.{1})*".format(subdomain, subdomain)
+email_str        = u"{0}@{1}".format(localpart, domain)
 email_re         = re.compile(email_str)

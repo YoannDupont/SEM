@@ -103,7 +103,7 @@ class Exporter(DefaultExporter):
             parts.append(cgi.escape(content[annotation.ub : last]).replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r"))
             parts.append(u'</span>')
             parts.append(cgi.escape(content[annotation.lb : annotation.ub]).replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r"))
-            parts.append(u'<span id="%s" title="%s">' %(annotation.value, annotation.value))
+            parts.append(u'<span id="{0}" title="{0}">'.format(annotation.value))
             last = annotation.lb
         parts.append(cgi.escape(content[0:last]).replace(u"\n", u"<br />\n").replace(u"\r<br />", u"<br />\r"))
         
@@ -124,15 +124,15 @@ class Exporter(DefaultExporter):
         # header + div that will contain tabs
         html_page = [u"""<html>
     <head>
-        <meta charset="%s" />
-        <title>%s</title>
-        <link rel="stylesheet" href="%s" />
-        <link rel="stylesheet" href="%s" />
+        <meta charset="{0}" />
+        <title>{1}</title>
+        <link rel="stylesheet" href="{2}" />
+        <link rel="stylesheet" href="{3}" />
     </head>
     <body>
         <div class="wrapper">
-            <h1>%s</h1>
-            <div class="tab_container">""" %(output_encoding, document.name, css_tabs, css_lang, document.name)]
+            <h1>{4}</h1>
+            <div class="tab_container">""".format(output_encoding, document.name, css_tabs, css_lang, document.name)]
         
         # the annotations that will be outputted
         nth    = 1
@@ -144,32 +144,32 @@ class Exporter(DefaultExporter):
         
         if pos != []:
             html_page.append(u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Part-Of-Speech</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Part-Of-Speech</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, pos))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, pos))
             nth += 1
         
         if chunk != []:
             html_page.append(u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Chunking</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Chunking</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, chunk))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, chunk))
             nth += 1
         
         if ner != []:
             html_page.append(u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Named Entity</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Named Entity</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, ner))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, ner))
             nth += 1
         
         # annotations are put after the tab declarations
@@ -230,11 +230,11 @@ class Exporter(DefaultExporter):
             for j in range(len(to_return[i])):
                 if corpus[i][j][column][0] == "_":
                     if (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "_"):
-                        to_return[i][j] = '%s</span>' %(to_return[i][j])
+                        to_return[i][j] = '{0}</span>'.format(to_return[i][j])
                 else:
-                    to_return[i][j] = '<span id="%s" title="%s">%s' %(corpus[i][j][column], corpus[i][j][column], to_return[i][j])
+                    to_return[i][j] = '<span id="{0}" title="{0}">{1}'.format(corpus[i][j][column], to_return[i][j])
                     if (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "_"):
-                        to_return[i][j] = '%s</span>' %(to_return[i][j])
+                        to_return[i][j] = '{0}</span>'.format(to_return[i][j])
         return to_return
 
     def add_chunking_corpus(self, escaped, corpus, column):
@@ -244,7 +244,7 @@ class Exporter(DefaultExporter):
                 if corpus[i][j][column][0] == "O": continue
                 chunk_name = corpus[i][j][column][2:]
                 if corpus[i][j][column][0] == "B":
-                    to_return[i][j] = '<span id="%s" title="%s">%s' %(chunk_name, chunk_name, escaped[i][j])
+                    to_return[i][j] = '<span id="{0}" title="{0}">{1}'.format(chunk_name, escaped[i][j])
                 if corpus[i][j][column][0] in "BI" and (j+1 == len(to_return[i]) or corpus[i][j+1][column][0] != "I"):
                     to_return[i][j] += '</span>'
         return to_return
@@ -263,15 +263,15 @@ class Exporter(DefaultExporter):
         # header + div that will contain tabs
         html_page = u"""<html>
     <head>
-        <meta charset="%s" />
-        <title>%s</title>
-        <link rel="stylesheet" href="%s" />
-        <link rel="stylesheet" href="%s" />
+        <meta charset="{0}" />
+        <title>{1}</title>
+        <link rel="stylesheet" href="{2}" />
+        <link rel="stylesheet" href="{3}" />
     </head>
     <body>
         <div class="wrapper">
-            <h1>%s</h1>
-            <div class="tab_container">""" %(output_encoding, document_name, css_tabs, css_lang, document_name)
+            <h1>{4}</h1>
+            <div class="tab_container">""".format(output_encoding, document_name, css_tabs, css_lang, document_name)
         
         # the annotations that will be outputted
         nth    = 1
@@ -283,32 +283,32 @@ class Exporter(DefaultExporter):
         
         if pos != []:
             html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Part-Of-Speech</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Part-Of-Speech</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(pos_token) for pos_token in pos])))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, u"\n".join([u" ".join(pos_token) for pos_token in pos])))
             nth += 1
         
         if chunk != []:
             html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Chunking</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Chunking</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(chunk_token) for chunk_token in chunk])))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, u"\n".join([u" ".join(chunk_token) for chunk_token in chunk])))
             nth += 1
     
         if ner != []:
             html_page += (u"""
-                <input id="tab%i" type="radio" name="tabs"%s />
-                <label for="tab%i">Named Entity</label>""" %(nth, checked(nth), nth))
+                <input id="tab{0}" type="radio" name="tabs"{1} />
+                <label for="tab{0}">Named Entity</label>""".format(nth, checked(nth)))
             annots.append(u"""
-                <section id="content%i" class="tab-content">
-%s
-                </section>""" %(nth, u"\n".join([u" ".join(ner_token) for ner_token in ner])))
+                <section id="content{0}" class="tab-content">
+{1}
+                </section>""".format(nth, u"\n".join([u" ".join(ner_token) for ner_token in ner])))
             nth += 1
         
         # annotations are put after the tab declarations

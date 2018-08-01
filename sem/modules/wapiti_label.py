@@ -35,13 +35,23 @@ from datetime import timedelta
 from .sem_module import SEMModule as RootModule
 import sem.wapiti
 
-#TODO from sem.annotators            import get_annotator
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
 from sem.logger               import default_handler, file_handler
+from sem.misc                 import check_model_available
 
-annotate_logger = logging.getLogger("sem.wapiti_label")
-annotate_logger.addHandler(default_handler)
+wapiti_label_logger = logging.getLogger("sem.wapiti_label")
+wapiti_label_logger.addHandler(default_handler)
+wapiti_label_logger.setLevel("INFO")
+
+try:
+    from wapiti.api import Model as WapitiModel
+    wapiti_api = True
+    wapiti_label_logger.info("using python-wapiti wrapper instead of command-line")
+except ImportError:
+    from sem.crf.model import Model as WapitiModel
+    wapiti_api = False
+    wapiti_label_logger.warn("failed to load python-wapiti wrapper, using command-line instead. You can download it at https://github.com/adsva/python-wapiti")
 
 class SEMModule(RootModule):
     def __init__(self, model, field, annotation_fields=None, log_level="WARNING", log_file=None, **kwargs):
@@ -51,6 +61,12 @@ class SEMModule(RootModule):
         self._field = field
         self._annotation_fields = annotation_fields
         
+        if wapiti_api:
+            check_model_available(model, logger=wapiti_label_logger)
+            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            self._label_document = self._label_doc_as_wrapper
+        else:
+            self._label_document = self._label_doc_as_cl
     
     def process_document(self, document, encoding="utf-8", **kwargs):
         """
@@ -69,21 +85,38 @@ class SEMModule(RootModule):
         start = time.time()
         
         if self._log_file is not None:
-            annotate_logger.addHandler(file_handler(self._log_file))
-        annotate_logger.setLevel(self._log_level)
+            wapiti_label_logger.addHandler(file_handler(self._log_file))
+        wapiti_label_logger.setLevel(self._log_level)
         
         if self._field in document.corpus.fields:
-            annotate_logger.warn("field %s already exists in document, not annotating", self._field)
+            wapiti_label_logger.warn("field %s already exists in document, not annotating", self._field)
             
-            tags = [[s[self._field] for s in sentence] for sentence in corpus]
-            document.annotation_from_tags(tags, self._field, self._field)
+            tags = [[s[self._field] for s in sentence] for sentence in document.corpus]
+            document.add_annotation_from_tags(tags, self._field, self._field)
         else:
-            annotate_logger.info("annotating document with %s field", self._field)
+            wapiti_label_logger.info("annotating document with %s field", self._field)
             
-            sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
+            self._label_document(document, encoding)
         
         laps = time.time() - start
-        annotate_logger.info('in %s' %(timedelta(seconds=laps)))
+        wapiti_label_logger.info('in {0}'.format(timedelta(seconds=laps)))
+    
+    def _label_doc_as_cl(self, document, encoding="utf-8"):
+        sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
+    
+    def _label_doc_as_wrapper(self, document, encoding="utf-8"):
+        fields = self._annotation_fields or document.corpus.fields
+        tags = []
+        for sequence in document.corpus:
+            tagging = self._tag_as_wrapper(sequence, fields)
+            tags.append(tagging[:])
+        
+        document.add_annotation_from_tags(tags, self._field, self._field)
+    
+    def _tag_as_wrapper(self, sequence, fields, encoding="utf-8"):
+        seq_str = u"\n".join([u"\t".join([unicode(token[field]) for field in fields]) for token in sequence]).encode(encoding)
+        s = self._wapiti_model.label_sequence(seq_str).decode(encoding)
+        return s.strip().split(u"\n")
 
 def main(args):
     sem.wapiti.label(args.infile, args.model, args.outfile)

@@ -77,6 +77,16 @@ On a more NLP side, such changes would also include model changes.
 """
 
 _main_features = [
+                    [u"A GUI for manual annotation (requires TkInter)",
+                        [
+                            u'from terminal: run ```python -m sem annotation_gui```',
+                            u'fast annotation: keyboard shortcuts and document-wide annotation broadcast',
+                            u'can load pre-annotated files',
+                            u'support for hierarchical tags (dot-separated, eg: "noun.common")',
+                            u'handles multiple input format',
+                            u'export in different formats'
+                        ]
+                    ],
                     [u"A GUI for easier use (requires TkInter)",
                         [
                             u'on Linux: double-clic on sem_gui.sh',
@@ -113,26 +123,21 @@ _main_features = [
                             u"semi automatic integration of new feature functions",
                             u"easy creation of new CSS formats for HTML exports"
                         ]
+                    ],
+                    [u"manually annotate fast",
+                        [
+                            u"Annotation GUI to annotate text spans",
+                            u"can load pre-annotated documents",
+                            u"export in multiple formats"
+                        ]
                     ]
                   ]
 
 _first_steps = [
-                    [u"Install setuptools",
-                        [
-                            u"If pip is installed: run ```pip install setuptools```",
-                            u"Otherwise: run (Ubuntu) ```apt-get install python-setuptools```"
-                        ],
-                    ],
-                    [u"Install Tkinter (optional)",
-                        [
-                            u"run (Ubuntu): ```apt-get install python-tk```"
-                        ],
-                    ],
                     [u"install SEM",
                         [
-                            u"run ```python setup.py install --user``` to install SEM. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```",
-                            u'on Windows, Wapiti compilation may fail. Check you use the right gcc (see in make.bat)',
-                            u"note: on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ext/src/wapiti.h"
+                            u"see [install.md](install.md)",
+                            u"It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```"
                         ],
                     ],
                     [u"run tests",
@@ -141,7 +146,7 @@ _first_steps = [
                     [u"run SEM",
                         [
                             'run GUI (see "main features" above) and annotate "non-regression/fr/in/segmentation.txt"',
-                            'OR: run ```python -m sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output```'
+                            'or run: ```python -m sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output```'
                         ]
                     ]
                 ]
@@ -159,10 +164,9 @@ _external_resources = [
                       ]
 
 _planned_changes = [
-                        [u"Add a tutorial.", []],
+                        [u'Add a tutorial. Some of it done in section "retrain SEM" in manual.', []],
                         [u"add lemmatiser.", []],
                         [u"migration to python3 (already made for revision 39 by lerela).", []],
-                        [u"translate manual in English.", []],
                         [u'have more unit tests', []],
                         [
                             "improve segmentation",
@@ -174,30 +178,77 @@ _planned_changes = [
                    ]
 
 _references = [
-                [u'[DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)',
+                [u"""```latex
+@inproceedings{dupont2017etiqueteur,
+    title={Un {\'e}tiqueteur en ligne du fran{\c{c}}ais},
+    author={Dupont, Yoann and Plancq, Cl{\'e}ment},
+    booktitle={24e Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)},
+    pages={15--16},
+    year={2017}
+}
+```""",
                     [
-                        u"Online interface"
+                        u"Online interface",
+                        u"[link to pdf](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)"
                     ]
                 ],
-                [u'(best RECITAL paper award) [DUPONT, Yoann. Exploration de traits pour la reconnaissance d’entités nommées du Français par apprentissage automatique. RECITAL, 2017, p. 42.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)',
+                [u"""```latex
+@inproceedings{dupont2018exploration,
+  title={Exploration de traits pour la reconnaissance d’entit{\'e}s nomm{\'e}es du Fran{\c{c}}ais par apprentissage automatique},
+  author={Dupont, Yoann},
+  booktitle={24e Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)},
+  pages={42},
+  year={2018}
+}
+```""",
                     [
-                        u"Named Entity Recognition (new, please use this one)"
+                        u"Named Entity Recognition (new, please use this one)",
+                        u"[link to pdf](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)"
                     ]
                 ],
-                [u"[TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)",
+                [u"""```latex
+@inproceedings{tellier2012apprentissage,
+  title={Apprentissage automatique d'un chunker pour le fran{\c{c}}ais},
+  author={Tellier, Isabelle and Duchier, Denys and Eshkol, Iris and Courmet, Arnaud and Martinet, Mathieu},
+  booktitle={TALN2012},
+  volume={2},
+  pages={431--438},
+  year={2012}
+}
+```""",
                     [
-                        "Chunking"
+                        "Chunking",
+                        u"[link to pdf](https://hal.archives-ouvertes.fr/hal-01174591/document)"
                     ]
                 ],
-                [u"[TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)",
+                [u"""```latex
+@inproceedings{tellier2012segmenteur,
+  title={Un segmenteur-{\'e}tiqueteur et un chunker pour le fran{\c{c}}ais (A Segmenter-POS Labeller and a Chunker for French)[in French]},
+  author={Tellier, Isabelle and Dupont, Yoann and Courmet, Arnaud},
+  booktitle={Proceedings of the Joint Conference JEP-TALN-RECITAL 2012, volume 5: Software Demonstrations},
+  pages={7--8},
+  year={2012}
+}
+```""",
                     [
                         u"Part-Of-Speech Tagging",
-                        u"chunking"
+                        u"chunking",
+                        u"[link to pdf](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)"
                     ]
                 ],
-                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)",
+                [u"""```latex
+@article{dupont2014reconnaisseur,
+  title={Un reconnaisseur d’entit{\'e}s nomm{\'e}es du Fran{\c{c}}ais (A Named Entity recognizer for French)[in French]},
+  author={Dupont, Yoann and Tellier, Isabelle},
+  journal={Proceedings of TALN 2014 (Volume 3: System Demonstrations)},
+  volume={3},
+  pages={40--41},
+  year={2014}
+}
+```""",
                     [
-                        u"Named Entity Recognition (old, please do not use)"
+                        u"Named Entity Recognition (old, please do not use)",
+                        u"[link to pdf](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)"
                     ]
                 ],
                 #[u'[]()', ['']],
@@ -210,31 +261,31 @@ def version():
     return u".".join([unicode(x) for x in [_version_major, _version_minor, _version_patch]])
 
 def full_name():
-    return "%s v%s" %(name(), version())
+    return u"{0} v{1}".format(name(), version())
 
 def informations():
     def make_md(element_list):
         accumulator = []
         for i_index, element in enumerate(element_list, 1):
-            accumulator.append("%s. %s" %(i_index, element[0]))
+            accumulator.append(u"{0}. {1}".format(i_index, element[0]))
             for ii_index, subelement in enumerate(element[1], 1):
-                accumulator.append("   %s. %s" %(ii_index, subelement))
+                accumulator.append(u"   {0}. {1}".format(ii_index, subelement))
         return u"\n".join(accumulator)
         
-    return u"""# %s
-[SEM (Segmenteur-Étiqueteur Markovien)](%s) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
+    return u"""# {0}
+[SEM (Segmenteur-Étiqueteur Markovien)]({1}) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
-%s
+{2}
 
 ## First steps with SEM
-%s
+{3}
 
 ## External resources used by SEM
-%s
+{4}
 
 ## Planned changes (for latest changes, see changelog.md)
-%s
+{5}
 
 ## SEM references (with task[s] of interest)
-%s""" %(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), make_md(_planned_changes), make_md(_references))
+{6}""".format(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), make_md(_planned_changes), make_md(_references))

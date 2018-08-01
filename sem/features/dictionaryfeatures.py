@@ -35,16 +35,14 @@ import os.path
 from feature        import Feature
 from getterfeatures import DEFAULT_GETTER
 
-from sem.dictionaries import NUL
-
-from sem.trie import Trie
+from sem.storage import NUL
+from sem.storage import Trie
+from sem.storage import compile_token, compile_multiword , compile_map
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
-from sem.dictionaries import compile_token, compile_multiword , compile_map
 
 class DictionaryFeature(Feature):
     def __init__(self, path=None, value=None, entries=None, getter=DEFAULT_GETTER, *args, **kwargs):
@@ -100,60 +98,6 @@ class MultiwordDictionaryFeature(DictionaryFeature):
                     self._value.add(entry.split())
         else:
             self._value = Trie()
-        
-        #assert len(self._value) > 0
-    
-    """def __call__(self, list2dict, *args, **kwargs):
-        l         = ["O"]*len(list2dict)
-        tmp       = self._value._data
-        length    = len(list2dict)
-        fst       = 0
-        lst       = -1 # last match found
-        cur       = 0
-        criterion = False # stop criterion
-        ckey      = None  # Current KEY
-        entry     = self._entry
-        appendice = self._appendice
-        while not criterion:
-            cont = True
-            while cont and (cur < length):
-                ckey = list2dict[cur][entry]
-                if (NUL not in tmp):
-                    if (ckey in tmp):
-                        tmp  = tmp[ckey]
-                        cur += 1
-                    else:
-                        cont = False
-                else:
-                    lst  = cur
-                    cont = ckey in tmp
-                    if cont:
-                        tmp  = tmp[ckey]
-                        cur += 1
-            
-            if NUL in tmp:
-                l[fst] = u'B' + appendice
-                for i in xrange(fst+1, cur):
-                    l[i] = u'I' + appendice
-                fst = cur
-            elif lst != -1:
-                l[fst] = u'B' + appendice
-                for i in xrange(fst+1, lst):
-                    l[i] = u'I' + appendice
-                fst = lst
-                cur = fst
-            else:
-                fst += 1
-                cur  = fst
-            
-            tmp       = self._value._data
-            lst       = -1
-            criterion = fst >= length - 1
-        
-        if NUL in self._value._data.get(list2dict[-1][entry], []):
-            l[-1] = u'B' + appendice
-        
-        return l"""
     
     def __call__(self, list2dict, *args, **kwargs):
         l         = ["O"]*len(list2dict)
