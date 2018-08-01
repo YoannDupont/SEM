@@ -178,7 +178,36 @@ _planned_changes = [
                    ]
 
 _references = [
-                [u"""```latex
+                [u'[DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)',
+                    [
+                        u"Online interface"
+                    ]
+                ],
+                [u'(best RECITAL paper award) [DUPONT, Yoann. Exploration de traits pour la reconnaissance d’entités nommées du Français par apprentissage automatique. RECITAL, 2017, p. 42.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)',
+                    [
+                        u"Named Entity Recognition (new, please use this one)"
+                    ]
+                ],
+                [u"[TELLIER, Isabelle, DUCHIER, Denys, ESHKOL, Iris, et al. Apprentissage automatique d'un chunker pour le français. In : TALN2012. 2012. p. 431–438.](https://hal.archives-ouvertes.fr/hal-01174591/document)",
+                    [
+                        "Chunking"
+                    ]
+                ],
+                [u"[TELLIER, Isabelle, DUPONT, Yoann, et COURMET, Arnaud. Un segmenteur-étiqueteur et un chunker pour le français. JEP-TALN-RECITAL 2012](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)",
+                    [
+                        u"Part-Of-Speech Tagging",
+                        u"chunking"
+                    ]
+                ],
+                [u"[DUPONT, Yoann et TELLIER, Isabelle. Un reconnaisseur d’entités nommées du Français. session démonstration de TALN, 2014, p. 40.](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)",
+                    [
+                        u"Named Entity Recognition (old, please do not use)"
+                    ]
+                ],
+]
+
+_bibtex = [
+                [u"""\n```latex
 @inproceedings{dupont2017etiqueteur,
     title={Un {\'e}tiqueteur en ligne du fran{\c{c}}ais},
     author={Dupont, Yoann and Plancq, Cl{\'e}ment},
@@ -186,13 +215,9 @@ _references = [
     pages={15--16},
     year={2017}
 }
-```""",
-                    [
-                        u"Online interface",
-                        u"[link to pdf](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)"
-                    ]
+```""", []
                 ],
-                [u"""```latex
+                [u"""\n```latex
 @inproceedings{dupont2018exploration,
   title={Exploration de traits pour la reconnaissance d’entit{\'e}s nomm{\'e}es du Fran{\c{c}}ais par apprentissage automatique},
   author={Dupont, Yoann},
@@ -200,13 +225,9 @@ _references = [
   pages={42},
   year={2018}
 }
-```""",
-                    [
-                        u"Named Entity Recognition (new, please use this one)",
-                        u"[link to pdf](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_RECITAL_2017.pdf#page=52)"
-                    ]
+```""", []
                 ],
-                [u"""```latex
+                [u"""\n```latex
 @inproceedings{tellier2012apprentissage,
   title={Apprentissage automatique d'un chunker pour le fran{\c{c}}ais},
   author={Tellier, Isabelle and Duchier, Denys and Eshkol, Iris and Courmet, Arnaud and Martinet, Mathieu},
@@ -215,13 +236,9 @@ _references = [
   pages={431--438},
   year={2012}
 }
-```""",
-                    [
-                        "Chunking",
-                        u"[link to pdf](https://hal.archives-ouvertes.fr/hal-01174591/document)"
-                    ]
+```""", []
                 ],
-                [u"""```latex
+                [u"""\n```latex
 @inproceedings{tellier2012segmenteur,
   title={Un segmenteur-{\'e}tiqueteur et un chunker pour le fran{\c{c}}ais (A Segmenter-POS Labeller and a Chunker for French)[in French]},
   author={Tellier, Isabelle and Dupont, Yoann and Courmet, Arnaud},
@@ -229,14 +246,9 @@ _references = [
   pages={7--8},
   year={2012}
 }
-```""",
-                    [
-                        u"Part-Of-Speech Tagging",
-                        u"chunking",
-                        u"[link to pdf](http://anthology.aclweb.org/F/F12/F12-5.pdf#page=27)"
-                    ]
+```""", []
                 ],
-                [u"""```latex
+                [u"""\n```latex
 @article{dupont2014reconnaisseur,
   title={Un reconnaisseur d’entit{\'e}s nomm{\'e}es du Fran{\c{c}}ais (A Named Entity recognizer for French)[in French]},
   author={Dupont, Yoann and Tellier, Isabelle},
@@ -245,13 +257,8 @@ _references = [
   pages={40--41},
   year={2014}
 }
-```""",
-                    [
-                        u"Named Entity Recognition (old, please do not use)",
-                        u"[link to pdf](http://www.aclweb.org/anthology/F/F14/F14-3.pdf#page=42)"
-                    ]
+```""", []
                 ],
-                #[u'[]()', ['']],
 ]
 
 def name():
@@ -288,4 +295,7 @@ def informations():
 {5}
 
 ## SEM references (with task[s] of interest)
-{6}""".format(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), make_md(_planned_changes), make_md(_references))
+{6}
+
+## SEM references (bibtex format)
+{7}""".format(full_name(), SEM_HOMEPAGE, make_md(_main_features), make_md(_first_steps), make_md(_external_resources), make_md(_planned_changes), make_md(_references), make_md(_bibtex))
