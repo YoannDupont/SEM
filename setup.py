@@ -30,6 +30,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import print_function
+
 # setuptools
 from setuptools import setup, find_packages
 
@@ -108,14 +110,14 @@ if not os.path.exists(wapiti_exec):
     exit_status = subprocess.call(cmd, shell=True)
     os.chdir(cwd)
     if exit_status == 0:
-        print
-        print
-        print "Wapiti compilation successful!"
+        print()
+        print()
+        print("Wapiti compilation successful!")
     else:
         raise RuntimeError("Could not compile Wapiti: error code {}".format(exit_status))
 else:
-    print wapiti_exec, "already exists, not compiling."
-    print
+    print(wapiti_exec, "already exists, not compiling.")
+    print()
 
 #
 # preparing SEM data
@@ -162,8 +164,9 @@ else:
     # the user would like to have.
     missing = diff_files(dircmp(os.path.join(usr_sem_data, "resources"), 'resources'))
     if missing:
-        print "\nThe following files are missing:"
-        print u"\t"+u" ".join(missing)
+        print()
+        print("The following files are missing:")
+        print(u"\t"+u" ".join(missing))
         answer = prompt("add missing files? [Y/n] ").lower()
         add_missing = validity.get(answer, True)
         if add_missing:

@@ -31,7 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.IO import KeyReader
+from sem.IO import KeyReader, KeyWriter
 
 class Corpus(object):
     def __init__(self, fields=None, sentences=None):
@@ -107,3 +107,10 @@ class Corpus(object):
         for sentence in sentences.spans:
             sentence_tokens = []
             self.append_sentence([{field_name:content[token.lb : token.ub]} for token in tokens.spans[sentence.lb : sentence.ub]])
+    
+    def write(self, fd, fields=None):
+        fmt = u"\t".join(["{{{0}}}".format(field) for field in (fields or self.fields)]) + u"\n"
+        for sentence in self:
+            for token in sentence:
+                fd.write(fmt.format(**token))
+            fd.write(u"\n")

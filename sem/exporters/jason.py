@@ -32,9 +32,10 @@ SOFTWARE.
 
 import json
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
 from sem.storage.segmentation import Segmentation
+from sem.misc import is_string
 
 class Exporter(DefaultExporter):
     __ext = "json"
@@ -71,7 +72,7 @@ class Exporter(DefaultExporter):
         json_dict[u"annotations"] = {}
         for annotation in document.annotations.values():
             json_dict[u"annotations"][annotation.name] = {}
-            reference = ("" if not annotation.reference else (annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+            reference = ("" if not annotation.reference else (annotation.reference if is_string(annotation.reference) else annotation.reference.name))
             if reference:
                 json_dict[u"annotations"][annotation.name][u"reference"] = reference
             json_dict[u"annotations"][annotation.name]["annotations"] = [{u"v":tag.value, u"s":tag.lb, u"l":len(tag)} for tag in annotation]

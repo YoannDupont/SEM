@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from feature import Feature
+from .feature import Feature
 
 class BooleanFeature(Feature):
     def __init__(self, *args, **kwargs):

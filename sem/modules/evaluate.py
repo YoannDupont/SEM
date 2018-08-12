@@ -26,10 +26,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import sys, codecs
+from __future__ import print_function
+
+import sys
+import codecs
 
 from sem.IO.columnIO import Reader
 from sem.storage import Tag, Annotation, Document
+from sem.storage.annotation import annotation_from_sentence
 
 import sem.importers
 
@@ -42,34 +46,6 @@ SILENCE_ERROR = "silence error"
 
 ERRORS_KINDS = [TYPE_ERROR, BOUNDARY_ERROR, TYPE_AND_BOUNDARY_ERROR, NOISE_ERROR, SILENCE_ERROR]
 OUTPUT_KINDS = [CORRECT] + ERRORS_KINDS
-
-def compile_chunks(sentence, column=-1, shift=0):
-    entity_chunks = []
-    label = u""
-    start = -1
-    for index, token in enumerate(sentence):
-        ne = token[column]
-        
-        if ne == "O":
-            if label:
-                entity_chunks.append(Tag(start+shift, index+shift, label))
-                label = u""
-                start = -1
-        elif ne[0] == "B":
-            if label:
-                entity_chunks.append(Tag(start+shift, index+shift, label))
-            start = index
-            label = ne[2:]
-        elif ne[0] == "I":
-            None
-        else:
-            raise ValueError(ne)
-    if label:
-        entity_chunks.append(Tag(start+shift, index+shift, label))
-        label = u""
-        start = -1
-    
-    return entity_chunks
 
 def mean(numbers):
     return float(sum(numbers)) / len(numbers)
@@ -125,11 +101,11 @@ def fscore(P, R, beta=1.0):
 def get_diff(content, gold, guess, error_kind, context_size=20):
     if error_kind == TYPE_ERROR:
         diff = content[gold.lb - context_size : gold.lb]
-        diff += u"{+<{0}>+} ".format(guess.value)
+        diff += u"{{+<{0}>+}} ".format(guess.value)
         diff += u"[-<{0}>-] ".format(gold.value)
         diff += content[gold.lb : gold.ub]
         diff += u" [-</{0}>-]".format(gold.value)
-        diff += u" {+</{0}>+}".format(guess.value)
+        diff += u" {{+</{0}>+}}".format(guess.value)
         diff += content[gold.ub : gold.ub + context_size]
     elif error_kind == BOUNDARY_ERROR:
         if gold.lb == guess.lb:
@@ -137,16 +113,16 @@ def get_diff(content, gold, guess, error_kind, context_size=20):
             diff += u"<{0}> ".format(gold.value)
             gold_min = gold.ub < guess.ub
             diff += content[gold.lb : min(gold.ub, guess.ub)]
-            diff += (u" [-</{0}>-]".format(gold.value) if gold_min else u" {+</{0}>+}".format(guess.value))
+            diff += (u" [-</{0}>-]".format(gold.value) if min(gold.ub, guess.ub) else u" {{+</{0}>+}}".format(guess.value))
             diff += content[min(gold.ub, guess.ub) : max(gold.ub, guess.ub)]
-            diff += (u" {+</{0}>+}".format(guess.value) if gold_min else u" [-</{0}>-]".format(gold.value))
+            diff += (u" {{+</{0}>+}}".format(guess.value) if min(gold.ub, guess.ub) else u" [-</{0}>-]".format(gold.value))
             diff += content[max(gold.ub, guess.ub) : max(gold.ub, guess.ub) + context_size]
         else:
             gold_min = gold.lb < guess.lb
             diff = content[min(gold.lb, guess.lb) - context_size : min(gold.lb, guess.lb)]
-            diff += (u"[-<{0}>-] ".format(gold.value) if gold_min else u"{+<{0}>+} ".format(guess.value))
+            diff += (u"[-<{0}>-] ".format(gold.value) if gold_min else u"{{+<{0}>+}} ".format(guess.value))
             diff += content[min(gold.lb, guess.lb) : max(gold.lb, guess.lb)]
-            diff += (u"{+<{0}>+} ".format(guess.value) if gold_min else u"[-<{0}>-] ".format(gold.value))
+            diff += (u"{{+<{0}>+}} ".format(guess.value) if gold_min else u"[-<{0}>-] ".format(gold.value))
             diff += content[max(gold.lb, guess.lb) : gold.ub]
             diff += u" </{0}>".format(gold.value)
             diff += content[gold.ub : gold.ub + context_size]
@@ -159,26 +135,26 @@ def get_diff(content, gold, guess, error_kind, context_size=20):
         if min_lb == gold:
             diff += u"[-<{0}>-] ".format(gold.value)
             diff += content[min_lb.lb : max_lb.lb]
-            diff += u"{+<{0}>+} ".format(guess.value)
+            diff += u"{{+<{0}>+}} ".format(guess.value)
         else:
-            diff += u"{+<{0}>+} ".format(guess.value)
+            diff += u"{{+<{0}>+}} ".format(guess.value)
             diff += content[min_lb.lb : max_lb.lb]
             diff += u"[-<{0}>-] ".format(gold.value)
         diff += content[max_lb.lb : min_ub.ub]
         if min_ub == gold:
             diff += u" [-</{0}>-]".format(gold.value)
             diff += content[min_ub.ub : max_ub.ub]
-            diff += u" {+</{0}>+}".format(guess.value)
+            diff += u" {{+</{0}>+}}".format(guess.value)
         else:
-            diff += u" {+</{0}>+}".format(guess.value)
+            diff += u" {{+</{0}>+}}".format(guess.value)
             diff += content[min_ub.ub : max_ub.ub]
             diff += u" [-</{0}>-]".format(gold.value)
         diff += content[max_ub.ub : max_ub.ub + context_size]
     elif error_kind == NOISE_ERROR:
         diff = content[guess.lb - context_size : guess.lb]
-        diff += u"{+<{0}>+} ".format(guess.value)
+        diff += u"{{+<{0}>+}} ".format(guess.value)
         diff += content[guess.lb : guess.ub]
-        diff += u" {+</{0}>+}".format(guess.value)
+        diff += u" {{+</{0}>+}}".format(guess.value)
         diff += content[guess.ub : guess.ub + context_size]
     elif error_kind == SILENCE_ERROR:
         diff = content[gold.lb - context_size : gold.lb]
@@ -207,14 +183,19 @@ def main(args):
     prf = {}
     if input_format == "conll":
         if reference_file:
-            print "reference_file not handled for CoNLL files"
+            print("reference_file not handled for CoNLL files")
         L = []
         R = []
+        keys = None
+        nth = -1
         for n_line, p in Reader(infile, ienc).line_iter():
-            L.extend(annotation_from_sentence(p, column=reference_column, shift=n_line))
-            R.extend(annotation_from_sentence(p, column=tagging_column, shift=n_line))
-        keys = range(len(p))
+            nth += 1
+            keys = keys or range(len(p[0]))
+            L.extend(annotation_from_sentence(p, column=reference_column, shift=n_line-nth))
+            R.extend(annotation_from_sentence(p, column=tagging_column, shift=n_line-nth))
         document = sem.importers.conll_file(infile, keys, keys[0], encoding=ienc)
+        L = Annotation("", annotations=L, reference=document.segmentation("tokens")).get_reference_annotations()
+        R = Annotation("", annotations=R, reference=document.segmentation("tokens")).get_reference_annotations()
     elif input_format == "brat":
         document = sem.importers.brat_file(reference_file)
         L = document.annotation("NER").get_reference_annotations()
@@ -312,7 +293,7 @@ def main(args):
                 entities.add(e.value)
     
     with codecs.open(dump, "w", "utf-8") as O:
-        O.write("error kind\treference entity\toutput entity\tdiff\n")
+        O.write(u"error kind\treference entity\toutput entity\tdiff\n")
         for error_kind in (TYPE_ERROR, BOUNDARY_ERROR, TYPE_AND_BOUNDARY_ERROR, NOISE_ERROR, SILENCE_ERROR):
             for ex in d[error_kind]:
                 if error_kind == NOISE_ERROR:
@@ -324,10 +305,10 @@ def main(args):
                 else:
                     gold = ex[0]
                     guess = ex[1]
-                gold_str = ("{0}:{1}".format(gold.value, document.content[gold.lb : gold.ub]) if gold else "").replace("\r", "").replace("\n", " ")
-                guess_str = ("{0}:{1}".format(guess.value, document.content[guess.lb : guess.ub]) if guess else "").replace("\r", "").replace("\n", " ")
+                gold_str = (u"{0}:{1}".format(gold.value, document.content[gold.lb : gold.ub]) if gold else "").replace("\r", "").replace("\n", " ")
+                guess_str = (u"{0}:{1}".format(guess.value, document.content[guess.lb : guess.ub]) if guess else "").replace("\r", "").replace("\n", " ")
                 diff = get_diff(document.content, gold, guess, error_kind, context_size=context_size)
-                O.write("{0}\t{1}\t{2}\t{4}\n".format(error_kind, gold_str, guess_str, diff))
+                O.write(u"{0}\t{1}\t{2}\t{3}\n".format(error_kind, gold_str, guess_str, diff))
     
     counts = {}
     for entity in entities:
@@ -341,43 +322,43 @@ def main(args):
         counts[entity] = sub_d
     
     # basic counts
-    print u"entity\tmeasure\tvalue"
+    print(u"entity\tmeasure\tvalue")
     for entity in sorted(entities):
         for kind in OUTPUT_KINDS:
-            print "{0}\t{1}\t{2}".format(entity, kind, len(counts[entity][kind]))
-    print "global\treference\t{0}".format(len_ref)
-    print "global\ttagging\t{0}".format(len_tag)
+            print("{0}\t{1}\t{2}".format(entity, kind, len(counts[entity][kind])))
+    print("global\treference\t{0}".format(len_ref))
+    print("global\ttagging\t{0}".format(len_tag))
     for kind in OUTPUT_KINDS:
-        print "global\t{0}\t{1}".format(kind, len(d[kind]))
+        print("global\t{0}\t{1}".format(kind, len(d[kind])))
     
     # P R F
     precisions = []
     recalls = []
-    print
-    print u"entity\tmeasure\tvalue"
+    print()
+    print(u"entity\tmeasure\tvalue")
     for entity in sorted(entities):
         precisions.append(precision(counts[entity]))
         recalls.append(recall(counts[entity]))
-        print "{0}\tprecision\t{1:.4f}".format(entity, precisions[-1])
-        print "{0}\trecall\t{1:.4f}".format(entity, recalls[-1])
-        print "{0}\tfscore\t{1:.4f}".format(entity, fscore(precision(counts[entity]), recall(counts[entity])))
-    print "global\tprecision\t{1:.4f}".format(precision(d))
-    print "global\trecall\t{:.4f}".format(recall(d))
-    print "global\tfscore\t{:.4f}".format(fscore(precision(d), recall(d)))
-    print "global\tmacro-precision\t{:.4f}".format(mean(precisions))
-    print "global\tmacro-recall\t{:.4f}".format(mean(recalls))
-    print "global\tmacro-fscore\t{:.4f}".format(fscore(mean(precisions), mean(recalls)))
+        print("{0}\tprecision\t{1:.4f}".format(entity, precisions[-1]))
+        print("{0}\trecall\t{1:.4f}".format(entity, recalls[-1]))
+        print("{0}\tfscore\t{1:.4f}".format(entity, fscore(precision(counts[entity]), recall(counts[entity]))))
+    print("global\tprecision\t{0:.4f}".format(precision(d)))
+    print("global\trecall\t{0:.4f}".format(recall(d)))
+    print("global\tfscore\t{0:.4f}".format(fscore(precision(d), recall(d))))
+    print("global\tmacro-precision\t{0:.4f}".format(mean(precisions)))
+    print("global\tmacro-recall\t{0:.4f}".format(mean(recalls)))
+    print("global\tmacro-fscore\t{0:.4f}".format(fscore(mean(precisions), mean(recalls))))
     
     # over/under generation, substitution
-    print
-    print u"entity\tmeasure\tvalue"
+    print()
+    print(u"entity\tmeasure\tvalue")
     for entity in sorted(entities):
-        print "{0}\tundergeneration\t{1:.4f}".format(entity, undergeneration(counts[entity]))
-        print "{0}\tovergeneration\t{1:.4f}".format(entity, overgeneration(counts[entity]))
-        print "{0}\tsubstitution\t{1:.4f}".format(entity, substitution(counts[entity]))
-    print "global\tundergeneration\t{1:.4f}".format(undergeneration(d))
-    print "global\tovergeneration\t{1:.4f}".format(overgeneration(d))
-    print "global\tsubstitution\t{1:.4f}".format(substitution(d))
+        print("{0}\tundergeneration\t{1:.4f}".format(entity, undergeneration(counts[entity])))
+        print("{0}\tovergeneration\t{1:.4f}".format(entity, overgeneration(counts[entity])))
+        print("{0}\tsubstitution\t{1:.4f}".format(entity, substitution(counts[entity])))
+    print("global\tundergeneration\t{0:.4f}".format(undergeneration(d)))
+    print("global\tovergeneration\t{0:.4f}".format(overgeneration(d)))
+    print("global\tsubstitution\t{0:.4f}".format(substitution(d)))
 
 
 import os.path

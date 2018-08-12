@@ -35,7 +35,7 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 
 class Exporter(DefaultExporter):
     __ext = "ann"

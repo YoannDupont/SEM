@@ -34,7 +34,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs, cPickle, logging
+import codecs, logging
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from sem.logger               import default_handler, file_handler
 from sem.storage.dictionaries import compile_token, compile_multiword
@@ -64,7 +69,7 @@ def compile_dictionary(infile, outfile, kind="token",
         compile_dictionary_logger.exception("Invalid kind: {0}. Should be in: {1}".format(kind, u", ".join(_compile.keys())))
         raise
     
-    cPickle.dump(dictionary_compile(infile, ienc), open(outfile, "w"))
+    pickle.dump(dictionary_compile(infile, ienc), open(outfile, "w"))
     
     compile_dictionary_logger.info(u"done")
 

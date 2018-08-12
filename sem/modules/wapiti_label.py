@@ -49,7 +49,6 @@ try:
     wapiti_api = True
     wapiti_label_logger.info("using python-wapiti wrapper instead of command-line")
 except ImportError:
-    from sem.crf.model import Model as WapitiModel
     wapiti_api = False
     wapiti_label_logger.warn("failed to load python-wapiti wrapper, using command-line instead. You can download it at https://github.com/adsva/python-wapiti")
 

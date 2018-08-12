@@ -32,7 +32,7 @@ SOFTWARE.
 
 import codecs
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 
 class Exporter(DefaultExporter):
     __ext = "sem.xml"

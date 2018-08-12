@@ -144,17 +144,18 @@ def label_document(document, model, field, encoding, annotation_name=None, annot
     try:
         if wapiti_process.returncode != 0:
             raise RuntimeError("%s exited with status %i" %(command_name(), wapiti_process.returncode))
-    except RuntimeError, re:
+    except RuntimeError as rte:
         for error_part in [line for line in w_stderr.split(u"\n") if line.strip() != ""]:
             wapiti_logger.error(error_part)
-        wapiti_logger.exception(re)
+        wapiti_logger.exception(rte)
         raise
     
     i    = 0
     j    = 0
     tags = [[]]
+    w_stdout = w_stdout.decode(encoding)
     document.corpus.fields.append(field)
-    for element in w_stdout.split("\n"):
+    for element in w_stdout.split(u"\n"):
         element = element.strip()
         if "" == element:
             if len(tags[-1]) > 0:

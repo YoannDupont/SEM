@@ -31,16 +31,20 @@ SOFTWARE.
 """
 
 try:
-    import Tkinter as tk
+    import Tkinter as tkinter
 except ImportError:
-    import tkinter as tk
+    import tkinter
 
 try:
     import ttk
 except ImportError:
-    ttk = tk.ttk
+    from tkinter import ttk
 
-import Tkconstants, tkMessageBox
+try:
+    import tkMessageBox
+    tkinter.messagebox = tkMessageBox
+except:
+    import tkinter.messagebox
 
 import time
 import os.path
@@ -50,11 +54,9 @@ import logging
 import sem
 from sem.modules.tagger import load_master, main as tagger
 from sem.storage import Holder, SEMCorpus
-from sem.gui.components import SemTkMasterSelector, SemTkLangSelector, SemTkFileSelector, SemTkExportSelector, SEMTkWapitiTrain
+from sem.gui.components import SemTkMasterSelector, SemTkLangSelector, SemTkFileSelector, SemTkExportSelector, SEMTkTrainInterface
 from sem.logger import default_handler
-
-SYSTEM = platform.system().lower()
-ON_WINDOWS = (SYSTEM == "windows")
+from sem import ON_WINDOWS
 
 gui_logger = logging.getLogger("sem.gui")
 gui_logger.addHandler(default_handler)
@@ -79,13 +81,13 @@ class SemTkMainWindow(ttk.Frame):
         
         self.master_zone = ttk.Frame(root)
         self.master_zone.grid(row=0, column=0, rowspan=2, columnspan=1, sticky="ns")
-        self.master_zone.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.master_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         
         self.file_select_zone = ttk.Frame(root)
-        self.file_select_zone.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.file_select_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         
         self.launch_zone = ttk.Frame(root)
-        self.launch_zone.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.launch_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         
         self.lang_selector = SemTkLangSelector(self.master_zone, self.resource_dir)
         self.master = SemTkMasterSelector(self.master_zone, self.resource_dir)
@@ -93,7 +95,7 @@ class SemTkMainWindow(ttk.Frame):
         self.lang_selector.pack()
         self.master.pack()
         
-        self.file_selector = SemTkFileSelector(self.file_select_zone, self, button_opt={'fill': Tkconstants.BOTH, 'padx': 5, 'pady': 5})
+        self.file_selector = SemTkFileSelector(self.file_select_zone, self, button_opt={'fill': "both", 'padx': 5, 'pady': 5})
         self.file_selector.pack()
         root.bind("<Control-o>", self.file_selector.filenames)
         
@@ -102,23 +104,23 @@ class SemTkMainWindow(ttk.Frame):
         
         self.launch_button = ttk.Button(self.launch_zone, text=u"launch SEM", command=self.launch_tagger)
         self.launch_button.pack(expand=True)
-        self.haw = tk.PhotoImage(file=os.path.join(self.resource_dir, "images", "haw_24_24.gif"))
-        self.launch_button.config(image=self.haw, compound=tk.LEFT)
+        self.haw = tkinter.PhotoImage(file=os.path.join(self.resource_dir, "images", "haw_24_24.gif"))
+        self.launch_button.config(image=self.haw, compound=tkinter.LEFT)
         
         self.train_button = ttk.Button(self.launch_zone, text=u"train SEM", command=self.train_tagger)
         self.train_button.pack(expand=True)
-        self.university = tk.PhotoImage(file=os.path.join(self.resource_dir, "images", "fa_university_24_24.gif"))
-        self.train_button.config(image=self.university, compound=tk.LEFT)
+        self.university = tkinter.PhotoImage(file=os.path.join(self.resource_dir, "images", "fa_university_24_24.gif"))
+        self.train_button.config(image=self.university, compound=tkinter.LEFT)
     
     def launch_tagger(self):
         current_files = self.file_selector.files()
         if not current_files:
-            tkMessageBox.showwarning("launching SEM", "No files specified.")
+            tkinter.messagebox.showwarning("launching SEM", "No files specified.")
             return
         
         workflow = self.master.workflow()
         if not workflow:
-            tkMessageBox.showwarning("launching SEM", "No workflow selected.")
+            tkinter.messagebox.showwarning("launching SEM", "No workflow selected.")
             return
         masterfile = os.path.join(self.resource_dir, "master", self.lang_selector.lang(), workflow)
         
@@ -143,26 +145,27 @@ class SemTkMainWindow(ttk.Frame):
                 else:
                     args.infile = current_file
                     tagger(args)
-        except Exception,e:
-            tkMessageBox.showerror("launching SEM", "Error: " + str(e.message)) # handling ExpatError from etree
+        except Exception as e:
+            tkinter.messagebox.showerror("launching SEM", "Error: " + str(e)) # handling ExpatError from etree
             raise
             return
         gui_logger.info("files are located in: " + output_dir)
-        tkMessageBox.showinfo("launching SEM", "Everything went ok! files are located in: " + output_dir)
+        tkinter.messagebox.showinfo("launching SEM", "Everything went ok! files are located in: " + output_dir)
         return
     
     def train_tagger(self, event=None):
         current_files = self.file_selector.files()
         if not current_files:
-            tkMessageBox.showwarning("launching SEM", "No files specified.")
+            tkinter.messagebox.showwarning("launching SEM", "No files specified.")
             return
         
         workflow = self.master.workflow()
         if not workflow:
-            tkMessageBox.showwarning("launching SEM", "No workflow selected.")
+            tkinter.messagebox.showwarning("launching SEM", "No workflow selected.")
             return
         
-        wt = SEMTkWapitiTrain(self.file_selector, self.master, None)
+        #wt = SEMTkWapitiTrain(self.file_selector, self.master, None)
+        train_interface = SEMTkTrainInterface(self.file_selector, self.lang_selector, self.master)
 
 
 import sem
@@ -177,7 +180,7 @@ parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG", "INFO", "
                     help="Increase log level (default: critical)")
 
 def main(args):
-    root = tk.Tk()
+    root = tkinter.Tk()
     root.title("SEM")
     root.minsize(width=380, height=200)
     

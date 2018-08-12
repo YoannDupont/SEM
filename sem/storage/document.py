@@ -48,7 +48,7 @@ except ImportError:
     from html.parser import HTMLParser
 
 import sem
-from sem.misc import correct_pos_tags
+from sem.misc import correct_pos_tags, is_string
 from sem.logger import default_handler
 from .holder import Holder
 from .segmentation import Segmentation
@@ -141,7 +141,7 @@ class Document(Holder):
     
     @classmethod
     def from_xml(cls, xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
-        if type(xml) in (str, unicode):
+        if is_string(xml):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
             data = xml
@@ -296,7 +296,7 @@ class Document(Holder):
             f.write(u'{0}<annotations>\n'.format(depth*indent*" "))
             for annotation in self.annotations.values():
                 depth += 1
-                reference = ("" if not annotation.reference else u' reference="{0}"'.format(annotation.reference if type(annotation.reference) in (str, unicode) else annotation.reference.name))
+                reference = ("" if not annotation.reference else u' reference="{0}"'.format(annotation.reference if is_string(annotation.reference) else annotation.reference.name))
                 f.write(u'{0}<annotation name="{1}"{2}>\n'.format(depth*indent*" ", annotation.name, reference))
                 depth += 1
                 for tag in annotation:
@@ -480,7 +480,7 @@ class SEMCorpus(Holder):
     
     @classmethod
     def from_xml(cls, xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
-        if type(xml) in (str, unicode):
+        if is_string(xml):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
             data = xml
@@ -508,3 +508,9 @@ class SEMCorpus(Holder):
         for document in self._documents:
             document.write(f, depth=1, indent=indent, add_header=False)
         f.write(u"</sem>")
+
+
+str2docfilter = {
+    u"all documents" : lambda x,y : True,
+    u"only documents with annotations": lambda d, a : len(d.annotation(a) or []) > 0
+}

@@ -20,7 +20,7 @@ Run: ```apt install build-essential```
 
 Go to SEM folder and launch the command :
 
-```python .\setup.py install```
+```python .\setup.py install --user```
 
 # Install SEM on Windows
 

@@ -37,7 +37,7 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 
 class Exporter(DefaultExporter):
     __ext = "html"
@@ -82,13 +82,13 @@ class Exporter(DefaultExporter):
         ner_html   = []
         
         current_key = entry_names.get("pos", None)
-        if current_key and document.annotations.has_key(current_key):
+        if current_key and current_key in document.annotations:
             pos_html = self.add_annotation_document(document, entry_names["pos"])
         current_key = entry_names.get("chunking", None)
-        if current_key and document.annotations.has_key(current_key):
+        if current_key and current_key in document.annotations:
             chunk_html = self.add_annotation_document(document, entry_names.get("chunk", entry_names["chunking"]))
         current_key = entry_names.get("ner", None)
-        if current_key and document.annotations.has_key(current_key):
+        if current_key and current_key in document.annotations:
             ner_html = self.add_annotation_document(document, entry_names["ner"])
         
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)

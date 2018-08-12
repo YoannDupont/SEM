@@ -32,7 +32,7 @@ import time, codecs
 import itertools
 
 from sem.storage import Coder
-from template    import ListPattern
+from .template   import ListPattern
 
 class Model(object):
     def __init__(self, constraints={}):
@@ -95,8 +95,6 @@ class Model(object):
         line_index += n_labels
         assert len(model.tagset) == n_labels
         state = OBSERVATIONS
-        """if verbose:
-            print "labels:", time.time()-s"""
         
         s = time.time()
         n_observations = int(lines[line_index].split("#")[-1])
@@ -117,15 +115,11 @@ class Model(object):
         line_index += n_observations
         model._weights = [0.0]*current_feature
         state = FEATURES
-        """if verbose:
-            print "observations:", time.time()-s"""
         
         s = time.time()
         for line in lines[-n_weights : ]:
             index, weight = line.split("=")
             model.weights[int(index)] = float.fromhex(weight)#(float.fromhex(weight) if "x" in weight else float(weight))
-        """if verbose:
-            print "features:", time.time()-s"""
         
         return model
     
@@ -188,13 +182,10 @@ class Model(object):
             for template in templates_:
                 obs = template.instanciate(sentence, t)
                 o = obs_encode(obs)
-                #if t == 0: print obs, "--", o
                 if o != -1:
                     if obs[0] == 'u' and uoff_[o] != -1:
-                        #u_append(uoff_[o])
                         u_append(weights_[uoff_[o] : uoff_[o]+Y])
                     if obs[0] == 'b' and boff_[o] != -1:
-                        #b_append(boff_[o])
                         b_append(weights_[boff_[o] : boff_[o]+Y*Y])
         
         # compute scores in psi

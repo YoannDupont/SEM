@@ -39,7 +39,7 @@ except ImportError:
 import logging
 from sem.logger import logging_format, default_handler
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
 from sem.storage import Span
 

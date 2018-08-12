@@ -33,9 +33,9 @@ from sem.storage import Trie
 from sem.constants import NUL
 
 try:
-    import Tkinter as tk
+    import Tkinter as tkinter
 except ImportError:
-    import tkinter as tk
+    import tkinter
 
 def fill_with(t, value):
     def fill_rec(t1):
@@ -115,7 +115,6 @@ class Adder():
         if self.level == 0:
             if len(self.frame.spare_colors) > 0:
                 self.color = self.frame.spare_colors.pop()
-                # print self.label, self.color # dump color for selection
             else:
                 self.color = random_color()
             self.frame.text.tag_configure(self.type, **self.color)
@@ -167,7 +166,7 @@ class Adder():
                 if Tag(self.type, match.start(), match.end()) not in self.frame.current_annotations:
                     self.frame.wish_to_add = [self.type, cur_start, cur_end]
                     self.frame.add_annotation(None, remove_focus=False)
-        except tk.TclError:
+        except tkinter.TclError:
             raise
         self.frame.type_combos[self.level].current(0)
         self.frame.wish_to_add = None

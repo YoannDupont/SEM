@@ -42,6 +42,7 @@ from . import DEFAULT_GETTER, DictGetterFeature
 from . import MultiwordDictionaryFeature, MapperFeature
 from . import TriggeredFeature
 from . import SubsequenceFeature
+from sem.storage.annotation import Tag, Annotation, get_top_level, chunk_annotation_from_sentence
 
 class DirectoryFeature(Feature):
     def __init__(self, path, x2f, order=".order", ambiguous=False, *args, **kwargs):
@@ -72,32 +73,46 @@ class DirectoryFeature(Feature):
             self.features.append(x2f.parse(ET.fromstring(open(os.path.join(self.path, name), "rU").read())))
             self.features[-1]._name = name
             if not (self.features[-1].is_boolean or self.features[-1].is_sequence or isinstance(self.features[-1], MapperFeature) or (isinstance(self.features[-1], TriggeredFeature) and isinstance(self.features[-1].operation, MapperFeature)) or (isinstance(self.features[-1], SubsequenceFeature))):
-                raise ValueError("In {0} feature: {0} is neither boolean nor sequence".format(self.name, name))
+                raise ValueError("In {0} feature: {1} is neither boolean nor sequence".format(self.name, name))
             if isinstance(self.features[-1], MultiwordDictionaryFeature):
-                self.features[-1]._appendice = "-{0}".format(name)
+                self.features[-1]._appendice = u"-{0}".format(name)
     
     def __call__(self, list2dict, *args, **kwargs):
-        data = ["O"]*len(list2dict)
+        data = [u"O"]*len(list2dict)
+        annotation = Annotation("")
         
         for feature in self.features:
             name = feature.name
             if feature.is_boolean:
                 for x in range(len(list2dict)):
                     if feature(list2dict, x):
-                        if not self._ambiguous or data[x] == u"O":
+                        # redone
+                        annotation.add(Tag(name, x, x+1))
+                        """if not self._ambiguous or data[x] == u"O":
                             data[x] = name
                         else:
-                            data[x] += "|"+name
+                            data[x] += "|"+name"""
             elif feature.is_sequence:
-                for x, element in enumerate(feature(list2dict)):
+                # redone
+                for tag in chunk_annotation_from_sentence([{"tag": tag} for tag in feature(list2dict)], "tag"):
+                    annotation.add(tag)
+                """for x, element in enumerate(feature(list2dict)):
                     if element != "O":
                         if not self._ambiguous or data[x] == u"O":
                             data[x] = element
                         else:
-                            data[x] += "|"+element
-            else:
-                for x in range(len(list2dict)):
-                    data[x] = feature(list2dict, x)
+                            data[x] += "|"+element"""
+            #else:
+            #    for x in range(len(list2dict)):
+            #        data[x] = feature(list2dict, x)
+        
+        # redone
+        if not self._ambiguous:
+            tags = get_top_level(annotation)
+            for tag in tags:
+                data[tag.lb] = u"B-{}".format(tag.value)
+                for index in range(tag.lb+1, tag.ub):
+                    data[index] = u"I-{}".format(tag.value)
         
         return data
 

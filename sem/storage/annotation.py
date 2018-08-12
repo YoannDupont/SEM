@@ -48,7 +48,7 @@ class Tag(object):
         return self.value == tag.value and self.lb == tag.lb and self.ub == tag.ub
     
     def __str__(self):
-        return "{0},{1:s}".format(self.value, self.span)
+        return "{0},{1}".format(self.value, self.span)
     
     @property
     def value(self):
@@ -204,7 +204,7 @@ def get_top_level(annotations):
     while modified:
         modified = False
         for i in range(len(result)-1):
-            modified = result[i].lb <= result[i+1].lb and result[i].ub >= result[i+1].ub
+            modified = result[i].lb <= result[i+1].lb and result[i].ub > result[i+1].lb
             if modified:
                 del result[i+1]
                 break
@@ -216,7 +216,7 @@ def get_bottom_level(annotations):
     while modified:
         modified = False
         for i in range(len(result)-1):
-            modified = result[i].lb <= result[i+1].lb and result[i].ub >= result[i+1].ub
+            modified = result[i].lb <= result[i+1].lb <= result[i].ub
             if modified:
                 del result[i]
                 break

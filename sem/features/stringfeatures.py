@@ -30,8 +30,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from feature        import Feature
-from getterfeatures import DEFAULT_GETTER
+from .feature        import Feature
+from .getterfeatures import DEFAULT_GETTER
 
 class StringFeature(Feature):
     def __init__(self, reference, getter=DEFAULT_GETTER, *args, **kwargs):

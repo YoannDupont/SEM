@@ -39,7 +39,7 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 
-import sem.misc
+from sem.misc import strip_html, is_string
 
 from sem.tokenisers           import get_tokeniser
 from sem.storage.document     import Document
@@ -53,7 +53,7 @@ class SEMModule(RootModule):
     def __init__(self, tokeniser, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
-        if type(tokeniser) in (str, unicode):
+        if is_string(tokeniser):
             segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
             Tokeniser = get_tokeniser(tokeniser)
             self._tokeniser = Tokeniser()
@@ -88,7 +88,7 @@ class SEMModule(RootModule):
 
         content = document.content
         if document.metadata("MIME") == "text/html":
-            content = sem.misc.strip_html(content, keep_offsets=True)
+            content = strip_html(content, keep_offsets=True)
         
         do_segmentation = document.segmentation("tokens") is None or document.segmentation("sentences") is None or document.segmentation("paragraphs") is None
         if do_segmentation:

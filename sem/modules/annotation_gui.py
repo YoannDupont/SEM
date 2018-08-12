@@ -26,6 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import print_function
+
 import codecs
 import re
 import logging
@@ -33,20 +35,34 @@ import sys
 import os
 
 try:
-    import Tkinter as tk
+    import Tkinter as tkinter
 except ImportError:
-    import tkinter as tk
+    import tkinter
 
 try:
     import ttk
 except ImportError:
-    ttk = tk.ttk
+    from tkinter import ttk
 
-from tkFont import Font
-import tkFileDialog
-import ScrolledText
-import tkMessageBox
-import Tkconstants
+try:
+    from tkFont import Font
+except ImportError:
+    from tkinter.font import Font
+try:
+    import tkFileDialog
+    tkinter.filedialog = tkFileDialog
+except ImportError:
+    import tkinter.filedialog
+try:
+    import ScrolledText
+    tkinter.scrolledtext = ScrolledText
+except ImportError:
+    import tkinter.scrolledtext
+try:
+    import tkMessageBox
+    tkinter.messagebox = tkMessageBox
+except ImportError:
+    import tkinter.messagebox
 
 import sem
 from sem.constants import NUL
@@ -55,11 +71,11 @@ from sem.storage.annotation import Tag, Annotation
 from sem.logger import extended_handler
 import sem.importers
 from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder2
-from sem.gui.components import SEMTkWapitiTrain, SemTkFileSelector, SearchFrame
+from sem.gui.components import SEMTkTrainInterface, SemTkFileSelector, SearchFrame
 from sem.storage.annotation import str2filter
 
-annotate_logger = logging.getLogger("sem.annotation_gui")
-annotate_logger.addHandler(extended_handler)
+annotation_gui_logger = logging.getLogger("sem.annotation_gui")
+annotation_gui_logger.addHandler(extended_handler)
 
 def update_annotations(document, annotation_name, annotations):
     annots = Annotation(annotation_name)
@@ -81,9 +97,11 @@ def check_in_tagset(tag, tagset):
                 break
     return ok
 
-class AnnotationTool(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+class AnnotationTool(tkinter.Frame):
+    def __init__(self, parent, log_level, *args, **kwargs):
+        tkinter.Frame.__init__(self, parent, *args, **kwargs)
+        
+        annotation_gui_logger.setLevel(log_level)
         
         self.bind_all("<Alt-F4>", self.exit)
         
@@ -112,34 +130,34 @@ class AnnotationTool(tk.Frame):
         #
         # menu
         #
-        self.global_menu = tk.Menu(self.parent)
+        self.global_menu = tkinter.Menu(self.parent)
         # file menu
-        self.file_menu = tk.Menu(self.global_menu, tearoff=False)
+        self.file_menu = tkinter.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Open...", command=self.openfile, accelerator="Ctrl+O")
         self.file_menu.add_command(label="Open url...", command=self.openurl, accelerator="Ctrl+Shift+O")
         self.file_menu.add_command(label="Save to...", command=self.save, accelerator="Ctrl+S")
-        self.saveas_menu = tk.Menu(self.file_menu, tearoff=False)
+        self.saveas_menu = tkinter.Menu(self.file_menu, tearoff=False)
         self.file_menu.add_cascade(label="Save as...", menu=self.saveas_menu)
         self.saveas_menu.add_command(label="BRAT corpus", command=self.save_brat)
         self.saveas_menu.add_command(label="GATE corpus", command=self.save_gate)
         self.saveas_menu.add_command(label="TEI ANALEC corpus", command=self.save_tei_analec)
         self.saveas_menu.add_command(label="TEI REDEN corpus", command=self.save_tei_reden)
         self.saveas_menu.add_command(label="JSON corpus", command=self.save_json)
-        self.file_menu.entryconfig("Save to...", state=tk.DISABLED)
-        self.file_menu.entryconfig("Save as...", state=tk.DISABLED)
+        self.file_menu.entryconfig("Save to...", state=tkinter.DISABLED)
+        self.file_menu.entryconfig("Save as...", state=tkinter.DISABLED)
         # edit menu
-        self.edit_menu = tk.Menu(self.global_menu, tearoff=False)
+        self.edit_menu = tkinter.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="Edit", menu=self.edit_menu)
         self.edit_menu.add_command(label="Preferences...", command=self.preferences)
         # ? menu
-        self.qm_menu = tk.Menu(self.global_menu, tearoff=False)
+        self.qm_menu = tkinter.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="?", menu=self.qm_menu)
         self.qm_menu.add_command(label="About SEM...", command=self.about_sem)
         # final
         self.parent.config(menu=self.global_menu)
         
-        self.new_type = tk.StringVar()
+        self.new_type = tkinter.StringVar()
         self.SPARE_COLORS_DEFAULT = []
         self.SPARE_COLORS_DEFAULT = [{"background":"#CCCCCC", "foreground":"#000000"}, {'foreground': '#374251', 'background': '#9ca9bc'}, {'foreground': '#4b3054', 'background': '#b28fbf'}, {'foreground': '#625e2d', 'background': '#d0cb99'}, {'foreground': '#454331', 'background': '#a7a383'}, {'foreground': '#79a602', 'background': '#e7fea8'}, {'background': '#C8A9DC', 'foreground': '#542D6E'}, {'background': '#C9B297', 'foreground': '#5C4830'}, {'foreground': '#426722', 'background': '#aad684'}, {'foreground': '#886c11', 'background': '#f1da91'}, {'foreground': '#275a5f', 'background': '#85c6cc'}, {'foreground': '#0a9b47', 'background': '#a3fac8'}, {'foreground': '#729413', 'background': '#e3f5af'}, {'foreground': '#a22800', 'background': '#ffb299'}, {'foreground': '#254084', 'background': '#bccaed'}, {'foreground': '#601194', 'background': '#d7a8f6'}, {'foreground': '#6c4c45', 'background': '#e6dad7'}, {'foreground': '#1461a1', 'background': '#cce5f9'}, {'foreground': '#8a570d', 'background': '#f4c888'}, {'foreground': '#813058', 'background': '#eecfde'}]
         self.SPARE_COLORS_DEFAULT.extend([{"background":"#DDFFDD", "foreground":"#008800"}, {"background":"#CCCCFF", "foreground":"#0000FF"}, {"background":"#CCEEEE", "foreground":"#008888"}, {"background":"#FFCCCC", "foreground":"#FF0000"}]) # at the end for "pop"
@@ -167,7 +185,7 @@ class AnnotationTool(tk.Frame):
 
         self.train_btn = ttk.Button(self.toolbar, text="train", command=self.train)
         self.train_btn.pack(side="left")
-        self.train_btn.configure(state=tk.DISABLED)
+        self.train_btn.configure(state=tkinter.DISABLED)
 
         self.load_tagset_btn = ttk.Button(self.toolbar, text="load tagset", command=self.load_tagset_gui)
         self.load_tagset_btn.pack(side="left")
@@ -179,13 +197,13 @@ class AnnotationTool(tk.Frame):
         self.corpus_tree = ttk.Treeview(self.annotation_row)
         self.corpus_tree_scrollbar = ttk.Scrollbar(self.annotation_row, command=self.corpus_tree.yview)
         self.corpus_tree.configure(yscroll=self.corpus_tree_scrollbar.set)
-        self.corpus_tree.heading("#0", text="corpus", anchor=tk.W)
+        self.corpus_tree.heading("#0", text="corpus", anchor=tkinter.W)
         self.corpus_tree.bind("<<TreeviewSelect>>", self.load_document)
         self.corpus_documents = []
         self.corpus_id2doc = {}
         self.corpus_doc2id = {}
         
-        self.text = ScrolledText.ScrolledText(self.annotation_row, wrap=tk.WORD, font="Helvetica")
+        self.text = tkinter.scrolledtext.ScrolledText(self.annotation_row, wrap=tkinter.WORD, font="Helvetica")
         self.text.configure(state="disabled")
         self.text.bind("<Shift-Tab>", self.shift_tab)
         self.search = SearchFrame(self.text)
@@ -199,7 +217,7 @@ class AnnotationTool(tk.Frame):
         self.tree = ttk.Treeview(self.annotation_row)
         self.tree_scrollbar = ttk.Scrollbar(self.annotation_row, command=self.tree.yview)
         self.tree.configure(yscroll=self.tree_scrollbar.set)
-        self.tree.heading("#0", text="annotation sets", anchor=tk.W)
+        self.tree.heading("#0", text="annotation sets", anchor=tkinter.W)
         self.tree.bind("<<TreeviewSelect>>", self.select_from_tree)
         self.tree_ids = {}
         self.annot2treeitems = {}
@@ -235,9 +253,9 @@ class AnnotationTool(tk.Frame):
         self.ner2history = {}
         
         # preferences
-        self._whole_word = tk.BooleanVar()
+        self._whole_word = tkinter.BooleanVar()
         self._whole_word.set(True)
-        self.wikinews_format = tk.BooleanVar()
+        self.wikinews_format = tkinter.BooleanVar()
         self.wikinews_format.set(False)
         
         #skip_auth=> self.auth()
@@ -251,10 +269,10 @@ class AnnotationTool(tk.Frame):
         self.parent.destroy()
     
     def auth(self, event=None):
-        authTop = tk.Toplevel()
+        authTop = tkinter.Toplevel()
         authTop.grab_set()
-        auth_login = tk.StringVar(authTop, value="admin")
-        auth_pw = tk.StringVar(authTop, value="")
+        auth_login = tkinter.StringVar(authTop, value="admin")
+        auth_pw = tkinter.StringVar(authTop, value="")
         
         def close():
             sys.exit(0)
@@ -265,11 +283,11 @@ class AnnotationTool(tk.Frame):
             import time, hashlib
             pwd = auth_pw.get()
             if pwd == "":
-                print "Please enter non empty password"
+                print("Please enter non empty password")
             try:
                 content = open(".users").read()
                 if "d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n" not in content:
-                    print "Something fishy about your .user file, rewriting it with admin user only."
+                    print("Something fishy about your .user file, rewriting it with admin user only.")
                     with codecs.open(".users", "w") as O:
                         O.write("d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n")
                     time.sleep(5.0)
@@ -283,7 +301,7 @@ class AnnotationTool(tk.Frame):
                 checked = login + pw in content
                 if checked:
                     self.user = auth_login.get()[:]
-                    tkMessageBox.showinfo("Login success","Logged succesfuly as {0}".format(self.user))
+                    tkinter.messagebox.showinfo("Login success","Logged succesfuly as {0}".format(self.user))
                     
                     if self.user == "admin":
                         self.add_user_btn = ttk.Button(self.toolbar, text="add user", command=self.add_user)
@@ -291,41 +309,41 @@ class AnnotationTool(tk.Frame):
                     
                     authTop.destroy()
                 else:
-                    tkMessageBox.showerror("Login error", "Wrong login/password")
+                    tkinter.messagebox.showerror("Login error", "Wrong login/password")
             except IOError:
                 with codecs.open(".users", "w") as O:
                     O.write("d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n")
-                print "Could not find .user file, rewriting it with admin user only."
+                print("Could not find .user file, rewriting it with admin user only.")
         
-        authLabel = tk.Label(authTop, text="Enter credentials:")
-        authLabel.grid(row=0, column=0, sticky=tk.W+tk.E, columnspan=2)
+        authLabel = tkinter.Label(authTop, text="Enter credentials:")
+        authLabel.grid(row=0, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
         
-        tk.Label(authTop, text='login').grid(row=1, column=0, sticky=tk.W)
-        auth_login_entry = tk.Entry(authTop, textvariable=auth_login)
-        auth_login_entry.grid(row=1, column=1, sticky=tk.W)
-        tk.Label(authTop, text='password').grid(row=2, column=0, sticky=tk.W)
-        auth_pw_entry = tk.Entry(authTop, textvariable=auth_pw, show="*")
-        auth_pw_entry.grid(row=2, column=1, sticky=tk.W)
+        tkinter.Label(authTop, text='login').grid(row=1, column=0, sticky=tkinter.W)
+        auth_login_entry = tkinter.Entry(authTop, textvariable=auth_login)
+        auth_login_entry.grid(row=1, column=1, sticky=tkinter.W)
+        tkinter.Label(authTop, text='password').grid(row=2, column=0, sticky=tkinter.W)
+        auth_pw_entry = tkinter.Entry(authTop, textvariable=auth_pw, show="*")
+        auth_pw_entry.grid(row=2, column=1, sticky=tkinter.W)
         
         login_btn = ttk.Button(authTop, text="login", command=check_auth)
-        login_btn.grid(row=3, column=0, sticky=tk.W+tk.E, columnspan=2)
+        login_btn.grid(row=3, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
         
     def add_user(self, event=None):
-        authTop = tk.Toplevel()
+        authTop = tkinter.Toplevel()
         authTop.grab_set()
-        auth_login = tk.StringVar(authTop, value="admin")
-        auth_pw = tk.StringVar(authTop, value="")
+        auth_login = tkinter.StringVar(authTop, value="admin")
+        auth_pw = tkinter.StringVar(authTop, value="")
         
         def check_auth():
             import hashlib
             pwd = auth_pw.get()
             if pwd == "":
-                print "Please enter non empty password"
+                print("Please enter non empty password")
                 return
             try:
                 lines = [line.strip() for line in open(".users").readlines()]
                 if "d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2" not in lines:
-                    print "Something fishy about your .user file, rewriting it with admin user only."
+                    print("Something fishy about your .user file, rewriting it with admin user only.")
                     with codecs.open(".users", "w") as O:
                         O.write("d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n")
                 h = hashlib.sha1()
@@ -336,37 +354,37 @@ class AnnotationTool(tk.Frame):
                 pw = h.hexdigest()
                 for line in lines:
                     if line.startswith(login):
-                        tkMessageBox.showerror("Cannot add user", "User {0} already exists".format(auth_login.get()))
+                        tkinter.messagebox.showerror("Cannot add user", "User {0} already exists".format(auth_login.get()))
                         return
                 
                 with codecs.open(".users", "a") as O:
                     O.write("{0}{1}\n".format(login, pw))
-                tkMessageBox.showinfo("New user","Succesfuly added user {0}".format(auth_login.get()))
+                tkinter.messagebox.showinfo("New user","Succesfuly added user {0}".format(auth_login.get()))
                 authTop.destroy()
             except IOError:
                 with codecs.open(".users", "w") as O:
                     O.write("d033e22ae348aeb5660fc2140aec35850c4da997aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n")
-                print "Could not find .user file, rewriting it with admin user only."
+                print("Could not find .user file, rewriting it with admin user only.")
         
-        authLabel = tk.Label(authTop, text="Enter credentials:")
-        authLabel.grid(row=0, column=0, sticky=tk.W+tk.E, columnspan=2)
+        authLabel = tkinter.Label(authTop, text="Enter credentials:")
+        authLabel.grid(row=0, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
         
-        tk.Label(authTop, text='login').grid(row=1, column=0, sticky=tk.W)
-        auth_login_entry = tk.Entry(authTop, textvariable=auth_login)
-        auth_login_entry.grid(row=1, column=1, sticky=tk.W)
-        tk.Label(authTop, text='password').grid(row=2, column=0, sticky=tk.W)
-        auth_pw_entry = tk.Entry(authTop, textvariable=auth_pw, show="*")
-        auth_pw_entry.grid(row=2, column=1, sticky=tk.W)
+        tkinter.Label(authTop, text='login').grid(row=1, column=0, sticky=tkinter.W)
+        auth_login_entry = tkinter.Entry(authTop, textvariable=auth_login)
+        auth_login_entry.grid(row=1, column=1, sticky=tkinter.W)
+        tkinter.Label(authTop, text='password').grid(row=2, column=0, sticky=tkinter.W)
+        auth_pw_entry = tkinter.Entry(authTop, textvariable=auth_pw, show="*")
+        auth_pw_entry.grid(row=2, column=1, sticky=tkinter.W)
         
         login_btn = ttk.Button(authTop, text="login", command=check_auth)
-        login_btn.grid(row=3, column=0, sticky=tk.W+tk.E, columnspan=2)
+        login_btn.grid(row=3, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
     
     #
     # file menu methods
     #
     
     def openfile(self, event=None):
-        filenames = tkFileDialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")), ("text files", ".txt"), ("BRAT files", (".txt", ".ann")), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
+        filenames = tkinter.filedialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")), ("text files", ".txt"), ("BRAT files", (".txt", ".ann")), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
         if filenames == []: return
         
         chunks_to_load = ([self.annotation_name] if self.annotation_name else None)
@@ -398,19 +416,18 @@ class AnnotationTool(tk.Frame):
         
         self.load_document(document)
         
-        if self.adder is not None:
-            self.train_btn.configure(state=tk.NORMAL)
-        self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
-        self.file_menu.entryconfig("Save as...", state=tk.NORMAL)
+        self.train_btn.configure(state=tkinter.NORMAL)
+        self.file_menu.entryconfig("Save to...", state=tkinter.NORMAL)
+        self.file_menu.entryconfig("Save as...", state=tkinter.NORMAL)
         if self.adder is not None:
             self.adder.current_hierarchy_level = 0
             self.update_level()
     
     def openurl(self, event=None):
         import urllib
-        toplevel = tk.Toplevel()
+        toplevel = tkinter.Toplevel()
         
-        self.url = tk.StringVar()
+        self.url = tkinter.StringVar()
         
         def cancel(event=None):
             self.url.set("")
@@ -424,13 +441,12 @@ class AnnotationTool(tk.Frame):
             
             self.load_document(document)
             
-            if self.adder is not None:
-                self.train_btn.configure(state=tk.NORMAL)
-            self.file_menu.entryconfig("Save to...", state=tk.NORMAL)
-            self.file_menu.entryconfig("Save as...", state=tk.NORMAL)
+            self.train_btn.configure(state=tkinter.NORMAL)
+            self.file_menu.entryconfig("Save to...", state=tkinter.NORMAL)
+            self.file_menu.entryconfig("Save as...", state=tkinter.NORMAL)
             cancel()
         
-        label1 = tk.Label(toplevel, text="enter url:")
+        label1 = tkinter.Label(toplevel, text="enter url:")
         label1.pack()
         
         text = ttk.Entry(toplevel, textvariable=self.url)
@@ -470,7 +486,7 @@ class AnnotationTool(tk.Frame):
             self.doc_is_modified = True
     
     def save(self, event=None):
-        filename = tkFileDialog.asksaveasfilename(defaultextension=".sem.xml")
+        filename = tkinter.filedialog.asksaveasfilename(defaultextension=".sem.xml")
         if filename == u"": return
         
         self.unselect()
@@ -501,23 +517,23 @@ class AnnotationTool(tk.Frame):
             exporter.document_to_file(document, couples, out_path, encoding="utf-8")
     
     def save_brat(self, event=None):
-        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
         self.save_as_format(output_directory, "brat")
     
     def save_gate(self, event=None):
-        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
         self.save_as_format(output_directory, "gate")
     
     def save_tei_analec(self, event=None):
-        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
         self.save_as_format(output_directory, "tei_analec")
     
     def save_tei_reden(self, event=None):
-        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
         self.save_as_format(output_directory, "tei_reden")
     
     def save_json(self, event=None):
-        output_directory = tkFileDialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
+        output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
         self.save_as_format(output_directory, "jason")
     
     #
@@ -525,7 +541,7 @@ class AnnotationTool(tk.Frame):
     #
     
     def preferences(self, event=None):
-        preferenceTop = tk.Toplevel()
+        preferenceTop = tkinter.Toplevel()
         preferenceTop.focus_set()
         
         notebook = ttk.Notebook(preferenceTop)
@@ -549,9 +565,9 @@ class AnnotationTool(tk.Frame):
             j += 1
             key, cmd, bindings = shortcut
             name, command = cmd
-            shortcuts_vars.append(tk.StringVar(frame_list[-1], value=key))
-            tk.Label(frame_list[-1], text=name).grid(row=cur_row, column=0, sticky=tk.W)
-            entry = tk.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
+            shortcuts_vars.append(tkinter.StringVar(frame_list[-1], value=key))
+            tkinter.Label(frame_list[-1], text=name).grid(row=cur_row, column=0, sticky=tkinter.W)
+            entry = tkinter.Entry(frame_list[-1], textvariable=shortcuts_vars[j])
             entry.grid(row=cur_row, column=1)
             cur_row += 1
         notebook.pack()
@@ -562,7 +578,7 @@ class AnnotationTool(tk.Frame):
     
     def about_sem(self, event=None):
         options = {"background":"white"}
-        aboutTop = tk.Toplevel(**options)
+        aboutTop = tkinter.Toplevel(**options)
         aboutTop.title("About SEM")
         aboutTop.focus_set()
         
@@ -598,59 +614,14 @@ class AnnotationTool(tk.Frame):
         if self.doc_is_modified:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
         
-        from sem.gui.components import SemTkLangSelector, SemTkMasterSelector
-        trainTop = tk.Toplevel()
-        trainTop.focus_set()
-        vars_workflow = tk.StringVar(trainTop, value="")
-        CRF_algorithmString = tk.StringVar(trainTop, value="rprop")
-        CRF_l1String = tk.StringVar(trainTop, value="0.5")
-        CRF_l2String = tk.StringVar(trainTop, value="0.0001")
-        
-        varsFrame = ttk.LabelFrame(trainTop, text="Global variables")
-        annotation_level_label = ttk.Label(varsFrame, text=u"annotation level:")
-        annotation_level_var = tk.StringVar(varsFrame, value="top level")
-        annotation_level = ttk.Combobox(varsFrame, textvariable=annotation_level_var)
-        annotation_level["values"] = str2filter.keys()
-        annotation_level.current(0)
-        master_selector = SemTkMasterSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
-        lang_selector = SemTkLangSelector(varsFrame, os.path.join(sem.SEM_DATA_DIR, "resources"))
-        lang_selector.master_selector = master_selector
-        
-        algsFrame = ttk.LabelFrame(trainTop, text="Algorithm-specific variables")
-        
-        notebook = ttk.Notebook(algsFrame)
-        frame1 = ttk.Frame(notebook)
-        frame2 = ttk.Frame(notebook)
-        notebook.add(frame1, text='CRF')
-        notebook.add(frame2, text='NN')
-        frame1.resource_dir = self.resource_dir
-        
-        varsFrame.pack(fill="both", expand="yes")
-        vars_cur_row = 0
-        annotation_level_label.grid(row=vars_cur_row, column=0)
-        vars_cur_row += 1
-        annotation_level.grid(row=vars_cur_row, column=0)
-        vars_cur_row += 1
-        vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
-        vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
-        
-        for _ in range(5):
-            ttk.Separator(trainTop,orient=tk.HORIZONTAL).pack()
-        
-        algsFrame.pack(fill="both", expand="yes")
-        
-        notebook.pack()
-        
-        crf_cur_row = 0
-        
-        crf_train = SEMTkWapitiTrain(self.corpus_documents, master_selector, self.annotation_name, annotation_level=annotation_level_var, top=frame1, main_frame=trainTop, text="CRF-specific variables")
+        train_interface = SEMTkTrainInterface(self.corpus_documents)
     
     def handle_char(self, event):
         if self.adder is None:
             return
         try:
             self.text.index("sel.first")
-        except tk.TclError:
+        except tkinter.TclError:
             return
         
         the_type = self.adder.type_from_letter(event.keysym)
@@ -674,7 +645,7 @@ class AnnotationTool(tk.Frame):
                     if Tag(the_type, match.start(), match.end()) not in self.current_annotations:
                         self.wish_to_add = [the_type, cur_start, cur_end]
                         self.add_annotation(None, remove_focus=False)
-            except tk.TclError:
+            except tkinter.TclError:
                 raise
             self.unselect()
     
@@ -697,7 +668,7 @@ class AnnotationTool(tk.Frame):
             if last == "sel.last":
                 last = self.text.index("sel.last")
             
-        except tk.TclError: # no selection
+        except tkinter.TclError: # no selection
             return
         
         self.doc_is_modified = True
@@ -714,7 +685,7 @@ class AnnotationTool(tk.Frame):
                     if annot.lb > tag.lb:
                         break
                     index += 1
-                key = unicode(tag)
+                key = u"{}".format(tag) # TODO: PY2
                 item = self.tree.insert(self.tree_ids[self.annotation_name], index, text=u'{0} "{1}" [{2}:{3}]'.format(value, self.doc.content[pos[0] : pos[1]], pos[0], pos[1]))
                 self.treeitem2annot[item] = tag
                 self.annot2treeitems[self.annotation_name][key] = item
@@ -748,7 +719,7 @@ class AnnotationTool(tk.Frame):
                             new_item = self.tree.insert(self.tree_ids["history"], 0, text=new_text)
                             self.ner2history[tree_item_str] = new_item
                             self.treeitem2annot[new_item] = self.treeitem2annot[tree_item_str]
-                            self.annot2treeitems["history"][unicode(Tag(annot.getLevel(0), lb, ub))] = new_item
+                            self.annot2treeitems["history"][u"{}".format(Tag(annot.getLevel(0), lb, ub))] = new_item # TODO: PY2
         if remove_focus:
             self.wish_to_add = None
             self.adder.current_annotation = None
@@ -843,8 +814,8 @@ class AnnotationTool(tk.Frame):
         self.wish_to_add = None
         if self.adder:
             self.adder.current_annotation = None
-        self.adder.current_hierarchy_level = 0
-        self.update_level()
+            self.adder.current_hierarchy_level = 0
+            self.update_level()
     
     def delete(self, event):
         self.text.tag_remove("BOLD",  "1.0", 'end')
@@ -864,7 +835,7 @@ class AnnotationTool(tk.Frame):
             if len(greater) == 0:
                 self.text.tag_remove(self.adder.current_annotation.getLevel(0), self.charindex2position(annotation.lb), self.charindex2position(annotation.ub))
             tag = Tag(self.adder.current_annotation.getLevel(0), annotation.lb, annotation.ub)
-            key = unicode(tag)
+            key = u"{}".format(tag) # TODO: PY2
             for v in self.annot2treeitems.values():
                 item = v.get(key, None)
                 if item is not None:
@@ -906,7 +877,7 @@ class AnnotationTool(tk.Frame):
             cur += lengths[line]
             line += 1
         offset = charindex - cur
-        return "{0}.{1}".format(line, offset)
+        return u"{0}.{1}".format(line, offset)
     
     def tab(self, event=None):
         self.adder.up_one_level()
@@ -919,7 +890,7 @@ class AnnotationTool(tk.Frame):
     def update_level(self):
         for i in range(self.adder.max_depth()):
             if i != self.adder.current_hierarchy_level:
-                self.type_combos[i].configure(state=tk.DISABLED)
+                self.type_combos[i].configure(state=tkinter.DISABLED)
             else:
                 levels = (self.adder.current_annotation.levels if self.adder.current_annotation is not None else [])
                 subtrie = self.adder.shortcut_trie.goto(levels)
@@ -994,7 +965,7 @@ class AnnotationTool(tk.Frame):
                     annot.levels = annot.value.split(u".")
                     self.add_tag(annot.levels[0], annot.lb, annot.ub)
                     item = self.tree.insert(self.tree_ids[self.annotation_name], len(self.annot2treeitems[self.annotation_name])+1, text=u'{0} "{1}" [{2}:{3}]'.format(annot.value, self.doc.content[annot.lb : annot.ub], annot.lb, annot.ub))
-                    self.annot2treeitems[self.annotation_name][str(annot)] = item
+                    self.annot2treeitems[self.annotation_name][u"{}".format(annot)] = item # TODO: PY2
                     annot.ids[self.annotation_name] = item
                     self.treeitem2annot[item] = annot
                     self.current_annotations.add(annot)
@@ -1057,11 +1028,9 @@ class AnnotationTool(tk.Frame):
         self.update_level()
         self.doc = None
         self.load_document()
-        if self.doc is not None:
-            self.train_btn.configure(state=tk.NORMAL)
     
     def load_tagset_gui(self, event=None):
-        filename = tkFileDialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")], initialdir=os.path.join(sem.SEM_DATA_DIR, "resources", "tagsets"))
+        filename = tkinter.filedialog.askopenfilename(filetypes=[("text files", ".txt"), ("All files", ".*")], initialdir=os.path.join(sem.SEM_DATA_DIR, "resources", "tagsets"))
         
         if len(filename) == 0: return
         
@@ -1086,7 +1055,7 @@ parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WA
                     help="Increase log level (default: %(default)s)")
 
 def main(args):
-    root = tk.Tk()
+    root = tkinter.Tk()
     root.title("SEM")
-    AnnotationTool(root).pack(expand=1, fill="both")
+    AnnotationTool(root, args.log_level).pack(expand=1, fill="both")
     root.mainloop()

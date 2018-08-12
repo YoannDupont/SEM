@@ -31,12 +31,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from sem import PY2
+
 import codecs
 
 from . import tab_join
 
 class Reader(object):
-    def __init__(self, name, encoding, cleaner=unicode.strip, splitter=unicode.split):
+    def __init__(self, name, encoding, cleaner=(unicode.strip if PY2 else str.strip), splitter=(unicode.split if PY2 else str.strip)):
         self._name     = name
         self._encoding = encoding
         self._cleaner  = cleaner

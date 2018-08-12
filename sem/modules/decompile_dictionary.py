@@ -34,7 +34,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs, cPickle, logging
+import codecs, logging
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from sem.logger import default_handler
 
@@ -65,7 +70,7 @@ def decompile_dictionary(infile, outfile, kind="token",
     
     compile_dictionary_logger.info(u'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile))
     
-    resource = cPickle.load(open(infile))
+    resource = pickle.load(open(infile))
     entry    = _entry[kind]
     with codecs.open(outfile, "w", oenc) as O:
         tokens = []

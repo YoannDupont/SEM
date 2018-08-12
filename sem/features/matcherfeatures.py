@@ -34,8 +34,8 @@ SOFTWARE.
 
 import re
 
-from feature        import Feature
-from getterfeatures import DEFAULT_GETTER
+from .feature        import Feature
+from .getterfeatures import DEFAULT_GETTER
 
 class MatchFeature(Feature):
     def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, default=u"#", *args, **kwargs):

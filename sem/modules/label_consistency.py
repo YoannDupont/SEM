@@ -260,7 +260,7 @@ class LabelConsistencyFeature(MultiwordDictionaryFeature):
                 form = u" ".join([list2dict[i][entry] for i in range(fst,lst)])
                 appendice = u"-" + form2entity[form]
                 l[fst] = u'B' + appendice
-                for i in xrange(fst+1, lst):
+                for i in range(fst+1, lst):
                     l[i] = u'I' + appendice
                 fst = lst
                 cur = fst
@@ -378,7 +378,7 @@ class SEMModule(RootModule):
         
         for form, count in counts.items():
             if len(count) == 1:
-                entities[form] = count.keys()[0]
+                entities[form] = list(count.keys())[0]
             else:
                 best = sorted(count.keys(), key=lambda x: -count[x])[0]
                 entities[form] = best
@@ -421,7 +421,7 @@ def main(args):
     
     for form, count in counts.items():
         if len(count) == 1:
-            entities[form] = count.keys()[0]
+            entities[form] = list(count.keys())[0]
         else:
             best = sorted(count.keys(), key=lambda x: -count[x])[0]
             entities[form] = best

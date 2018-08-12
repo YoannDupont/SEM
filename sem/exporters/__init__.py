@@ -28,16 +28,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from brat import Exporter as BratExporter
-from conll import Exporter as CoNLLExporter
-from gate import Exporter as GateExporter
-from html import Exporter as HTMLExporter
-from jason import Exporter as JSONExporter
-from sem_xml import Exporter as SEMExporter
-from tei_analec import Exporter as AnalecTEIExporter
-from tei_reden import Exporter as REDENTEIExporter
-from tei_np import Exporter as TEINPExporter
-from text import Exporter as TextExporter
+from .brat import Exporter as BratExporter
+from .conll import Exporter as CoNLLExporter
+from .gate import Exporter as GateExporter
+from .html import Exporter as HTMLExporter
+from .jason import Exporter as JSONExporter
+from .sem_xml import Exporter as SEMExporter
+from .tei_analec import Exporter as AnalecTEIExporter
+from .tei_reden import Exporter as REDENTEIExporter
+from .tei_np import Exporter as TEINPExporter
+from .text import Exporter as TextExporter
 
 try:
     from importlib import import_module

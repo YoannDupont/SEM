@@ -32,8 +32,8 @@ SOFTWARE.
 
 import os.path
 
-from feature        import Feature
-from getterfeatures import DEFAULT_GETTER
+from .feature        import Feature
+from .getterfeatures import DEFAULT_GETTER
 
 from sem.storage import NUL
 from sem.storage import Trie
@@ -62,7 +62,7 @@ class TokenDictionaryFeature(DictionaryFeature):
         if self._path is not None:
             try:
                 self._value = pickle.load(open(self._path))
-            except (pickle.UnpicklingError, ImportError, EOFError, IndexError):
+            except (pickle.UnpicklingError, ImportError, EOFError, IndexError, TypeError):
                 self._value = compile_token(self._path, "utf-8")
             self._entries = None
         elif self._entries is not None:
@@ -122,7 +122,7 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             
             if lst != -1:
                 l[fst] = u'B' + appendice
-                for i in xrange(fst+1, lst):
+                for i in range(fst+1, lst):
                     l[i] = u'I' + appendice
                 fst = lst
                 cur = fst

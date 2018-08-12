@@ -35,9 +35,10 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
 from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
 from sem.storage import Span
+from sem.misc import is_string
 
 def add_text(node, text):
     parts = text.split(u"\n")
@@ -68,13 +69,14 @@ class Exporter(DefaultExporter):
     
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         teiCorpus = self.document_to_data(document, couples=couples)
-        if type(output) in (str, unicode):
+        content = ET.tostring(teiCorpus, encoding="utf-8").decode("utf-8")
+        if is_string(output):
             with open(output, "w") as O:
                 O.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-                O.write(ET.tostring(teiCorpus, encoding="utf-8"))
+                O.write(content)
         else:
             output.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-            output.write(ET.tostring(teiCorpus, encoding="utf-8"))
+            output.write(content)
     
     def document_to_data(self, document, couples, **kwargs):
         teiCorpus = ET.Element("teiCorpus")
@@ -120,7 +122,7 @@ class Exporter(DefaultExporter):
         annotations = set(document.annotations.keys())
         field = None
         if len(couples) == 1:
-            field = lower[lower.keys()[0]]
+            field = lower[sorted(lower.keys())[0]]
         else:
             field = (lower.get("ner", None) if lower.get("ner", None) in annotations else None)
             if field is None:

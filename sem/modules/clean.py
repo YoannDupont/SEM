@@ -38,7 +38,7 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 
-from sem.misc   import ranges_to_set
+from sem.misc   import ranges_to_set, is_string
 from sem.logger import default_handler, file_handler
 
 clean_info_logger = logging.getLogger("sem.clean_info")
@@ -48,7 +48,7 @@ class SEMModule(RootModule):
     def __init__(self, to_keep, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
-        if type(to_keep) in (str, unicode):
+        if is_string(to_keep):
             self._allowed = to_keep.split(u",") # comma-separated named fields
         else:
             self._allowed = to_keep
@@ -136,7 +136,7 @@ def main(args):
         for line in codecs.open(args.infile, "rU", ienc):
             line = line.strip().split()
             if line != []:
-                tokens = [line[i] for i in xrange(len(line)) if i in allowed]
+                tokens = [line[i] for i in range(len(line)) if i in allowed]
                 O.write(u"\t".join(tokens))
             O.write(u"\n")
     

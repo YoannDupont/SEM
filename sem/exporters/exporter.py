@@ -33,6 +33,8 @@ SOFTWARE.
 import codecs
 import os.path
 
+from sem.misc import is_string
+
 class Exporter(object):
     __ext = None
     
@@ -109,7 +111,7 @@ class Exporter(object):
             output : str
                 the name of the file to write into
         """
-        if type(output) in (str, unicode):
+        if is_string(output):
             with codecs.open(output, "w", encoding) as O:
                 O.write(self.document_to_unicode(document, couples, **kwargs))
         else:

@@ -26,8 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from fr import Tokeniser as FrenchTokeniser
-from en import Tokeniser as EnglishTokeniser
+from .default import Tokeniser as DefaultTokeniser
+from .fr import Tokeniser as FrenchTokeniser
+from .en import Tokeniser as EnglishTokeniser
 
 try:
     from importlib import import_module

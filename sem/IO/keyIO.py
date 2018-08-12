@@ -31,10 +31,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from sem import PY2
+
 import codecs
 
 class KeyReader(object):
-    def __init__(self, name, encoding, keys, cleaner=unicode.strip, splitter=unicode.split):
+    def __init__(self, name, encoding, keys, cleaner=(unicode.strip if PY2 else str.strip), splitter=(unicode.split if PY2 else str.strip)):
         self._name     = name
         self._encoding = encoding
         self._keys     = keys
@@ -90,7 +92,7 @@ class KeyWriter(object):
         if None == self._joiner:
             self._joiner = ""
         
-        self._format = self._joiner.join(["{{{0}}}".format(key) for key in self._keys])
+        self._format = self._joiner.join([u"{{{0}}}".format(key) for key in self._keys])
     
     def __enter__(self):
         return self
@@ -101,18 +103,18 @@ class KeyWriter(object):
     def write(self, entries):
         for p in entries:
             for l in p:
-                self._fd.write(self._format.format(l))
+                self._fd.write(self._format.format(**l))
                 self._fd.write(u"\n")
             self._fd.write(u"\n")
     
     def write_p(self, p):
         for l in p:
-            self._fd.write(self._format.format(l))
+            self._fd.write(self._format.format(**l))
             self._fd.write(u"\n")
         self._fd.write(u"\n")
     
     def write_l(self, l):
-        self._fd.write(self._format.format(l))
+        self._fd.write(self._format.format(**l))
         self._fd.write(u"\n")
     
     def close(self):

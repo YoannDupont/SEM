@@ -31,6 +31,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import print_function
+
 import logging
 import os.path
 import unittest
@@ -75,34 +77,34 @@ def main(args=None):
         module = modules[operation]
         module.main(sem.argument_parser.parse_args())
     elif operation in ["-h", "--help"]:
-        print "Usage: {0} <module> [module arguments]\n".format(name)
-        print "Module list:"
+        print("Usage: {0} <module> [module arguments]\n".format(name))
+        print("Module list:")
         for module in modules:
-            print "\t{0}".format(module)
-        print
-        print "for SEM's current version: -v or --version\n"
-        print "for informations about the last revision: -i or --informations"
-        print "for playing all tests: --test"
+            print("\t{0}".format(module))
+        print()
+        print("for SEM's current version: -v or --version\n")
+        print("for informations about the last revision: -i or --informations")
+        print("for playing all tests: --test")
     elif operation in ["-v", "--version"]:
-        print sem.full_name()
+        print(sem.full_name())
     elif operation in ["-i", "--informations"]:
         informations = sem.informations()
         try:
-            print informations
+            print(informations)
         except UnicodeEncodeError:
-            print informations.encode(sys.getfilesystemencoding(), errors="replace")
+            print(informations.encode(sys.getfilesystemencoding(), errors="replace"))
     elif operation == "--test":
         testsuite = unittest.TestLoader().discover(os.path.join(sem.SEM_HOME, "tests"))
         unittest.TextTestRunner(verbosity=2).run(testsuite)
     else:
-        print "Module not found: " + operation
+        print("Module not found: " + operation)
         suggestions = find_suggestions(operation, modules)
         if len(suggestions) > 0:
-            print "Did you mean one of the following?"
+            print("Did you mean one of the following?")
             for suggestion in suggestions:
-                print "\t{0}".format(suggestion)
+                print("\t{0}".format(suggestion))
         else:
-            print "No suggestions found...", banter()
+            print("No suggestions found...", banter())
 
 if __name__ == "__main__":
     main()

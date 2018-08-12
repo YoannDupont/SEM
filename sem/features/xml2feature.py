@@ -35,6 +35,7 @@ import re
 from os.path import abspath, dirname, join
 
 import sem.information
+import sem.misc
 
 from . import Feature
 from . import IdentityFeature, DictGetterFeature, FindForwardFeature, FindBackwardFeature, DEFAULT_GETTER
@@ -191,7 +192,7 @@ class XML2Feature(object):
         
         elif xml.tag == "directory":
             path = abspath(join(dirname(self._path), attrib.pop("path")))
-            ambiguous = {"true":True,"false":False}[attrib.pop("ambiguous", "false").lower()]
+            ambiguous = sem.misc.str2bool(attrib.pop("ambiguous", "false"))
             return DirectoryFeature(path, self, order=attrib.pop("order",".order"), ambiguous=ambiguous, **attrib)
         
         elif xml.tag == "fill":

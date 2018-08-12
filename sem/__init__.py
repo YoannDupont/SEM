@@ -37,8 +37,12 @@ from os.path import dirname, abspath, join, expanduser
 import platform
 SYSTEM = platform.system().lower()
 ON_WINDOWS = (SYSTEM == "windows")
+PY2 = sys.version_info.major == 2
 
-SEM_HOME = dirname(abspath(__file__)).decode(sys.getfilesystemencoding())
+if PY2:
+    SEM_HOME = dirname(abspath(__file__)).decode(sys.getfilesystemencoding())
+else:
+    SEM_HOME = dirname(abspath(__file__))
 SEM_DATA_DIR = join(expanduser(u"~"), u"sem_data")
 SEM_RESOURCE_DIR = join(SEM_DATA_DIR, u"resources")
 SEM_EXT_DIR = join(SEM_DATA_DIR, u"ext")
@@ -123,15 +127,8 @@ _main_features = [
                             u"semi automatic integration of new feature functions",
                             u"easy creation of new CSS formats for HTML exports"
                         ]
-                    ],
-                    [u"manually annotate fast",
-                        [
-                            u"Annotation GUI to annotate text spans",
-                            u"can load pre-annotated documents",
-                            u"export in multiple formats"
-                        ]
                     ]
-                  ]
+                ]
 
 _first_steps = [
                     [u"install SEM",
@@ -265,7 +262,7 @@ def name():
     return _name
 
 def version():
-    return u".".join([unicode(x) for x in [_version_major, _version_minor, _version_patch]])
+    return u".".join([str(x) for x in [_version_major, _version_minor, _version_patch]])
 
 def full_name():
     return u"{0} v{1}".format(name(), version())

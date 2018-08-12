@@ -34,8 +34,8 @@ SOFTWARE.
 
 import re
 
-from feature        import Feature
-from getterfeatures import DEFAULT_GETTER
+from .feature        import Feature
+from .getterfeatures import DEFAULT_GETTER
 
 class ListFeature(Feature):
     def __init__(self, *args, **kwargs):

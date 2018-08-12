@@ -35,7 +35,8 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-from sem.exporters.exporter import Exporter as DefaultExporter
+from .exporter import Exporter as DefaultExporter
+from sem.misc import is_string
 
 class Exporter(DefaultExporter):
     __ext = "gate.xml"
@@ -52,14 +53,15 @@ class Exporter(DefaultExporter):
     
     def document_to_file(self, document, couples, output, **kwargs):
         gateDocument = self.document_to_data(document, couples=couples)
-        if type(output) in (str, unicode):
+        content = ET.tostring(gateDocument, encoding="utf-8").decode("utf-8")
+        if is_string(output):
             with open(output, "w") as O:
                 O.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-                O.write(ET.tostring(gateDocument, encoding="utf-8"))
+                O.write(content)
                 #O.write(self.document_to_unicode(document, couples, encoding=encoding, **kwargs))
         else:
             output.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-            output.write(ET.tostring(gateDocument, encoding="utf-8"))
+            output.write(content)
     
     def document_to_data(self, document, couples, **kwargs):
         gateDocument = ET.Element("GateDocument")

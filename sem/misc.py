@@ -34,11 +34,14 @@ import re
 import os.path
 import tarfile
 
+from sem import PY2
+
 def find_suggestions(target, candidates, case_sensitive=True):
+    trgt = (target if case_sensitive else target.lower())
     suggestions = []
     for i, candidate in enumerate(candidates if case_sensitive else [cand.lower() for cand in candidates]):
-        shortest = (candidate if len(candidate) < len(target) else target)
-        longest = (target if shortest == candidate else candidate)
+        shortest = (candidate if len(candidate) < len(trgt) else trgt)
+        longest = (trgt if shortest == candidate else candidate)
         if shortest in longest:
             suggestions.append(candidates[i])
     return suggestions
@@ -72,7 +75,7 @@ def ranges_to_set(ranges, length, include_zero=False):
         if lo < 0: lo = length + lo
         if hi < 0: hi = length + hi
         
-        for i in xrange(lo, hi+1): result.add(i)
+        for i in range(lo, hi+1): result.add(i)
     
     if include_zero: result.add(0)
     
@@ -107,8 +110,24 @@ def correct_pos_tags(tags):
     return corrected
 
 def is_relative_path(s):
+    """
+    Return whether the path given in argument is relative or not.
+    """
     tmp = s.replace(u"\\", u"/")
     return tmp.startswith(u"../") or tmp.startswith(u"~/") or tmp.startswith(u"./")
+
+if PY2:
+    def is_string(s):
+        """
+        Return whether the argument is a string class or not.
+        """
+        return isinstance(s, basestring)
+else:
+    def is_string(s):
+        """
+        Return whether the argument is a string class or not.
+        """
+        return isinstance(s, str)
 
 def check_model_available(model, logger=None):
     if not os.path.exists(model):

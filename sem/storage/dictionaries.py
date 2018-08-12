@@ -32,7 +32,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs, cPickle
+import codecs
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from .trie import Trie
 

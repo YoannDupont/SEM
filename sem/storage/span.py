@@ -35,6 +35,8 @@ try:
 except ImportError:
     from xml.etree.ElementTree import ElementTree as ET
 
+from sem.misc import is_string
+
 class Span(object):
     """
     The Span object.
@@ -55,7 +57,10 @@ class Span(object):
         return self.lb == span.lb and self.ub == span.ub
     
     def __contains__(self, i):
-        return self._lb <= i and i < self.ub
+        try:
+            return self._lb <= i and i < self._ub
+        except TypeError:
+            return (self.lb <= i.lb) and (i.ub <= self.ub)
     
     def __len__(self):
         return self._ub - self._lb
@@ -84,7 +89,7 @@ class Span(object):
     
     @classmethod
     def fromXML(cls, xml):
-        if type(node) in (str, unicode):
+        if is_string(node):
             node = ET.fromstring(xml)
         else:
             node = xml

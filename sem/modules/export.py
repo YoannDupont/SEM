@@ -38,7 +38,7 @@ import time
 from datetime import timedelta
 
 import sem.importers
-import sem.misc
+from sem.misc import str2bool, is_string
 from .sem_module import SEMModule as RootModule
 
 from sem.IO.columnIO      import Reader
@@ -62,7 +62,7 @@ class SEMModule(RootModule):
         self._pos_column = pos_column
         self._chunk_column = chunk_column
         self._ner_column = ner_column
-        if type(exporter) in (str, unicode):
+        if is_string(exporter):
             export_logger.info('getting exporter {0}'.format(exporter))
             Exporter = get_exporter(exporter)
             self._exporter = Exporter(lang=self._lang, lang_style=self._lang_style)
@@ -132,7 +132,7 @@ def main(args):
         for option in import_options:
             key, value = option.split(u"=", 1)
             try:
-                value = sem.misc.str2bool(value)
+                value = str2bool(value)
             except ValueError:
                 pass
             options[key] = value
@@ -140,7 +140,7 @@ def main(args):
     else:
         options = import_options
     
-    infile_is_str = type(infile) in (str, unicode)
+    infile_is_str = is_string(infile)
     if infile_is_str:
         export_logger.info('loading input file')
         document = sem.importers.load(infile, logger=export_logger, **options)

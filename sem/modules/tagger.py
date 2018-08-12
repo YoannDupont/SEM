@@ -34,7 +34,11 @@ import codecs
 import logging
 import os
 import shutil
-import ConfigParser
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 try:
     from xml.etree import cElementTree as ET
@@ -72,7 +76,7 @@ def get_option(cfg, section, option, default=None):
 def get_section(cfg, section):
     try:
         return dict(cfg.items(section))
-    except ConfigParser.NoSectionError:
+    except configparser.NoSectionError:
         return {}
 
 def load_master(master, force_format="default"):
@@ -83,7 +87,7 @@ def load_master(master, force_format="default"):
         root = ET.fromstring(master)
     xmlpipes, xmloptions = list(root)
     
-    options = ConfigParser.RawConfigParser()
+    options = configparser.RawConfigParser()
     exporter = None
     couples = {}
     for xmloption in xmloptions:

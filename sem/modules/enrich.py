@@ -42,6 +42,7 @@ from .sem_module import SEMModule as RootModule
 from sem.information import Informations
 from sem.IO import KeyReader, KeyWriter
 from sem.logger import default_handler, file_handler
+from sem.misc import is_string
 
 import os.path
 enrich_logger = logging.getLogger("sem.{0}".format(os.path.basename(__file__).split(".")[0]))
@@ -54,7 +55,7 @@ class SEMModule(RootModule):
         self._mode = mode
         self._source = informations
         
-        if type(informations) in (str, unicode):
+        if is_string(informations):
             enrich_logger.info('loading {0}'.format(informations))
             self._informations = Informations(self._source, mode=self._mode)
         else:
@@ -70,7 +71,7 @@ class SEMModule(RootModule):
     
     @mode.setter
     def mode(self, mode):
-        if type(self._source) not in (str, unicode):
+        if not is_string(self._source):
             raise RuntimeError("cannot change mode for Enrich module: source for informations is not a file.")
         self._mode = mode
         enrich_logger.info('loading {0}'.format(self._source))

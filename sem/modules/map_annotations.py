@@ -39,7 +39,7 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 
-import sem.misc
+from sem.misc import is_string
 
 from sem.storage import Document, Annotation, Tag
 from sem.logger import default_handler, file_handler
@@ -52,7 +52,7 @@ class SEMModule(RootModule):
     def __init__(self, mapping, annotation_name, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
-        if type(mapping) in (str, unicode):
+        if is_string(mapping):
             self._mapping = compile_map(mapping, "utf-8")
         else:
             self._mapping = mapping
