@@ -34,6 +34,7 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 import sem.wapiti
+from sem import PY2
 
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
@@ -55,20 +56,38 @@ except ImportError:
 class SEMModule(RootModule):
     def __init__(self, model, field, annotation_fields=None, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+        expected_mode = kwargs.get("expected_mode", self.pipeline_mode)
         
         self._model = model
         self._field = field
         self._annotation_fields = annotation_fields
         
         if wapiti_api:
-            check_model_available(model, logger=wapiti_label_logger)
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            if self.pipeline_mode == "all" or expected_mode in ("all", self.pipeline_mode):
+                check_model_available(model, logger=wapiti_label_logger)
+                self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            else:
+                self._wapiti_model = None
             self._label_document = self._label_doc_as_wrapper
         else:
             self._label_document = self._label_doc_as_cl
     
+    @property
+    def field(self):
+        return self._field
+    
+    @property
+    def model(self):
+        return self._model
+    
+    def check_mode(self, expected_mode):
+        if (not self._wapiti_model) and self.pipeline_mode == expected_mode:
+            check_model_available(model, logger=wapiti_label_logger)
+            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+    
     def process_document(self, document, encoding="utf-8", **kwargs):
         """
+        Annotate document with Wapiti.
         
         Parameters
         ----------
@@ -98,13 +117,16 @@ class SEMModule(RootModule):
             self._label_document(document, encoding)
         
         laps = time.time() - start
-        wapiti_label_logger.info('in {0}'.format(timedelta(seconds=laps)))
+        wapiti_label_logger.info('in %s', timedelta(seconds=laps))
     
     def _label_doc_as_cl(self, document, encoding="utf-8"):
         sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
     
     def _label_doc_as_wrapper(self, document, encoding="utf-8"):
-        fields = self._annotation_fields or document.corpus.fields
+        if self._annotation_fields:
+            fields = [document.corpus.entry(field) for field in self._annotation_fields]
+        else:
+            fields = document.corpus.fields
         tags = []
         for sequence in document.corpus:
             tagging = self._tag_as_wrapper(sequence, fields)
@@ -113,7 +135,10 @@ class SEMModule(RootModule):
         document.add_annotation_from_tags(tags, self._field, self._field)
     
     def _tag_as_wrapper(self, sequence, fields, encoding="utf-8"):
-        seq_str = u"\n".join([u"\t".join([unicode(token[field]) for field in fields]) for token in sequence]).encode(encoding)
+        if PY2:
+            seq_str = u"\n".join([u"\t".join([unicode(token[field]) for field in fields]) for token in sequence]).encode(encoding)
+        else:
+            seq_str = u"\n".join([u"\t".join([str(token[field]) for field in fields]) for token in sequence]).encode(encoding)
         s = self._wapiti_model.label_sequence(seq_str).decode(encoding)
         return s.strip().split(u"\n")
 

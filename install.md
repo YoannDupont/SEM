@@ -1,6 +1,6 @@
 # Install SEM on Linux
 
-# Python
+## Python
 
 ### Install setuptools
 
@@ -16,17 +16,17 @@ Run: ```apt install python-tk```
 
 Run: ```apt install build-essential```
 
-# launch SEM installer
+# Launch SEM installer
 
 Go to SEM folder and launch the command :
 
-```python .\setup.py install --user```
+```python ./setup.py install --user```
 
 # Install SEM on Windows
 
 ## Python
 
-### install python
+### Install python
 
 Install the most recent python 2.7 possible : [python2.7.15](https://www.python.org/downloads/release/python-2715/)
 - [32 bits installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi)
@@ -56,8 +56,12 @@ by
 
 Note: to compile Wapiti on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ```ext/src/wapiti.h```
 
-## launch SEM installer
+## Launch SEM installer
 
 Go to SEM folder and launch the command :
 
 ```python .\setup.py install```
+
+# Using the python-wapiti wrapper in SEM
+
+Simply go to [this link](https://github.com/adsva/python-wapiti) and follow the instructions. SEM will automatically use the wrapper if it is installed. You will not need to modify the configuration files.

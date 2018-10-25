@@ -29,10 +29,11 @@ SOFTWARE.
 from __future__ import print_function
 
 import codecs
-import re
+import glob
 import logging
-import sys
 import os
+import re
+import sys
 
 try:
     import Tkinter as tkinter
@@ -66,13 +67,16 @@ except ImportError:
 
 import sem
 from sem.constants import NUL
+from sem.misc import documents_from_list
 from sem.storage.document import Document, SEMCorpus
 from sem.storage.annotation import Tag, Annotation
 from sem.logger import extended_handler
 import sem.importers
 from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder2
-from sem.gui.components import SEMTkTrainInterface, SemTkFileSelector, SearchFrame
+from sem.gui.components import SEMTkTrainInterface, SearchFrame
+from sem.gui.components import SemTkMasterSelector, SemTkLangSelector # TODO: remove
 from sem.storage.annotation import str2filter
+import sem.modules.tagger
 
 annotation_gui_logger = logging.getLogger("sem.annotation_gui")
 annotation_gui_logger.addHandler(extended_handler)
@@ -98,7 +102,7 @@ def check_in_tagset(tag, tagset):
     return ok
 
 class AnnotationTool(tkinter.Frame):
-    def __init__(self, parent, log_level, *args, **kwargs):
+    def __init__(self, parent, log_level, documents=None, tagset=None, *args, **kwargs):
         tkinter.Frame.__init__(self, parent, *args, **kwargs)
         
         annotation_gui_logger.setLevel(log_level)
@@ -117,7 +121,7 @@ class AnnotationTool(tkinter.Frame):
         self.annotations_tick = 0
         
         self.shortcuts = [
-            ["Ctrl+o", ["open file", self.openfile], [[self, True]]], # True = bind_all
+            ["Ctrl+o", ["open file", self.openfile_gui], [[self, True]]], # True = bind_all
             ["Ctrl+Shift+o", ["open url", self.openurl], [[self, True]]], # True = bind_all
             ["Ctrl+s", ["save", self.save], [[self, True]]], # True = bind_all
             ["Ctrl+t", ["train", self.train], [[self, True]]], # True = bind_all
@@ -133,22 +137,25 @@ class AnnotationTool(tkinter.Frame):
         self.global_menu = tkinter.Menu(self.parent)
         # file menu
         self.file_menu = tkinter.Menu(self.global_menu, tearoff=False)
-        self.global_menu.add_cascade(label="File", menu=self.file_menu)
-        self.file_menu.add_command(label="Open...", command=self.openfile, accelerator="Ctrl+O")
-        self.file_menu.add_command(label="Open url...", command=self.openurl, accelerator="Ctrl+Shift+O")
-        self.file_menu.add_command(label="Save to...", command=self.save, accelerator="Ctrl+S")
+        self.global_menu.add_cascade(label="File", underline=0, menu=self.file_menu)
+        self.file_menu.add_command(label="Open...", underline=0, command=self.openfile_gui, accelerator="Ctrl+O")
+        self.file_menu.add_command(label="Open url...", underline=5, command=self.openurl, accelerator="Ctrl+Shift+O")
+        self.file_menu.add_command(label="Save to...", underline=0, command=self.save, accelerator="Ctrl+S")
         self.saveas_menu = tkinter.Menu(self.file_menu, tearoff=False)
-        self.file_menu.add_cascade(label="Save as...", menu=self.saveas_menu)
-        self.saveas_menu.add_command(label="BRAT corpus", command=self.save_brat)
-        self.saveas_menu.add_command(label="GATE corpus", command=self.save_gate)
-        self.saveas_menu.add_command(label="TEI ANALEC corpus", command=self.save_tei_analec)
-        self.saveas_menu.add_command(label="TEI REDEN corpus", command=self.save_tei_reden)
-        self.saveas_menu.add_command(label="JSON corpus", command=self.save_json)
+        self.file_menu.add_cascade(label="Save as...", underline=5, menu=self.saveas_menu)
+        self.saveas_menu.add_command(label="BRAT corpus", underline=0, command=self.save_brat)
+        self.saveas_menu.add_command(label="GATE corpus", underline=0, command=self.save_gate)
+        self.saveas_menu.add_command(label="TEI ANALEC corpus", underline=4, command=self.save_tei_analec)
+        self.saveas_menu.add_command(label="TEI REDEN corpus", underline=4, command=self.save_tei_reden)
+        self.saveas_menu.add_command(label="JSON corpus", underline=0, command=self.save_json)
         self.file_menu.entryconfig("Save to...", state=tkinter.DISABLED)
         self.file_menu.entryconfig("Save as...", state=tkinter.DISABLED)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="load tagset...", underline=5, command=self.load_tagset_gui)
+        self.file_menu.add_command(label="Load master...", underline=5, command=self.load_pipeline)
         # edit menu
         self.edit_menu = tkinter.Menu(self.global_menu, tearoff=False)
-        self.global_menu.add_cascade(label="Edit", menu=self.edit_menu)
+        self.global_menu.add_cascade(label="Edit", underline=0, menu=self.edit_menu)
         self.edit_menu.add_command(label="Preferences...", command=self.preferences)
         # ? menu
         self.qm_menu = tkinter.Menu(self.global_menu, tearoff=False)
@@ -163,7 +170,7 @@ class AnnotationTool(tkinter.Frame):
         self.SPARE_COLORS_DEFAULT.extend([{"background":"#DDFFDD", "foreground":"#008800"}, {"background":"#CCCCFF", "foreground":"#0000FF"}, {"background":"#CCEEEE", "foreground":"#008888"}, {"background":"#FFCCCC", "foreground":"#FF0000"}]) # at the end for "pop"
         self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         
-        self.bind_all("<Control-o>", self.openfile)
+        self.bind_all("<Control-o>", self.openfile_gui)
         self.bind_all("<Control-O>", self.openurl)
         self.bind_all("<Control-s>", self.save)
         self.bind_all("<Control-t>", self.train)
@@ -187,8 +194,12 @@ class AnnotationTool(tkinter.Frame):
         self.train_btn.pack(side="left")
         self.train_btn.configure(state=tkinter.DISABLED)
 
-        self.load_tagset_btn = ttk.Button(self.toolbar, text="load tagset", command=self.load_tagset_gui)
-        self.load_tagset_btn.pack(side="left")
+        self.tag_document_btn = ttk.Button(self.toolbar, text="tag document", command=self.tag_document)
+        self.tag_document_btn.pack(side="left")
+        self.tag_document_btn.configure(state=tkinter.DISABLED)
+
+        #self.load_tagset_btn = ttk.Button(self.toolbar, text="load tagset", command=self.load_tagset_gui)
+        #self.load_tagset_btn.pack(side="left")
 
         self.type_combos = []
         self.add_type_lbls = []
@@ -258,6 +269,20 @@ class AnnotationTool(tkinter.Frame):
         self.wikinews_format = tkinter.BooleanVar()
         self.wikinews_format.set(False)
         
+        self.pipeline = None
+        
+        if tagset:
+            self.load_tagset(tagset)
+        if documents:
+            doc_list = []
+            for doc in documents:
+                doc_list.extend(glob.glob(doc))
+            self.openfile(doc_list)
+            ident = self.corpus_doc2id[self.corpus_documents[0].name]
+            self.corpus_tree.selection_set(ident)
+            self.corpus_tree.focus(ident)
+            self.corpus_tree.see(ident)
+            self.load_document()
         #skip_auth=> self.auth()
     
     @property
@@ -383,10 +408,7 @@ class AnnotationTool(tkinter.Frame):
     # file menu methods
     #
     
-    def openfile(self, event=None):
-        filenames = tkinter.filedialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")), ("text files", ".txt"), ("BRAT files", (".txt", ".ann")), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
-        if filenames == []: return
-        
+    def openfile(self, filenames):
         chunks_to_load = ([self.annotation_name] if self.annotation_name else None)
         
         documents = []
@@ -403,7 +425,7 @@ class AnnotationTool(tkinter.Frame):
                     for annotation_name in documents[-1].annotations.keys():
                         documents[-1].add_annotation(Annotation(annotation_name, reference=None, annotations=documents[-1].annotation(annotation_name).get_reference_annotations()))
             else:
-                documents.append(sem.importers.load(filename, encoding="utf-8"))
+                documents.append(sem.importers.load(filename, encoding="utf-8", tagset_name=self.annotation_name))
         
         if documents == []: return
         
@@ -414,7 +436,7 @@ class AnnotationTool(tkinter.Frame):
         if not added:
             return
         
-        self.load_document(document)
+        self.load_document()
         
         self.train_btn.configure(state=tkinter.NORMAL)
         self.file_menu.entryconfig("Save to...", state=tkinter.NORMAL)
@@ -422,6 +444,11 @@ class AnnotationTool(tkinter.Frame):
         if self.adder is not None:
             self.adder.current_hierarchy_level = 0
             self.update_level()
+    
+    def openfile_gui(self, event=None):
+        filenames = tkinter.filedialog.askopenfilenames(filetypes=[("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")), ("text files", ".txt"), ("BRAT files", (".txt", ".ann")), ("SEM XML files", ("*.sem.xml", ".sem")), ("All files", ".*")])
+        if filenames == []: return
+        self.openfile(filenames)
     
     def openurl(self, event=None):
         import urllib
@@ -439,7 +466,7 @@ class AnnotationTool(tkinter.Frame):
             added = self.add_document(document)
             if not added: return
             
-            self.load_document(document)
+            self.load_document()
             
             self.train_btn.configure(state=tkinter.NORMAL)
             self.file_menu.entryconfig("Save to...", state=tkinter.NORMAL)
@@ -498,7 +525,7 @@ class AnnotationTool(tkinter.Frame):
             corpus.write(O)
     
     def save_as_format(self, output_directory, fmt):
-        if output_directory == u"": return
+        if not output_directory: return
         
         if self.doc_is_modified:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
@@ -619,10 +646,11 @@ class AnnotationTool(tkinter.Frame):
     def handle_char(self, event):
         if self.adder is None:
             return
-        try:
-            self.text.index("sel.first")
-        except tkinter.TclError:
-            return
+        if not self.adder.current_annotation:
+            try:
+                self.text.index("sel.first")
+            except tkinter.TclError:
+                return
         
         the_type = self.adder.type_from_letter(event.keysym)
         the_type = the_type or self.adder.type_from_letter(event.keysym.lower())
@@ -771,7 +799,6 @@ class AnnotationTool(tkinter.Frame):
         if len(annotations) == 0 or prev_selection != self.adder.current_annotation:
             self.adder.current_hierarchy_level = 0
             self.update_level()
-        
     
     def locate_tree_item(self):
         if self.adder.current_annotation is None:
@@ -911,21 +938,21 @@ class AnnotationTool(tkinter.Frame):
         else:
             id = self.corpus_tree.insert("", len(self.corpus_tree.get_children()), text=document.name)
             self.corpus_id2doc[id] = document
-            self.corpus_id2doc[document.name] = id
+            self.corpus_doc2id[document.name] = id
             self.corpus_documents.append(document)
             self.corpus_tree.selection_set(id)
             self.corpus_tree.focus(id)
             self.corpus_tree.see(id)
         return not found
     
-    def load_document(self, event=None):
+    def load_document(self, event=None, same_doc=False):
         try:
             selection = self.corpus_tree.selection()[0]
         except IndexError:
             return
         
         document = self.corpus_id2doc[selection]
-        if self.doc is None or document.name != self.doc.name:
+        if self.doc is None or (document.name != self.doc.name or same_doc):
             if self.doc is not None and self.doc_is_modified:
                 update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
             
@@ -979,9 +1006,17 @@ class AnnotationTool(tkinter.Frame):
                             self.doc.annotation(self.annotation_name)[nth_annot].setLevel(0, annot.value)
         self.doc_is_modified = False
     
-    def load_tagset(self, tagset, tagset_name):
+    def load_tagset(self, filename):
         if self.doc and self.doc_is_modified:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
+        
+        tagset_name = os.path.splitext(os.path.basename(filename))[0]
+        tagset = []
+        with codecs.open(filename, "rU", "utf-8") as I:
+            for line in I:
+                tagset.append(line.strip())
+        tagset = [tag.split(u"#",1)[0] for tag in tagset]
+        tagset = [tag for tag in tagset if tag != u""]
         
         self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         self.annotation_name = tagset_name
@@ -1034,28 +1069,60 @@ class AnnotationTool(tkinter.Frame):
         
         if len(filename) == 0: return
         
-        tagset_name = os.path.splitext(os.path.basename(filename))[0]
-        tagset = []
-        with codecs.open(filename, "rU", "utf-8") as I:
-            for line in I:
-                tagset.append(line.strip())
-        tagset = [tag.split(u"#",1)[0] for tag in tagset]
-        tagset = [tag for tag in tagset if tag != u""]
-        
-        self.load_tagset(tagset, tagset_name)
+        self.load_tagset(filename)
     
     def find_in_text(self, event=None):
         self.search.find_in_text(event=event)
+    
+    def load_pipeline(self, event=None):
+        top = tkinter.Toplevel()
+        master_selector = SemTkMasterSelector(top, os.path.join(sem.SEM_DATA_DIR, "resources"))
+        lang_selector = SemTkLangSelector(top, os.path.join(sem.SEM_DATA_DIR, "resources"))
+        lang_selector.master_selector = master_selector
+        vars_cur_row = 0
+        vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
+        vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
+        
+        def cancel(event=None):
+            if self.pipeline is not None:
+                self.tag_document_btn.configure(state=tkinter.NORMAL)
+            top.destroy()
+        def ok(event=None):
+            path = master_selector.workflow()
+            pipeline, _, _, _ = sem.modules.tagger.load_master(path)
+            self.pipeline = pipeline
+            cancel()
+        
+        ok_btn = ttk.Button(top, text="load workflow", command=ok)
+        ok_btn.grid(row=vars_cur_row, column=0)
+        cancel_btn = ttk.Button(top, text="cancel", command=cancel)
+        cancel_btn.grid(row=vars_cur_row, column=1)
+    
+    def tag_document(self, event=None):
+        if self.pipeline is None:
+            return
+        
+        self.pipeline.process_document(self.doc)
+        self.doc_is_modified = True
+        for key in self.doc.annotations:
+            annotation = self.doc.annotation(key)
+            self.doc.add_annotation(Annotation(annotation.name, annotations=annotation.get_reference_annotations()))
+        self.current_annotations = self.doc.annotation(self.annotation_name)
+        self.load_document(same_doc=True)
 
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0], description="An annotation tool for SEM.")
 
+parser.add_argument("-d", "--documents", nargs="*",
+                    help="Documents to load at startup.")
+parser.add_argument("-t", "--tagset",
+                    help="The tagser to load at startup.")
 parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WARNING","ERROR","CRITICAL"), default="WARNING",
                     help="Increase log level (default: %(default)s)")
 
 def main(args):
     root = tkinter.Tk()
     root.title("SEM")
-    AnnotationTool(root, args.log_level).pack(expand=1, fill="both")
+    AnnotationTool(root, args.log_level, documents=args.documents, tagset=args.tagset).pack(expand=1, fill="both")
     root.mainloop()

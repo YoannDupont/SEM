@@ -3,6 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{biblio.bib}
 
 \usepackage[usenames,dvipsnames]{color}
 
@@ -247,6 +249,5 @@
         \label{subsec:use-new-model}
         \subfile{en/retrain-sem/use-new-model}
     
-    \bibliographystyle{apa}
-    \bibliography{biblio}
+    \printbibliography
 \end{document}

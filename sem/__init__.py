@@ -64,7 +64,7 @@ On a more NLP side, such changes could also include a change in corpora used in 
 If this number is incremented, _version_minor and _version_patch are to be reseted to 0.
 """
 
-_version_minor = 2
+_version_minor = 3
 u"""
 The minor version number.
 Is only incremented when medium changes are made to the program.
@@ -163,7 +163,6 @@ _external_resources = [
 _planned_changes = [
                         [u'Add a tutorial. Some of it done in section "retrain SEM" in manual.', []],
                         [u"add lemmatiser.", []],
-                        [u"migration to python3 (already made for revision 39 by lerela).", []],
                         [u'have more unit tests', []],
                         [
                             "improve segmentation",

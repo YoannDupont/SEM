@@ -33,6 +33,7 @@ import sys, codecs, logging, re
 from .sem_module import SEMModule as RootModule
 
 from sem.storage import Tag, Trie
+from sem.storage.annotation import chunk_annotation_from_sentence
 
 from sem.IO.columnIO import Reader
 
@@ -198,49 +199,22 @@ def detect_abbreviations(document, field):
     document.add_annotation_from_tags(all_tags, field, field)
 
 
-def compile_chunks(sentence, column=-1):
-    entity_chunks = []
-    label         = u""
-    start         = -1
-    for index, token in enumerate(sentence):
-        ne = token[column]
-        
-        if ne == "O":
-            if label:
-                entity_chunks.append([label, start, index])
-                label = u""
-                start = -1
-        elif ne[0] == "B":
-            if label:
-                entity_chunks.append([label, start, index])
-            start = index
-            label = ne[2:]
-        elif ne[0] == "I":
-            None
-        else:
-            raise ValueError(ne)
-    if label:
-        entity_chunks.append([label, start, len(sentence)])
-        label = u""
-        start = -1
-    
-    return entity_chunks
-
 class LabelConsistencyFeature(MultiwordDictionaryFeature):
     def __init__(self, form2entity, ne_entry, *args, **kwargs):
         super(LabelConsistencyFeature, self).__init__(*args, **kwargs)
         self._form2entity = form2entity
         self._ne_entry = ne_entry
     
-    def __call__(self, list2dict, *args, **kwargs):
-        l           = [t[self._ne_entry][:] for t in list2dict]
+    def __call__(self, list2dict, token_entry=None, annot_entry=None, *args, **kwargs):
+        ne_entry    = (annot_entry if annot_entry is not None else self._ne_entry)
+        l           = [t[ne_entry][:] for t in list2dict]
         form2entity = self._form2entity
         tmp         = self._value._data
         length      = len(list2dict)
         fst         = 0
         lst         = -1 # last match found
         cur         = 0
-        entry       = self._entry
+        entry       = (token_entry if token_entry is not None else self._entry)
         ckey        = None  # Current KEY
         while fst < length - 1:
             cont = True
@@ -282,7 +256,7 @@ class OverridingLabelConsistencyFeature(LabelConsistencyFeature):
     It can change CRF entities if it finds a wider one.
     Gives lower results on FTB
     """
-    def __call__(self, list2dict, *args, **kwargs):
+    def __call__(self, list2dict, token_entry=None, annot_entry=None, *args, **kwargs):
         l           = [u"O" for _ in range(len(list2dict))]
         form2entity = self._form2entity
         tmp         = self._value._data
@@ -290,7 +264,7 @@ class OverridingLabelConsistencyFeature(LabelConsistencyFeature):
         fst         = 0
         lst         = -1 # last match found
         cur         = 0
-        entry       = self._entry
+        entry       = (token_entry if token_entry is not None else self._entry)
         ckey        = None  # Current KEY
         entities    = []
         while fst < length - 1:
@@ -309,7 +283,7 @@ class OverridingLabelConsistencyFeature(LabelConsistencyFeature):
             
             if lst != -1:
                 form = u" ".join([list2dict[i][entry] for i in range(fst, lst)])
-                entities.append([form2entity[form], fst, lst])
+                entities.append(Tag(form2entity[form], fst, lst))
                 fst = lst
                 cur = fst
             else:
@@ -320,28 +294,29 @@ class OverridingLabelConsistencyFeature(LabelConsistencyFeature):
             lst = -1
         
         if NUL in self._value._data.get(list2dict[-1][entry], []):
-            entities.append([form2entity[list2dict[-1][entry]], len(list2dict)-1, len(list2dict)])
+            entities.append(Tag(form2entity[list2dict[-1][entry]], len(list2dict)-1, len(list2dict)))
         
-        gold = compile_chunks(list2dict, self._ne_entry)
+        ne_entry = (annot_entry if annot_entry is not None else self._ne_entry)
+        gold = chunk_annotation_from_sentence(list2dict, ne_entry).annotations
         
         for i in reversed(range(len(entities))):
             e = entities[i]
             for r in gold:
-                if (r[1] == e[1] and r[2] == e[2]):
+                if (r.lb == e.lb and r.ub == e.ub):
                     del entities[i]
                     break
         
         for i in reversed(range(len(gold))):
             r = gold[i]
             for e in entities:
-                if (r[1] >= e[1] and r[2] <= e[2]):
+                if (r.lb >= e.lb and r.ub <= e.ub):
                     del gold[i]
                     break
         
         for r in gold + entities:
-            appendice = u"-" + r[0]
-            l[r[1]] = u"B" + appendice
-            for i in range(r[1]+1,r[2]):
+            appendice = u"-" + r.value
+            l[r.lb] = u"B" + appendice
+            for i in range(r.lb+1,r.ub):
                 l[i] = u"I" + appendice
         
         return l
@@ -366,10 +341,10 @@ class SEMModule(RootModule):
         entities = {}
         counts   = {}
         for p in corpus:
-            G = compile_chunks(p, column=field)
+            G = chunk_annotation_from_sentence(p, column=field)
             for entity in G:
-                id   = entity[0]
-                form = u" ".join([p[index][token_field] for index in range(entity[1], entity[2])])
+                id   = entity.value
+                form = u" ".join([p[index][token_field] for index in range(entity.lb, entity.ub)])
                 if form not in counts:
                     counts[form] = {}
                 if id not in counts[form]:
@@ -392,7 +367,7 @@ class SEMModule(RootModule):
                 self._feature._value.add(entry.split())
         
         for p in corpus:
-            for i, value in enumerate(self._feature(p)):
+            for i, value in enumerate(self._feature(p, token_entry=token_field, annot_entry=field)):
                 p[i][field] = value
         
         tags = [[token[field] for token in sentence] for sentence in corpus]
@@ -409,10 +384,10 @@ def main(args):
     entities = {}
     counts   = {}
     for p in Reader(args.infile, ienc):
-        G = compile_chunks(p, column=args.tag_column)
+        G = chunk_annotation_from_sentence(p, column=args.tag_column)
         for entity in G:
-            id   = entity[0]
-            form = u" ".join([p[index][args.token_column] for index in range(entity[1], entity[2])])
+            id   = entity.value
+            form = u" ".join([p[index][args.token_column] for index in range(entity.lb, entity.ub)])
             if form not in counts:
                 counts[form] = {}
             if id not in counts[form]:

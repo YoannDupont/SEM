@@ -61,6 +61,12 @@ class Exporter(DefaultExporter):
             if "chunking" in lower: fields.append(lower["chunking"])
             if "ner" in lower:      fields.append(lower["ner"])
             
+            for field in fields:
+                if field not in document.corpus:
+                    if logger is not None:
+                        logger.warn('field "%s" not in corpus, adding', field)
+                    document.add_to_corpus(field)
+            
             return document.corpus.unicode(fields)
     
     def corpus_to_unicode(self, corpus, couples, **kwargs):

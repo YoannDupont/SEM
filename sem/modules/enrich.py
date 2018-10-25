@@ -37,29 +37,44 @@ import logging
 import time
 from datetime import timedelta
 
+try:
+    from xml.etree.cElementTree import ElementTree, tostring as element2string
+except ImportError:
+    from xml.etree.ElementTree import ElementTree, tostring as element2string
+
 from .sem_module import SEMModule as RootModule
 
-from sem.information import Informations
+from sem.features import XML2Feature
 from sem.IO import KeyReader, KeyWriter
 from sem.logger import default_handler, file_handler
 from sem.misc import is_string
+from sem.importers import conll_file
+from sem.storage import Entry
 
 import os.path
 enrich_logger = logging.getLogger("sem.{0}".format(os.path.basename(__file__).split(".")[0]))
 enrich_logger.addHandler(default_handler)
 
 class SEMModule(RootModule):
-    def __init__(self, informations, mode=u"label", log_level="WARNING", log_file=None, **kwargs):
+    def __init__(self, path=None, bentries=None, aentries=None, features=None, mode=u"label", log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         
-        self._mode = mode
-        self._source = informations
+        self._mode     = mode
+        self._source   = path
+        self._bentries = [] # informations that are before newly added information
+        self._aentries = [] # informations that are after ...
+        self._features = [] # informations that are added
+        self._names    = set()
+        self._x2f      = None # the feature parser, initialised in parse
         
-        if is_string(informations):
-            enrich_logger.info('loading {0}'.format(informations))
-            self._informations = Informations(self._source, mode=self._mode)
+        if self._source is not None:
+            enrich_logger.info(u'loading %s', self._source)
+            self._parse(self._source)
         else:
-            self._informations = self._source
+            self._bentries = ([entry for entry in bentries if entry.has_mode(self._mode)] if bentries else self._bentries)
+            self._aentries = ([entry for entry in aentries if entry.has_mode(self._mode)] if aentries else self._aentries)
+            self._features = features
+            self._names = set([entry.name for entry in self._aentries + self._bentries])
     
     @property
     def informations(self):
@@ -74,8 +89,20 @@ class SEMModule(RootModule):
         if not is_string(self._source):
             raise RuntimeError("cannot change mode for Enrich module: source for informations is not a file.")
         self._mode = mode
-        enrich_logger.info('loading {0}'.format(self._source))
-        self._informations = Informations(self._source, mode=self._mode)
+        enrich_logger.info(u'loading %s', self._source)
+        self._parse(self._source)
+    
+    @property
+    def bentries(self):
+        return self._bentries
+    
+    @property
+    def aentries(self):
+        return self._aentries
+    
+    @property
+    def features(self):
+        return self._features
     
     def process_document(self, document, **kwargs):
         """
@@ -100,25 +127,93 @@ class SEMModule(RootModule):
             enrich_logger.addHandler(file_handler(self._log_file))
         enrich_logger.setLevel(self._log_level)
         
-        informations = self._informations
-        missing_fields = set([I.name for I in informations.bentries + informations.aentries]) - set(document.corpus.fields)
+        missing_fields = set([I.name for I in self.bentries + self.aentries]) - set(document.corpus.fields)
         
         if len(missing_fields) > 0:
             raise ValueError("Missing fields in input corpus: {0}".format(u",".join(sorted(missing_fields))))
         
-        enrich_logger.debug('enriching file "{0}"'.format(document.name))
+        enrich_logger.info(u'enriching file "%s"', document.name)
         
-        new_fields = [feature.name for feature in informations.features if feature.display]
+        new_fields = [feature.name for feature in self.features if feature.display]
         document.corpus.fields += new_fields
         nth = 0
-        for i, sentence in enumerate(informations.enrich(document.corpus)):
+        for i, p in enumerate(document.corpus):
+            for feature in self.features:
+                if feature.is_sequence:
+                    for i, value in enumerate(feature(p)):
+                        p[i][feature.name] = value
+                else:
+                    for i in range(len(p)):
+                        p[i][feature.name] = feature(p, i)
+                        if feature.is_boolean:
+                            p[i][feature.name] = int(p[i][feature.name])
+                        elif p[i][feature.name] is None:
+                            p[i][feature.name] = feature.default()
             nth += 1
             if (0 == nth % 1000):
-                enrich_logger.debug('{0} sentences enriched'.format(nth))
-        enrich_logger.debug('{0} sentences enriched'.format(nth))
+                enrich_logger.debug(u'%i sentences enriched', nth)
+        enrich_logger.debug(u'%i sentences enriched', nth)
         
         laps = time.time() - start
-        enrich_logger.info("done in {0}".format(timedelta(seconds=laps)))
+        enrich_logger.info(u"done in %s", timedelta(seconds=laps))
+    
+    def _parse(self, filename):
+        def check_entry(entry_name):
+            if entry_name in self._names:
+                raise ValueError('Duplicated column name: "{}"'.format(entry_name))
+            else:
+                self._names.add(entry_name)
+        
+        parsing = ElementTree()
+        parsing.parse(filename)
+        
+        children = parsing.getroot().getchildren()
+        
+        if len(children) != 2: raise RuntimeError("Enrichment file requires exactly 2 fields, {0} given.".format(len(children)))
+        else:
+            if children[0].tag != "entries":
+                raise RuntimeError('Expected "entries" as first field, got "{0}".'.format(children[0].tag))
+            if children[1].tag != "features":
+                raise RuntimeError('Expected "features" as second field, got "{0}".'.format(children[1].tag))
+        
+        entries = list(children[0])
+        if len(entries) not in (1,2):
+            raise RuntimeError("Entries takes exactly 1 or 2 fields, {0} given".format(len(entries)))
+        else:
+            entry1 = entries[0].tag.lower()
+            entry2 = (entries[1].tag.lower() if len(entries)==2 else None)
+            if entry1 not in ("before", "after"):
+                raise RuntimeError('For entry position, expected "before" or "after", got "{0}".'.format(entry1))
+            if entry2 and entry2 not in ("before", "after"):
+                raise RuntimeError('For entry position, expected "before" or "after", got "{0}".'.format(entry2))
+            if entry1 == entry2:
+                raise RuntimeError('Both entry positions are the same, they should be different')
+        
+        for entry in entries:
+            for c in entry.getchildren():
+                current_entry = Entry.fromXML(c)
+                check_entry(current_entry.name)
+                if entry.tag == "before" and current_entry.has_mode(self._mode):
+                    self._bentries.append(current_entry)
+                elif entry.tag == "after" and current_entry.has_mode(self._mode):
+                    self._aentries.append(current_entry)
+        
+        self._x2f = XML2Feature(self.bentries + self.aentries, path=filename)
+        
+        features = list(children[1])
+        del self._features[:]
+        for feature in features:
+            self._features.append(self._x2f.parse(feature))
+            if self._features[-1].name is None:
+                try:
+                    raise ValueError("Nameless feature found.")
+                except ValueError as exc:
+                    for line in element2string(feature).rstrip().split("\n"):
+                        xml2feature_logger.error(line.strip())
+                    xml2feature_logger.exception(exc)
+                    raise
+            check_entry(self._features[-1].name)
+
 
 def main(args):
     """
@@ -147,26 +242,24 @@ def main(args):
     if args.log_file is not None:
         enrich_logger.addHandler(file_handler(args.log_file))
     enrich_logger.setLevel(args.log_level)
-    enrich_logger.info('parsing enrichment file "{0}"'.format(args.infofile))
+    enrich_logger.info(u'parsing enrichment file "%s"', args.infofile)
     
-    informations = Informations(path=args.infofile, mode=args.mode)
+    processor = SEMModule(path=args.infofile, mode=args.mode)
     
-    enrich_logger.debug('enriching file "{0}"'.format(args.infile))
+    enrich_logger.debug(u'enriching file "%s"', args.infile)
     
-    bentries = [entry.name for entry in informations.bentries]
-    aentries = [entry.name for entry in informations.aentries]
-    features = [feature.name for feature in informations.features if feature.display]
+    bentries = [entry.name for entry in processor.bentries]
+    aentries = [entry.name for entry in processor.aentries]
+    features = [feature.name for feature in processor.features if feature.display]
+    document = from_conll(args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc)
+    
+    processor.process_document(document)
     with KeyWriter(args.outfile, args.oenc or args.enc, bentries + features + aentries) as O:
-        nth = 0
-        for p in informations.enrich(KeyReader(args.infile, args.ienc or args.enc, bentries + aentries)):
+        for p in document.corpus:
             O.write_p(p)
-            nth += 1
-            if (0 == nth % 1000):
-                enrich_logger.debug('{0} sentences enriched'.format(nth))
-        enrich_logger.debug('{0} sentences enriched'.format(nth))
     
     laps = time.time() - start
-    enrich_logger.info("done in {0}".format(timedelta(seconds=laps)))
+    enrich_logger.info(u"done in %s", timedelta(seconds=laps))
 
 
 

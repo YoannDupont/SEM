@@ -28,7 +28,7 @@ SOFTWARE.
 
 from .annotation import Tag, Annotation
 from .coder import Coder
-from .corpus import Corpus
+from .corpus import Entry, Corpus
 from .dictionaries import NUL, compile_token, compile_multiword, compile_map
 from .document import Document, SEMCorpus
 from .holder import Holder

@@ -35,7 +35,7 @@ import logging
 
 from xml.etree.ElementTree import ElementTree, tostring as element2string
 
-from sem.features import XML2Feature
+#from sem.features import XML2Feature
 from sem.logger import default_handler
 
 import os.path
@@ -160,43 +160,9 @@ class Informations(object):
     
     def check_entry(self, entry_name):
         if entry_name in self._names:
-            raise ValueError('Duplicated column name: "' + entry_name + '"')
+            raise ValueError('Duplicated column name: "{}"'.format(entry_name))
         else:
             self._names.add(entry_name)
-    
-    def enrich(self, keycorpus):
-        """
-        An iterator to enrich a corpus. It will go through the data and
-        generate features, one feature at a time. If the feature has the
-        is_sequence property, it be called once and enrich the whole
-        sentence. If a feature does not have the is_sequence property, it
-        will be called at each and every token.
-        
-        Parameters
-        ----------
-        keycorpus : list of list of dict / sem.storage.Corpus
-            the input data, contains an object representing CoNLL-formatted
-            data. Each token is a dict which works like TSV.
-        
-        Yields
-        ------
-        list of dict
-            the current sentence enriched with informations
-        """
-        
-        for p in keycorpus:
-            for feature in self.features:
-                if feature.is_sequence:
-                    for i, value in enumerate(feature(p)):
-                        p[i][feature.name] = value
-                else:
-                    for i in range(len(p)):
-                        p[i][feature.name] = feature(p, i)
-                        if feature.is_boolean:
-                            p[i][feature.name] = int(p[i][feature.name])
-                        elif p[i][feature.name] is None:
-                            p[i][feature.name] = feature.default()
-            yield p
     
     @property
     def bentries(self):

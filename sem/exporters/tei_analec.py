@@ -30,6 +30,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import codecs
+
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -71,7 +73,7 @@ class Exporter(DefaultExporter):
         teiCorpus = self.document_to_data(document, couples=couples)
         content = ET.tostring(teiCorpus, encoding="utf-8").decode("utf-8")
         if is_string(output):
-            with open(output, "w") as O:
+            with codecs.open(output, "w", "utf-8") as O:
                 O.write(u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
                 O.write(content)
         else:

@@ -75,7 +75,7 @@ class DirectoryFeature(Feature):
             if not (self.features[-1].is_boolean or self.features[-1].is_sequence or isinstance(self.features[-1], MapperFeature) or (isinstance(self.features[-1], TriggeredFeature) and isinstance(self.features[-1].operation, MapperFeature)) or (isinstance(self.features[-1], SubsequenceFeature))):
                 raise ValueError("In {0} feature: {1} is neither boolean nor sequence".format(self.name, name))
             if isinstance(self.features[-1], MultiwordDictionaryFeature):
-                self.features[-1]._appendice = u"-{0}".format(name)
+                self.features[-1]._appendice = self.features[-1]._appendice or u"-{0}".format(name)
     
     def __call__(self, list2dict, *args, **kwargs):
         data = [u"O"]*len(list2dict)

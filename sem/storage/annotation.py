@@ -35,6 +35,9 @@ from .span import Span
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 
 class Tag(object):
+    
+    __slots__ = ("_span", "_value", "levels", "ids")
+    
     def __init__(self, value, lb, ub, length=-1):
         self._span = Span(lb, ub, length=length)
         self._value = value
@@ -49,6 +52,9 @@ class Tag(object):
     
     def __str__(self):
         return "{0},{1}".format(self.value, self.span)
+    
+    def __unicode__(self):
+        return u"{0},{1}".format(self.value, self.span)
     
     @property
     def value(self):

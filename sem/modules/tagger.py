@@ -34,6 +34,7 @@ import codecs
 import logging
 import os
 import shutil
+import multiprocessing
 
 try:
     import ConfigParser as configparser
@@ -47,9 +48,9 @@ except importError:
 
 # measuring time laps
 import time
-from datetime import timedelta
-
 import os.path
+from datetime import timedelta
+from functools import partial
 
 import sem
 
@@ -66,7 +67,34 @@ import sem.misc
 
 sem_tagger_logger = logging.getLogger("sem.tagger")
 sem_tagger_logger.addHandler(default_handler)
+if sem.ON_WINDOWS:
+    sem_tagger_logger.warn("multiprocessing not handled on Windows. Documents will be processed sequentially.")
 
+__pipeline = None
+def process(document, exporter, output_directory, couples, encoding, lang_style):
+    """
+    The function used to allow multiprocessing of documents.
+    Note that multiprocessing will only work on Linux.
+    The function is written to work sequentially on Windows to avoid dupe.
+    """
+    __pipeline.process_document(document)
+    
+    if exporter is not None:
+        name = document.escaped_name()
+        if u"html" in exporter.extension():
+            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, u"css", u"tabs.css"), output_directory)
+            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, u"css", exporter._lang, lang_style), output_directory)
+        
+        shortname, ext = os.path.splitext(name)
+        out_path = os.path.join(output_directory, u"{0}.{1}".format(shortname, exporter.extension()))
+        if exporter.extension() == u"ann":
+            filename = shortname + u".txt"
+            with codecs.open(os.path.join(output_directory, filename), "w", encoding) as O:
+                O.write(document.content)
+        exporter.document_to_file(document, couples, out_path, encoding=encoding)
+        
+    return document
+    
 def get_option(cfg, section, option, default=None):
     try:
         return cfg.get(section, option)
@@ -79,9 +107,9 @@ def get_section(cfg, section):
     except configparser.NoSectionError:
         return {}
 
-def load_master(master, force_format="default"):
+def load_master(master, force_format="default", pipeline_mode="all"):
     try:
-        tree = ET.parse(master)
+        tree = ET.parse(os.path.abspath(master))
         root = tree.getroot()
     except IOError:
         root = ET.fromstring(master)
@@ -124,6 +152,7 @@ def load_master(master, force_format="default"):
             Class = get_module(xmlpipe.tag)
             classes[xmlpipe.tag] = Class
         arguments = {}
+        arguments["expected_mode"] = pipeline_mode
         for key, value in xmlpipe.attrib.items():
             if value.startswith(u"~/"):
                 value = os.path.expanduser(value)
@@ -139,7 +168,7 @@ def load_master(master, force_format="default"):
                     sem_tagger_logger.warn('Not adding already existing option: {0}'.format(key))
         sem_tagger_logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
-    pipeline = sem.modules.pipeline.Pipeline(pipes)
+    pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
     
     return pipeline, options, exporter, couples
 
@@ -151,16 +180,22 @@ def main(args):
     ----------
     masterfile : str
         the file containing the pipeline and global options
-    infile : str
-        the input for the upcoming pipe. Its base value is the file to
+    infiles : list
+        the input for the upcoming pipe. Its base value is the list of files to
         treat, it can be either "plain text" or CoNNL-formatted file.
     directory : str
         the directory where every file will be outputted.
+    n_procs : int
+        the number of processors to use to process documents.
+        f n_procs < 0, it will be set to 1, if n_procs == 0 it will be set
+        to cpu_count, and n_procs otherwise.
+        If n_procs is greater than the number of documents, it will be
+        adjusted.
     """
     
     start = time.time()
     
-    infile = args.infile
+    global __pipeline
     
     try:
         output_directory = args.output_directory
@@ -178,6 +213,7 @@ def main(args):
         couples = args.couples
     except AttributeError:
         pipeline, options, exporter, couples = load_master(args.master, force_format)
+    __pipeline = pipeline
     
     if get_option(options, "log", "log_file") is not None:
         sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
@@ -192,52 +228,50 @@ def main(args):
     ienc = get_option(options, "encoding", "input_encoding", "utf-8")
     oenc = get_option(options, "encoding", "output_encoding", "utf-8")
     
-    current_fields = None
-    # the fields at the current state (depends on enrichments and
-    # info cleaning). They will be used for wapiti
+    file_format = get_option(options, "file", "format", "guess")
+    opts = get_section(options, "file")
+    opts.update(get_section(options, "encoding"))
+    if file_format == "conll":
+        opts["fields"] = opts["fields"].split(u",")
+        opts["taggings"] = [tagging for tagging in opts.get("taggings", u"").split(u",") if tagging]
+        opts["chunkings"] = [chunking for chunking in opts.get("chunkings", u"").split(u",") if chunking]
     
-    if isinstance(infile, Document):
-        sem_tagger_logger.info("Reading {0}".format(infile.name))
-        document = infile
+    documents = sem.misc.documents_from_list(args.infiles, file_format, **opts)
+    
+    n_procs = getattr(args, "n_procs", 1)
+    if n_procs == 0:
+        n_procs = multiprocessing.cpu_count()
+        sem_tagger_logger.info("no processors given, using %s", n_procs)
     else:
-        sem_tagger_logger.info("Reading {0}".format(infile))
-        file_shortname, _ = os.path.splitext(os.path.basename(infile))
-        export_name = os.path.join(output_directory, file_shortname)
-        file_format = get_option(options, "file", "format", "guess")
-        opts = get_section(options, "file")
-        opts.update(get_section(options, "encoding"))
-        if file_format == "text":
-            document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
-        elif file_format == "conll":
-            opts["fields"] = opts["fields"].split(u",")
-            opts["taggings"] = [tagging for tagging in opts.get("taggings", u"").split(u",") if tagging]
-            opts["chunkings"] = [chunking for chunking in opts.get("chunkings", u"").split(u",") if chunking]
-            document = Document.from_conll(infile, **opts)
-        elif file_format == "guess":
-            document = sem.importers.load(infile, logger=sem_tagger_logger, **opts)
-        else:
-            raise ValueError(u"unknown format: {0}".format(file_format))
+        n_procs = min(max(n_procs, 1), multiprocessing.cpu_count())
+    if n_procs > len(documents):
+        n_procs = len(documents)
     
-    pipeline.process_document(document)
-    
-    if exporter is not None:
-        name = document.escaped_name()
-        if "html" in exporter.extension():
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", "tabs.css"), output_directory)
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, "css", exporter._lang, get_option(options, "export", "lang_style", "default.css")), output_directory)
-        
-        shortname, ext = os.path.splitext(name)
-        out_path = os.path.join(output_directory, "{0}.{1}".format(shortname, exporter.extension()))
-        if exporter.extension() == "ann":
-            filename = shortname + ".txt"
-            with codecs.open(os.path.join(output_directory, filename), "w", oenc) as O:
-                O.write(document.content)
-        exporter.document_to_file(document, couples, out_path, encoding=oenc)
+    do_process = partial(
+        process,
+        exporter=exporter,
+        output_directory=output_directory,
+        couples=couples,
+        encoding=oenc,
+        lang_style=get_option(options, "export", "lang_style", "default.css")
+    )
+    if sem.ON_WINDOWS:
+        for document in documents:
+            do_process(document)
+    else:
+        pool = multiprocessing.Pool(processes=n_procs)
+        dpp = (1 if n_procs < len(documents)*2 else 2) # documents per processor
+        beg = 0
+        batch_size = dpp * n_procs
+        while beg <= len(documents):
+            documents[beg : beg + batch_size] = pool.map(do_process, documents[beg : beg + batch_size])
+            beg += batch_size
+        pool.terminate()
     
     laps = time.time() - start
-    sem_tagger_logger.info('done in {0}'.format(timedelta(seconds=laps)))
+    sem_tagger_logger.info('done in %s', timedelta(seconds=laps))
     
-    return document
+    return documents
 
 
 import sem
@@ -248,9 +282,11 @@ parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0],
 
 parser.add_argument("master",
                     help="The master configuration file. Defines at least the pipeline and may provide some options.")
-parser.add_argument("infile",
-                    help="The input file for the tagger.")
+parser.add_argument("infiles", nargs="+",
+                    help="The input file(s) for the tagger.")
 parser.add_argument("-o", "--output-directory", dest="output_directory", default=".",
                     help='The output directory (default: "%(default)s").')
 parser.add_argument("-f", "--force-format", dest="force_format", default="default",
                     help='Force the output format given in "master", default otherwise (default: "%(default)s").')
+parser.add_argument("-p", "--processors", dest="n_procs", type=int, default=1,
+                    help='The number of processors to use (default: "%(default)s").')

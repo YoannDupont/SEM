@@ -34,8 +34,10 @@ import re
 
 from os.path import abspath, dirname, join
 
-import sem.information
+#import sem.information
 import sem.misc
+
+from sem.storage import Entry
 
 from . import Feature
 from . import IdentityFeature, DictGetterFeature, FindForwardFeature, FindBackwardFeature, DEFAULT_GETTER
@@ -77,7 +79,7 @@ class XML2Feature(object):
             self.check_entry(getter.entry, attrib)
         
         if attrib.get("name", None):
-            self._features[attrib["name"]] = sem.information.Entry(attrib["name"], mode="label")
+            self._features[attrib["name"]] = Entry(attrib["name"], mode="label")
         
         if xml.tag == "boolean":
             if attrib["action"] == "and":

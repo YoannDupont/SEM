@@ -357,7 +357,7 @@ class Document(Holder):
                 annotation.lb = begin
                 annotation.ub = i + 1
             else:
-                document_logger.warn("cannot add annotation {0}".format(annotation))
+                document_logger.warn(u"cannot add annotation {0}".format(annotation))
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
@@ -389,7 +389,7 @@ class Document(Holder):
                 except IndexError:
                     cur_annot = None
             if cur_annot is not None and ((span.lb <= cur_annot.lb < span.ub) and cur_annot.ub > span.ub): # annotation spans over at least two sentences
-                document_logger.warn("Annotation {0} spans over multiple sentences, ignoring".format(cur_annot))
+                document_logger.warn(u"Annotation {0} spans over multiple sentences, ignoring".format(cur_annot))
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]

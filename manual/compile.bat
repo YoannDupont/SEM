@@ -1,11 +1,9 @@
 @echo off
 
-latex %1
-bibtex %1
-latex %1
-latex %1
-dvips %1.dvi
-ps2pdf %1.ps
+pdflatex %1
+biber %1
+pdflatex %1
+pdflatex %1
 ::pdflatex %1.tex
 ::pdflatex %1.tex
 

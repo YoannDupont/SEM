@@ -58,10 +58,11 @@ def diff_files(dcmp):
     diff_files_rec(dcmp, acc)
     return acc
 
+# more python3 ready
 try:
-    prompt = raw_input
+    input = raw_input
 except NameError:
-    prompt = input
+    pass
 validity = {"y":True, "ye":True, "yes":True, "n":False, "no":False}
 
 import sem
@@ -78,16 +79,6 @@ except ImportError:
         import tkinter
     except ImportError:
         tkinter_available = False
-
-packages = find_packages()
-
-if not tkinter_available:
-    module_dir = os.path.join("sem", "modules")
-    gui_files = [f for f in os.listdir(module_dir) if "gui" in f]
-    for gui_file in gui_files:
-        gui_path = os.path.join(module_dir, gui_file)
-        shutil.move(gui_path, os.path.join(".", "."+gui_file))
-    packages = [p for p in packages if "gui" not in p]
 
 #
 # compiling Wapiti
@@ -128,7 +119,7 @@ usr_sem_data = os.path.join(os.path.expanduser(u"~"), "sem_data")
 already_exists = os.path.exists(usr_sem_data)
 override = False
 if already_exists:
-    answer = prompt("\nsem_data already exists, override? [y/N] ").lower()
+    answer = input("\nsem_data already exists, override? [y/N] ").lower()
     override = validity.get(answer, False)
 
 if override:
@@ -167,7 +158,7 @@ else:
         print()
         print("The following files are missing:")
         print(u"\t"+u" ".join(missing))
-        answer = prompt("add missing files? [Y/n] ").lower()
+        answer = input("add missing files? [Y/n] ").lower()
         add_missing = validity.get(answer, True)
         if add_missing:
             for filename in missing:
@@ -176,6 +167,20 @@ else:
                     shutil.copytree(filename, dest)
                 else:
                     shutil.copy(filename, dest)
+
+#
+# preparing packages to install
+#
+
+packages = find_packages()
+
+if not tkinter_available:
+    module_dir = os.path.join("sem", "modules")
+    gui_files = [f for f in os.listdir(module_dir) if "gui" in f]
+    for gui_file in gui_files:
+        gui_path = os.path.join(module_dir, gui_file)
+        shutil.move(gui_path, os.path.join(".", "."+gui_file))
+    packages = [p for p in packages if "gui" not in p]
 
 #
 # launching setup

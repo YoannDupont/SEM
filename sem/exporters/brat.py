@@ -47,6 +47,8 @@ class Exporter(DefaultExporter):
         lowers = dict([(x.lower(), y) for (x,y) in couples.items()])
         if "ner" not in lowers:
             return u""
+        if not document.annotation(lowers["ner"]):
+            return u""
         content = document.content
         parts = []
         for id, annotation in enumerate(document.annotation(lowers["ner"]).get_reference_annotations(), 1):

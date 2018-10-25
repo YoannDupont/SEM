@@ -1,4 +1,4 @@
-# SEM v3.2.0
+# SEM v3.3.0
 [SEM (Segmenteur-Étiqueteur Markovien)](http://www.lattice.cnrs.fr/sites/itellier/SEM.html) is a free NLP tool relying on Machine Learning technologies, especially CRFs. SEM provides powerful and configurable preprocessing and postprocessing. [SEM also has an online version](http://apps.lattice.cnrs.fr/sem/index).
 
 ## Main SEM features
@@ -30,10 +30,6 @@
    1. automatic integration of new segmenters and exporters
    2. semi automatic integration of new feature functions
    3. easy creation of new CSS formats for HTML exports
-7. manually annotate fast
-   1. Annotation GUI to annotate text spans
-   2. can load pre-annotated documents
-   3. export in multiple formats
 
 ## First steps with SEM
 1. install SEM
@@ -59,9 +55,8 @@
 ## Planned changes (for latest changes, see changelog.md)
 1. Add a tutorial. Some of it done in section "retrain SEM" in manual.
 2. add lemmatiser.
-3. migration to python3 (already made for revision 39 by lerela).
-4. have more unit tests
-5. improve segmentation
+3. have more unit tests
+4. improve segmentation
    1. handle URLs starting with country indicator (ex: "en.wikipedia.org")
    2. handle URLs starting with subdomain (ex: "blog.[...]")
 

@@ -33,6 +33,55 @@ SOFTWARE.
 
 from sem.IO import KeyReader, KeyWriter
 
+_train_set = set([u"train", u"eval", u"evaluate", u"evaluation"])
+_train = u"train"
+_label_set = set([u"label", u"annotate", u"annotation"])
+_label = "label"
+_modes = _train_set | _label_set
+_equivalence = dict([[mode, _train] for mode in _train_set] + [[mode, _label] for mode in _label_set])
+
+class Entry(object):
+    """
+    The Entry object. It represents a field's identifier in a CoNLL corpus.
+    An Entry may be used only in certain circumstances: for example, the
+    output tag may only appear in train mode.
+    """
+    def __init__(self, name, mode=u"label"):
+        if mode not in _modes:
+            raise ValueError("Unallowed mode for entry: {0}".format(mode))
+        self._name = name
+        self._mode = _equivalence[mode]
+    
+    def __eq__(self, other):
+        return self.name == other.name
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def mode(self):
+        return self._mode
+    
+    @mode.setter
+    def mode(self, mode):
+        self._mode = _equivalence[mode]
+    
+    @property
+    def is_train(self):
+        return self._mode == _train
+    
+    @property
+    def is_label(self):
+        return self._mode == _label
+    
+    @staticmethod
+    def fromXML(xml_element):
+        return Entry(**xml_element.attrib)
+    
+    def has_mode(self, mode):
+        return self.mode == _equivalence[mode]
+
 class Corpus(object):
     def __init__(self, fields=None, sentences=None):
         if fields:
@@ -44,6 +93,9 @@ class Corpus(object):
             self.sentences = sentences[:]
         else:
             self.sentences = []
+    
+    def __contains__(self, item):
+        return item in self.fields
     
     def __len__(self):
         return len(self.sentences)

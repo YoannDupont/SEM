@@ -32,11 +32,19 @@ import logging
 from sem.storage.holder import Holder
 
 class SEMModule(Holder):
-    def __init__(self, log_level="WARNING", log_file=None, **kwargs):
+    def __init__(self, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
         super(SEMModule, self).__init__(**kwargs)
         
         self._log_level = log_level
         self._log_file = log_file
+        self._pipeline_mode = pipeline_mode
+    
+    @property
+    def pipeline_mode(self):
+        return self._pipeline_mode
+    
+    def check_mode(self, expected_mode):
+        pass
     
     def process_document(self, document, **kwargs):
         raise NotImplementedError("process_document not implemented for root type " + self.__class__)

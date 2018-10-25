@@ -37,7 +37,8 @@ from sem.storage import Document, Corpus
 
 from sem.modules import EnrichModule, CleanModule, WapitiLabelModule, LabelConsistencyModule
 
-from sem.information import Entry, Informations
+#from sem.information import Entry, Informations
+from sem.modules.enrich import Entry
 from sem.features import DictGetterFeature
 from sem.features import BOSFeature, EOSFeature
 
@@ -58,9 +59,7 @@ class TestModules(unittest.TestCase):
         features.append(BOSFeature(name="BOS", entry="word", getter=cwg))
         features.append(EOSFeature(name="EOS", entry="word", getter=cwg))
         
-        informations = Informations(bentries=[Entry(u"word")], features=features)
-        
-        enrich = EnrichModule(informations)
+        enrich = EnrichModule(bentries=[Entry(u"word")], features=features)
         
         self.assertEquals(document._corpus.fields, [u"word"])
         

@@ -31,6 +31,7 @@ SOFTWARE.
 """
 
 import logging
+import os
 
 # the SEM logging format(s)
 logging_format    = u"%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s\t%(message)s"

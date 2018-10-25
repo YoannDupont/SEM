@@ -4,7 +4,15 @@ All notable changes to SEM will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [SEM v3.3.0](https://github.com/YoannDupont/SEM/releases/tag/v3.3.0)
 ### Added
+- python3 support
+- `sem.importers.load` : `tagset_name` keyword argument added, allows to define the name of the tagset when loading BRAT (instead of hard-coded NER), defaults to NER
+- `annotation_gui`: a document list may be loaded at startup with `--document` or `-d` option (can take multiple arguments)
+- `annotation_gui`: a tag set may be loaded at startup with `--tagset`or `-t` option
+- memory usage improvement: added slots in Span and Tag types
+- pipeline_mode in pipeline to allow the use of a pipeline in train or label mode (only one workflow for training and labelling)
 - install.md file for installation instructions
 - SEM may copy a newly trained model into the right folder in sem_data in order to use it immidiately
 - support for SEM documents in ```chunking_evaluate```
@@ -14,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - first version of the manual in English
 - user can now select language when training from annotation_gui
 ### Changed
+- Entry object moved from informations.py to corpus.py
 - most string formatting with "%" now replaced with string.format method
 - improving french tokeniser performance on numerous little texts: regexp are now compiled once and for all
 - corrected bug in french tokeniser when document only had one token and no spaces
@@ -23,7 +32,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - corrected a bug when there was no french language defined in SEM data
 - corrected a bug disallowing user to "save as..." in certain context
 ### Removed
-- code refactoring: removal of duplicated methods for generating Annotation from CoNLL files.
+- Information object removed, its useful parts are now in the sem.modules.enrich.SEMModule object.
+- informations.py file removed, it is now part of the enrich module
+- code refactoring: removal of duplicated methods for generating Annotation from CoNLL files
 
 ## [SEM v3.2.0](https://github.com/YoannDupont/SEM/releases/tag/v3.2.0)
 ### Added
@@ -115,7 +126,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
     - tests for modules
 
 ## changes compared to other versions:
-- unreleased: https://github.com/YoannDupont/SEM/compare/v3.2.0...HEAD
+- unreleased: https://github.com/YoannDupont/SEM/compare/v3.3.0...HEAD
+- 3.3.0: https://github.com/YoannDupont/SEM/compare/v3.2.0...v3.3.0
 - 3.2.0: https://github.com/YoannDupont/SEM/compare/v3.1.2...v3.2.0
 - 3.1.2: https://github.com/YoannDupont/SEM/compare/v3.1.1...v3.1.2
 - 3.1.1: https://github.com/YoannDupont/SEM/compare/v3.1.0...v3.1.1

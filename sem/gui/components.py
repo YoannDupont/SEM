@@ -69,7 +69,7 @@ import sem.importers
 
 from sem.storage import Holder, Document, SEMCorpus
 from sem.modules.tagger import load_master, main as tagger
-from sem.modules import EnrichModule
+from sem.modules import EnrichModule, WapitiLabelModule
 from sem.logger import default_handler
 from sem.storage import Annotation
 from sem.storage.annotation import str2filter
@@ -369,20 +369,12 @@ class SEMTkWapitiTrain(ttk.Frame):
         compact = self.compact()
         masterfile = self.master.workflow()
         export_format = "conll"
-        pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
+        pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format, pipeline_mode="train")
+        #pipeline.pipeline_mode = "train"
         annotation_level = str2filter[self.annotation_level.get()]
         document_filter = str2docfilter[self.document_filter.get()]
         
-        paren, name = os.path.split(masterfile)
-        paren1, lang = os.path.split(paren)
-        rootdir = os.path.dirname(paren1)
-        mod_dir = os.path.join(rootdir, "models", lang)
-        mod_subdirs = os.listdir(mod_dir)
-        suggestions = find_suggestions(name, mod_subdirs, case_sensitive=False)
-        out_dir = None
-        if suggestions != []:
-            out_dir = os.path.join(mod_dir, suggestions[0])
-        
+        target_model = None
         pipes = [pipe for pipe in pipeline]
         for pipe in reversed(pipes):
             if isinstance(pipe, EnrichModule):
@@ -390,6 +382,20 @@ class SEMTkWapitiTrain(ttk.Frame):
                 self.annotation_name = pipe.informations.aentries[-1].name
                 pipe.mode = "label"
                 break
+            elif isinstance(pipe, WapitiLabelModule):
+                self.annotation_name = pipe.field
+                target_model = pipe.model
+                break
+        
+        out_dir = None
+        if target_model:
+            out_dir, name = os.path.split(target_model)
+            try:
+                os.makedirs(out_dir)
+            except OSError: # aleady exists
+                pass
+            except FileExistsError: # python3
+                pass
         
         timestamp = time.strftime("%Y%m%d%H%M%S")
         output_dir = os.path.join(self.current_train, timestamp)
@@ -406,8 +412,8 @@ class SEMTkWapitiTrain(ttk.Frame):
         names = set()
         with codecs.open(train_file, "w", "utf-8") as O:
             for filename in files:
-                document = sem.importers.load(filename, encoding="utf-8")
-                args = Holder(**{"infile":document, "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
+                document = sem.importers.load(filename, encoding="utf-8", tagset_name=self.annotation_name)
+                args = Holder(**{"infiles":[document], "pipeline":pipeline, "options":workflow_options, "exporter":None, "couples":None})
                 if isinstance(document, SEMCorpus):
                     for doc in document:
                         if doc.name in names:
@@ -416,8 +422,8 @@ class SEMTkWapitiTrain(ttk.Frame):
                         elif not document_filter(doc, self.annotation_name):
                             self.wapiti_train_logger.warn("document %s has no annotations, skipping", doc.name)
                             continue
-                        args.infile = doc
-                        doc = tagger(args)
+                        args.infiles = [doc]
+                        doc = tagger(args)[0]
                         
                         if self.annotation_name is not None:
                             doc.add_to_corpus(self.annotation_name, filter=annotation_level)
@@ -425,13 +431,14 @@ class SEMTkWapitiTrain(ttk.Frame):
                         if not fields:
                             fields = doc.corpus.fields[:-1]
                 else:
-                    document = tagger(args)
                     if document.name in names:
                         self.wapiti_train_logger.warn("document %s already found, skipping", document.name)
                         continue
                     elif not document_filter(document, self.annotation_name):
                         self.wapiti_train_logger.warn("document %s has no annotations, skipping", document.name)
                         continue
+                    
+                    document = tagger(args)[0]
                     
                     if self.annotation_name is not None:
                         document.add_to_corpus(self.annotation_name, filter=annotation_level)
@@ -461,16 +468,16 @@ class SEMTkWapitiTrain(ttk.Frame):
         sem.wapiti.train(train_file, pattern=pattern_file, output=model_file, algorithm=alg, rho1=l1, rho2=l2, nthreads=nprocs, compact=compact)
         
         model_update_message = "\n\nNo candidate location found, model update has to be done manually"
-        if out_dir:
-            model_out = os.path.join(out_dir, "model.txt")
-            if os.path.exists(model_out):
-                backup_name = "model.backup-{0}.txt".format(timestamp)
+        if target_model:
+            if os.path.exists(target_model):
+                bname, ext = os.path.splitext(name)
+                backup_name = "{}.backup-{}.{}".format(bname, timestamp, ext)
                 dest = os.path.join(out_dir, backup_name)
                 self.wapiti_train_logger.info('creating backup file before moving: %s', dest)
-                shutil.move(model_out, dest)
+                shutil.move(target_model, dest)
             self.wapiti_train_logger.info('trained model moved to: %s', out_dir)
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
-            shutil.copy(model_file, model_out)
+            shutil.copy(model_file, target_model)
         
         self.wapiti_train_logger.info("files are located in: " + output_dir)
         tkinter.messagebox.showinfo("training SEM", "Everything went ok! files are located in: {0}{1}".format(output_dir, model_update_message))

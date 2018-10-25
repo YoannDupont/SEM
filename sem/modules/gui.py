@@ -131,7 +131,7 @@ class SemTkMainWindow(ttk.Frame):
         try:
             export_format = self.export_format_selector.export_format()
             pipeline, workflow_options, exporter, couples = load_master(masterfile, force_format=export_format)
-            args = Holder(**{"output_directory":output_dir, "pipeline":pipeline, "options":workflow_options, "exporter":exporter, "couples":couples})
+            args = Holder(**{"infiles": [], "output_directory":output_dir, "pipeline":pipeline, "options":workflow_options, "exporter":exporter, "couples":couples, "n_procs":0})
             for current_file in current_files:
                 corpus = None
                 try:
@@ -139,12 +139,10 @@ class SemTkMainWindow(ttk.Frame):
                 except:
                     pass
                 if corpus is not None:
-                    for doc in corpus:
-                        args.infile = doc
-                        tagger(args)
+                    args.infiles.extend(corpus.documents)
                 else:
-                    args.infile = current_file
-                    tagger(args)
+                    args.infiles.append(current_file)
+            tagger(args)
         except Exception as e:
             tkinter.messagebox.showerror("launching SEM", "Error: " + str(e)) # handling ExpatError from etree
             raise

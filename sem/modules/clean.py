@@ -80,17 +80,17 @@ class SEMModule(RootModule):
         clean_info_logger.info(u'cleaning document')
         
         allowed = set(self._allowed)
-        fields  = set(document.corpus.fields)
-        to_remove = [field for field in document.corpus.fields if field not in allowed]
-        document.corpus.fields = [field for field in document.corpus.fields if field not in to_remove]
+        fields  = set(field for field in document.corpus.fields)
+        to_remove = fields - allowed
+        document.corpus.fields = self._allowed[:]
         
         if len(allowed - fields) > 0:
-            clean_info_logger.warn(u"the following fields are not present in document, this might cause an error sometime later: {0}".format(u", ".join(allowed - fields)))
+            clean_info_logger.warn(u"the following fields are not present in document, this might cause an error sometime later: %s", u", ".join(allowed - fields))
         
+        indices = [entry.index for entry in document.corpus.fields]
         for i in range(len(document.corpus.sentences)):
             for j in range(len(document.corpus.sentences[i])):
-                for field in to_remove:
-                    del document.corpus.sentences[i][j][field]
+                document.corpus.sentences[i][j] = dict((a,document.corpus.sentences[i][j][a]) for a in allowed)
         
         laps = time.time() - start
         clean_info_logger.info(u'done in {0}'.format(timedelta(seconds=laps)))

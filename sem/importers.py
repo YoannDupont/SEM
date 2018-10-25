@@ -54,11 +54,18 @@ from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
 from sem.storage import Span
 
-def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False, logger=None, strip_html=False, *args, **kwargs):
+def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_format=False, logger=None, strip_html=False, tagset_name=None, *args, **kwargs):
     if type(filename) in (Document, SEMCorpus):
         if logger is not None:
             logger.info(u"detected format: SEM XML")
         return filename
+    
+    try:
+        filename = filename.decode(sys.getfilesystemencoding())
+    except UnicodeDecodeError:
+        pass
+    except AttributeError: # AttributeError raised in python3 as it will be str
+        pass
     
     if filename.startswith("http"):
         if logger is not None:
@@ -85,7 +92,7 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
     if (ext == ".ann") or (ext == ".txt" and os.path.exists(no_ext+".ann")):
         if logger is not None:
             logger.info(u"detected format: BRAT")
-        return brat_file(filename, encoding=encoding)
+        return brat_file(filename, encoding=encoding, tagset_name=tagset_name)
     
     if fields is not None and word_field is not None:
         if logger is not None:
@@ -188,7 +195,8 @@ def from_url(url, strip_html=False, wikinews_format=False):
     mime_type = ("text/plain" if strip_html else "text/html")
     return Document(name=url, content=cleaned_content, original_content=content, mime_type=mime_type)
 
-def brat_file(filename, encoding="utf-8"):
+def brat_file(filename, encoding="utf-8", tagset_name=None):
+    tagset_name = tagset_name or "NER"
     no_ext, ext = os.path.splitext(filename)
     txt_file = no_ext + ".txt"
     ann_file = no_ext + ".ann"
@@ -197,7 +205,7 @@ def brat_file(filename, encoding="utf-8"):
     
     document = Document(os.path.basename(txt_file), encoding=encoding, mime_type="text/plain")
     document.content = codecs.open(txt_file, "rU", encoding).read().replace(u"\r", u"")
-    annotations = Annotation("NER")
+    annotations = Annotation(tagset_name)
     for line in codecs.open(ann_file, "rU", encoding):
         line = line.strip()
         if line != u"" and line.startswith(u'T'):

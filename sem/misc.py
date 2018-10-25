@@ -30,11 +30,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import re
+import glob
 import os.path
+import re
 import tarfile
 
 from sem import PY2
+import sem.storage
 
 def find_suggestions(target, candidates, case_sensitive=True):
     trgt = (target if case_sensitive else target.lower())
@@ -197,6 +199,53 @@ def str2bool(s):
     if res is None:
         raise ValueError(u'Cannot convert to boolean: "{0}"'.format(s))
     return res
+
+def documents_from_list(name_list, file_format, logger=None, **opts):
+    """
+    Create a Document list from a list which may contain either Document objects
+    or string objects that need to be globbed.
+    
+    Parameters
+    ----------
+    name_list : list
+        the list of "documents". It can be Document object or str with wildcards.
+    file_format : str
+        The expected file format for documents. Can be "plain", "conll",
+        "guess", etc.
+    **opts : dict
+        options for reading documents.
+    """
+    documents = []
+    names = set() # document names that were already seen
+    for name in name_list:
+        if isinstance(name, sem.storage.Document):
+            if logger:
+                logger.info("Reading %s", name.name)
+            if name.name not in names:
+                documents.append(name)
+                names.add(name.name)
+            elif logger:
+                logger.info("document %s already found, not adding to the list.", name.name)
+        else:
+            for infile in glob.glob(name):
+                if logger:
+                    logger.info("Reading %s", infile)
+                file_shortname, _ = os.path.splitext(os.path.basename(infile))
+                if file_format == "text":
+                    document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
+                elif file_format == "conll":
+                    document = Document.from_conll(infile, **opts)
+                elif file_format == "guess":
+                    document = sem.importers.load(infile, logger=logger, **opts)
+                else:
+                    raise ValueError(u"unknown format: {0}".format(file_format))
+                if document.name not in names:
+                    documents.append(document)
+                    names.add(document.name)
+                elif logger:
+                    logger.info("document %s already found, not adding to the list.", document.name)
+    
+    return documents
 
 def longest_common_substring(a, b, casesensitive=True, lastchance=False):
     """

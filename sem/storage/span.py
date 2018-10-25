@@ -49,6 +49,8 @@ class Span(object):
         the upper bound of a Span.
     """
     
+    __slots__ = ("_lb", "_ub")
+    
     def __init__(self, lb, ub, length=-1):
         self._lb = (min(lb, ub) if length<0 else lb)
         self._ub = (max(lb, ub) if length<0 else lb+length)
