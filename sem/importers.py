@@ -103,7 +103,7 @@ def load(filename, encoding="utf-8", fields=None, word_field=None, wikinews_form
     return text_file(filename, encoding=encoding)
 
 def text_file(filename, encoding="utf-8"):
-    return Document(os.path.basename(filename), content=codecs.open(filename, "rU", encoding).read().replace("\r",""), encoding=encoding)
+    return Document(os.path.basename(filename), content=codecs.open(filename, "rU", encoding).read().replace(u"\r",u""), encoding=encoding)
 
 def conll_file(filename, fields, word_field, encoding="utf-8"):
     document         = Document(os.path.basename(filename), encoding=encoding)

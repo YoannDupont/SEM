@@ -35,7 +35,7 @@ try:
 except ImportError:
     from xml.etree.ElementTree import ElementTree as ET
 
-from sem.misc import is_string
+import sem.misc
 
 class Span(object):
     """
@@ -91,7 +91,7 @@ class Span(object):
     
     @classmethod
     def fromXML(cls, xml):
-        if is_string(node):
+        if sem.misc.is_string(node):
             node = ET.fromstring(xml)
         else:
             node = xml

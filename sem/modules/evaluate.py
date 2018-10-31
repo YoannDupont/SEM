@@ -183,7 +183,7 @@ def main(args):
     prf = {}
     if input_format == "conll":
         if reference_file:
-            print("reference_file not handled for CoNLL files")
+            print(u"reference_file not handled for CoNLL files")
         L = []
         R = []
         keys = None
@@ -325,11 +325,11 @@ def main(args):
     print(u"entity\tmeasure\tvalue")
     for entity in sorted(entities):
         for kind in OUTPUT_KINDS:
-            print("{0}\t{1}\t{2}".format(entity, kind, len(counts[entity][kind])))
-    print("global\treference\t{0}".format(len_ref))
-    print("global\ttagging\t{0}".format(len_tag))
+            print(u"{0}\t{1}\t{2}".format(entity, kind, len(counts[entity][kind])))
+    print(u"global\treference\t{0}".format(len_ref))
+    print(u"global\ttagging\t{0}".format(len_tag))
     for kind in OUTPUT_KINDS:
-        print("global\t{0}\t{1}".format(kind, len(d[kind])))
+        print(u"global\t{0}\t{1}".format(kind, len(d[kind])))
     
     # P R F
     precisions = []
@@ -339,26 +339,26 @@ def main(args):
     for entity in sorted(entities):
         precisions.append(precision(counts[entity]))
         recalls.append(recall(counts[entity]))
-        print("{0}\tprecision\t{1:.4f}".format(entity, precisions[-1]))
-        print("{0}\trecall\t{1:.4f}".format(entity, recalls[-1]))
-        print("{0}\tfscore\t{1:.4f}".format(entity, fscore(precision(counts[entity]), recall(counts[entity]))))
-    print("global\tprecision\t{0:.4f}".format(precision(d)))
-    print("global\trecall\t{0:.4f}".format(recall(d)))
-    print("global\tfscore\t{0:.4f}".format(fscore(precision(d), recall(d))))
-    print("global\tmacro-precision\t{0:.4f}".format(mean(precisions)))
-    print("global\tmacro-recall\t{0:.4f}".format(mean(recalls)))
-    print("global\tmacro-fscore\t{0:.4f}".format(fscore(mean(precisions), mean(recalls))))
+        print(u"{0}\tprecision\t{1:.4f}".format(entity, precisions[-1]))
+        print(u"{0}\trecall\t{1:.4f}".format(entity, recalls[-1]))
+        print(u"{0}\tfscore\t{1:.4f}".format(entity, fscore(precision(counts[entity]), recall(counts[entity]))))
+    print(u"global\tprecision\t{0:.4f}".format(precision(d)))
+    print(u"global\trecall\t{0:.4f}".format(recall(d)))
+    print(u"global\tfscore\t{0:.4f}".format(fscore(precision(d), recall(d))))
+    print(u"global\tmacro-precision\t{0:.4f}".format(mean(precisions)))
+    print(u"global\tmacro-recall\t{0:.4f}".format(mean(recalls)))
+    print(u"global\tmacro-fscore\t{0:.4f}".format(fscore(mean(precisions), mean(recalls))))
     
     # over/under generation, substitution
     print()
     print(u"entity\tmeasure\tvalue")
     for entity in sorted(entities):
-        print("{0}\tundergeneration\t{1:.4f}".format(entity, undergeneration(counts[entity])))
-        print("{0}\tovergeneration\t{1:.4f}".format(entity, overgeneration(counts[entity])))
-        print("{0}\tsubstitution\t{1:.4f}".format(entity, substitution(counts[entity])))
-    print("global\tundergeneration\t{0:.4f}".format(undergeneration(d)))
-    print("global\tovergeneration\t{0:.4f}".format(overgeneration(d)))
-    print("global\tsubstitution\t{0:.4f}".format(substitution(d)))
+        print(u"{0}\tundergeneration\t{1:.4f}".format(entity, undergeneration(counts[entity])))
+        print(u"{0}\tovergeneration\t{1:.4f}".format(entity, overgeneration(counts[entity])))
+        print(u"{0}\tsubstitution\t{1:.4f}".format(entity, substitution(counts[entity])))
+    print(u"global\tundergeneration\t{0:.4f}".format(undergeneration(d)))
+    print(u"global\tovergeneration\t{0:.4f}".format(overgeneration(d)))
+    print(u"global\tsubstitution\t{0:.4f}".format(substitution(d)))
 
 
 import os.path

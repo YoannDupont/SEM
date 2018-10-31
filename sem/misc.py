@@ -41,11 +41,11 @@ import sem.storage
 def find_suggestions(target, candidates, case_sensitive=True):
     trgt = (target if case_sensitive else target.lower())
     suggestions = []
-    for i, candidate in enumerate(candidates if case_sensitive else [cand.lower() for cand in candidates]):
+    for candidate in (candidates if case_sensitive else [cand.lower() for cand in candidates]):
         shortest = (candidate if len(candidate) < len(trgt) else trgt)
         longest = (trgt if shortest == candidate else candidate)
         if shortest in longest:
-            suggestions.append(candidates[i])
+            suggestions.append(candidate)
     return suggestions
 
 def ranges_to_set(ranges, length, include_zero=False):
