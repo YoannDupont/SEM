@@ -412,6 +412,7 @@ class AnnotationTool(tkinter.Frame):
         chunks_to_load = ([self.annotation_name] if self.annotation_name else None)
         
         documents = []
+        names = set()
         for filename in filenames:
             if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
@@ -419,13 +420,22 @@ class AnnotationTool(tkinter.Frame):
                     for doc in docs: # using reference annotations
                         for annotation_name in doc.annotations.keys():
                             doc.add_annotation(Annotation(annotation_name, reference=None, annotations=doc.annotation(annotation_name).get_reference_annotations()))
-                    documents.extend(docs)
+                    #documents.extend(docs)
+                    for doc in [doc for doc in docs if doc.name not in names]:
+                        documents.append(doc)
+                        names.add(doc.name)
                 except:
-                    documents.append(Document.from_xml(filename, chunks_to_load=chunks_to_load, load_subtypes=True))
-                    for annotation_name in documents[-1].annotations.keys():
-                        documents[-1].add_annotation(Annotation(annotation_name, reference=None, annotations=documents[-1].annotation(annotation_name).get_reference_annotations()))
+                    doc = Document.from_xml(filename, chunks_to_load=chunks_to_load, load_subtypes=True)
+                    if doc.name not in names:
+                        names.add(doc.name)
+                        documents.append(doc)
+                        for annotation_name in documents[-1].annotations.keys():
+                            documents[-1].add_annotation(Annotation(annotation_name, reference=None, annotations=documents[-1].annotation(annotation_name).get_reference_annotations()))
             else:
-                documents.append(sem.importers.load(filename, encoding="utf-8", tagset_name=self.annotation_name))
+                doc = sem.importers.load(filename, encoding="utf-8", tagset_name=self.annotation_name)
+                if doc.name not in names:
+                    documents.append(doc)
+                    names.add(doc.name)
         
         if documents == []: return
         

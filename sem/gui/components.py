@@ -471,7 +471,7 @@ class SEMTkWapitiTrain(ttk.Frame):
         if target_model:
             if os.path.exists(target_model):
                 bname, ext = os.path.splitext(name)
-                backup_name = "{}.backup-{}.{}".format(bname, timestamp, ext)
+                backup_name = "{}.backup-{}{}".format(bname, timestamp, ext)
                 dest = os.path.join(out_dir, backup_name)
                 self.wapiti_train_logger.info('creating backup file before moving: %s', dest)
                 shutil.move(target_model, dest)

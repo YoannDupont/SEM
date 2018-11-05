@@ -127,10 +127,10 @@ def conll_file(filename, fields, word_field, encoding="utf-8"):
     document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
     return document
 
-def from_url(url, strip_html=False, wikinews_format=False):
+def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     url = url.strip()
     
-    if url == u"": return None
+    if not url: return None
     
     try:
         url = url.decode(sys.getfilesystemencoding())
@@ -139,7 +139,7 @@ def from_url(url, strip_html=False, wikinews_format=False):
     
     strip_html |= wikinews_format # wikinews format is always stripped
     
-    charset = re.compile('charset="(.+?)"')
+    charset = re.compile(u'charset="(.+?)"')
     escaped_url = u"".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
     escaped_url = escaped_url.replace(u"%2525", u"%25")
     #url = url.decode("iso-8859-1")
@@ -156,7 +156,7 @@ def from_url(url, strip_html=False, wikinews_format=False):
         encoding = "utf-8"
     content = content.decode(encoding)
     
-    regex = re.compile('^.+?[^/]/(?=[^/])', re.M)
+    regex = re.compile(u'^.+?[^/]/(?=[^/])', re.M)
     parts = regex.findall(escaped_url)
     base_url = (escaped_url[:]+u"/" if parts == [] else parts[0]).decode("iso-8859-1")
     
@@ -179,16 +179,16 @@ def from_url(url, strip_html=False, wikinews_format=False):
     
     if strip_html:
         h = HTMLParser()
-        empty_line = re.compile("\n[ \t]+")
-        spaces = re.compile("[ \t]+")
-        newlines = re.compile("\n{2,}")
+        empty_line = re.compile(u"\n[ \t]+")
+        spaces = re.compile(u"[ \t]+")
+        newlines = re.compile(u"\n{2,}")
         cleaned_content = h.unescape(cleaned_content)
         cleaned_content = empty_line.sub(u"\n", cleaned_content)
         cleaned_content = spaces.sub(u" ", cleaned_content)
-        cleaned_content = newlines.sub("\n\n", cleaned_content)
+        cleaned_content = newlines.sub(u"\n\n", cleaned_content)
     
-    spaces_begin = re.compile("^[ \t]+", re.M)
-    spaces_end = re.compile("[ \t]+$", re.M)
+    spaces_begin = re.compile(u"^[ \t]+", re.M)
+    spaces_end = re.compile(u"[ \t]+$", re.M)
     cleaned_content = spaces_begin.sub("", cleaned_content)
     cleaned_content = spaces_end.sub("", cleaned_content)
     

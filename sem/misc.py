@@ -227,7 +227,7 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
             elif logger:
                 logger.info("document %s already found, not adding to the list.", name.name)
         else:
-            for infile in glob.glob(name):
+            for infile in (glob.glob(name) or [name]):
                 if logger:
                     logger.info("Reading %s", infile)
                 file_shortname, _ = os.path.splitext(os.path.basename(infile))
@@ -235,6 +235,12 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
                     document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
                 elif file_format == "conll":
                     document = Document.from_conll(infile, **opts)
+                elif file_format == "html":
+                    try:
+                        infile = infile.decode(sys.getfilesystemencoding())
+                    except:
+                        pass
+                    document = sem.importers.from_url(infile, logger=logger, **opts)
                 elif file_format == "guess":
                     document = sem.importers.load(infile, logger=logger, **opts)
                 else:

@@ -148,9 +148,9 @@ class Exporter(DefaultExporter):
                 p.text = content[paragraph.lb : entities[0].lb]
                 for i,entity in enumerate(entities):
                     nth[entity.value] += 1
-                    entity_start = ET.SubElement(p, "anchor", {"xml:id":"u-{0}-{1}-start".format(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitStart"})
+                    entity_start = ET.SubElement(p, "anchor", {"xml:id":u"u-{0}-{1}-start".format(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitStart"})
                     entity_start.tail = content[entity.lb : entity.ub]
-                    entity_end = ET.SubElement(p, "anchor", {"xml:id":"u-{0}-{1}-end".format(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitEnd"})
+                    entity_end = ET.SubElement(p, "anchor", {"xml:id":u"u-{0}-{1}-end".format(entity.value, nth[entity.value]), "type":"AnalecDelimiter", "subtype":"UnitEnd"})
                     if i < len(entities)-1:
                         entity_end.tail = content[entity.ub : entities[i+1].lb]
                     else:
@@ -164,13 +164,13 @@ class Exporter(DefaultExporter):
             i = 0
             for entity in [ent for ent in NEs if ent.value == value]:
                 i += 1
-                ET.SubElement(spanGrp, "span", {"xml:id":"u-{0}-{1}".format(value, i), "from":"#u-{0}-{1}-start".format(value, i), "to":"#u-{0}-{1}-end".format(value, i), "ana":"#u-{0}-{1}-fs".format(value, i)})
+                ET.SubElement(spanGrp, "span", {"xml:id":u"u-{0}-{1}".format(value, i), "from":u"#u-{0}-{1}-start".format(value, i), "to":u"#u-{0}-{1}-end".format(value, i), "ana":u"#u-{0}-{1}-fs".format(value, i)})
         
         fvLib = ET.SubElement(back,"fvLib")
         fvLib.set("n","AnalecElementProperties")
         nth = dict([(value,0) for value in values])
         for i, entity in enumerate(NEs):
             nth[entity.value] += 1
-            fs = ET.SubElement(fvLib,"fs",{"xml:id": "u-{0}-{1}-fs".format(entity.value, nth[entity.value])})
+            fs = ET.SubElement(fvLib,"fs",{"xml:id": u"u-{0}-{1}-fs".format(entity.value, nth[entity.value])})
         
         return teiCorpus
