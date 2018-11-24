@@ -2,7 +2,7 @@
 <master>
     <pipeline>
         <segmentation tokeniser="fr" />
-        <enrich informations="../../enrich/fr/pos.xml" mode="label" />
+        <enrich path="../../enrich/fr/pos.xml" mode="label" />
         <wapiti_label model="../../models/fr/POS/plain" field="POS" />
     </pipeline>
     

@@ -47,16 +47,19 @@ import sys
 from filecmp import dircmp
 
 def diff_files(dcmp):
-    def diff_files_rec(dcmp, acc):
+    def diff_files_rec(dcmp, missing, differents):
         right_only = dcmp.right_only
-        if right_only:
-            for ro in right_only:
-                acc.append(os.path.join(dcmp.right, ro))
+        diff_files = dcmp.diff_files
+        for ro in right_only or []:
+            missing.append(os.path.join(dcmp.right, ro))
+        for df in diff_files or []:
+            differents.append(os.path.join(dcmp.right, df))
         for sub_dcmp in dcmp.subdirs.values():
-            diff_files_rec(sub_dcmp, acc)
-    acc = []
-    diff_files_rec(dcmp, acc)
-    return acc
+            diff_files_rec(sub_dcmp, missing, differents)
+    missing = []
+    differents = []
+    diff_files_rec(dcmp, missing, differents)
+    return missing, differents
 
 # more python3 ready
 try:
@@ -153,7 +156,7 @@ if override or not already_exists:
 else:
     # even if sem_data already exists, there may be some new files
     # the user would like to have.
-    missing = diff_files(dircmp(os.path.join(usr_sem_data, "resources"), 'resources'))
+    missing, differents = diff_files(dircmp(os.path.join(usr_sem_data, "resources"), 'resources'))
     if missing:
         print()
         print("The following files are missing:")
@@ -162,6 +165,19 @@ else:
         add_missing = validity.get(answer, True)
         if add_missing:
             for filename in missing:
+                dest = os.path.join(usr_sem_data, filename)
+                if os.path.isdir(filename):
+                    shutil.copytree(filename, dest)
+                else:
+                    shutil.copy(filename, dest)
+    if differents:
+        print()
+        print("The following files are differents:")
+        print(u"\t"+u" ".join(differents))
+        answer = input("overwritte different files? [Y/n] ").lower()
+        overwritte = validity.get(answer, True)
+        if overwritte:
+            for filename in differents:
                 dest = os.path.join(usr_sem_data, filename)
                 if os.path.isdir(filename):
                     shutil.copytree(filename, dest)

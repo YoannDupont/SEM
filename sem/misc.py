@@ -3,7 +3,8 @@
 """
 file: misc.py
 
-Description: a file for miscellaneous operations.
+Description: a file for miscellaneous operations. This should maybe be renamed
+util, as it is just functions that do not fit anywhere else.
 
 author: Yoann Dupont
 

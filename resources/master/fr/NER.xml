@@ -2,10 +2,10 @@
 <master>
     <pipeline>
         <segmentation tokeniser="fr" />
-        <enrich informations="../../enrich/fr/pos.xml" mode="label" />
+        <enrich path="../../enrich/fr/pos.xml" mode="label" />
         <wapiti_label model="../../models/fr/POS/plain" field="POS" />
         <clean to-keep="word,POS" />
-        <enrich informations="../../enrich/fr/NER.xml" mode="label" />
+        <enrich path="../../enrich/fr/NER.xml" mode="label" />
         <wapiti_label model="../../models/fr/NER/plain_NER" field="NER" />
         <clean to-keep="word,POS,NER" />
         <label_consistency field="NER" />

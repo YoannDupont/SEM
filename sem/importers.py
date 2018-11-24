@@ -142,8 +142,6 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     charset = re.compile(u'charset="(.+?)"')
     escaped_url = u"".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
     escaped_url = escaped_url.replace(u"%2525", u"%25")
-    #url = url.decode("iso-8859-1")
-    #url = url.replace(":","")
     
     content = u""
     f = urllib.urlopen(escaped_url)

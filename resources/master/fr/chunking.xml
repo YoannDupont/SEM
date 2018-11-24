@@ -2,7 +2,7 @@
 <master>
     <pipeline>
         <segmentation tokeniser="fr" />
-        <enrich informations="../../enrich/fr/pos-lefff.xml" mode="label" />
+        <enrich path="../../enrich/fr/pos-lefff.xml" mode="label" />
         <wapiti_label model="../../models/fr/POS/plain.lefff" field="POS" />
         <clean to-keep="word,POS" />
         <wapiti_label model="../../models/fr/chunk/plain_all" field="chunking" />
