@@ -31,10 +31,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import glob
 import os.path
 import re
 import tarfile
+
+from contextlib import contextmanager
+from io import open, StringIO
 
 from sem import PY2
 import sem.storage
@@ -84,13 +86,10 @@ def ranges_to_set(ranges, length, include_zero=False):
     
     return result
 
-def last_index(s, e):
-    try:
-        return len(s) - s[::-1].index(e[::-1]) - 1
-    except ValueError:
-        return -1
-
 def correct_pos_tags(tags):
+    """
+    Correct POS tags following the "tag _tag" scheme to remove impossible transitions.
+    """
     corrected   = [[level2 for level2 in level1] for level1 in tags]
     corrections = 0
     for i in range(len(corrected)):
@@ -143,6 +142,16 @@ def check_model_available(model, logger=None):
             raise IOError("Cannot find model file: {0}".format(model))
 
 def strip_html(html, keep_offsets=False):
+    """
+    Take an str containing HTML data and strip the HTML markup.
+    
+    Parameters
+    ----------
+    html : str
+        the HTML data (str) to strip.
+    keep_offsets : bool [False]
+        if True, markups are replaced by spaces, otherwise replace by single space.
+    """
     def replace_same_size(m):
         return u" " * (m.end() - m.start())
     
@@ -195,64 +204,20 @@ def strip_html(html, keep_offsets=False):
     return stripped_html
 
 def str2bool(s):
+    """
+    Return a boolean value from string.
+    
+    Parameters
+    ----------
+    s : str
+        the string value to convert to boolean.
+    """
+    
     s = s.lower()
     res = {"yes":True,"y":True,"true":True, "no":False,"n":False,"false":False}.get(s, None)
     if res is None:
         raise ValueError(u'Cannot convert to boolean: "{0}"'.format(s))
     return res
-
-def documents_from_list(name_list, file_format, logger=None, **opts):
-    """
-    Create a Document list from a list which may contain either Document objects
-    or string objects that need to be globbed.
-    
-    Parameters
-    ----------
-    name_list : list
-        the list of "documents". It can be Document object or str with wildcards.
-    file_format : str
-        The expected file format for documents. Can be "plain", "conll",
-        "guess", etc.
-    **opts : dict
-        options for reading documents.
-    """
-    documents = []
-    names = set() # document names that were already seen
-    for name in name_list:
-        if isinstance(name, sem.storage.Document):
-            if logger:
-                logger.info("Reading %s", name.name)
-            if name.name not in names:
-                documents.append(name)
-                names.add(name.name)
-            elif logger:
-                logger.info("document %s already found, not adding to the list.", name.name)
-        else:
-            for infile in (glob.glob(name) or [name]):
-                if logger:
-                    logger.info("Reading %s", infile)
-                file_shortname, _ = os.path.splitext(os.path.basename(infile))
-                if file_format == "text":
-                    document = Document(os.path.basename(infile), content=codecs.open(infile, "rU", ienc).read().replace(u"\r", u""), **opts)
-                elif file_format == "conll":
-                    document = Document.from_conll(infile, **opts)
-                elif file_format == "html":
-                    try:
-                        infile = infile.decode(sys.getfilesystemencoding())
-                    except:
-                        pass
-                    document = sem.importers.from_url(infile, logger=logger, **opts)
-                elif file_format == "guess":
-                    document = sem.importers.load(infile, logger=logger, **opts)
-                else:
-                    raise ValueError(u"unknown format: {0}".format(file_format))
-                if document.name not in names:
-                    documents.append(document)
-                    names.add(document.name)
-                elif logger:
-                    logger.info("document %s already found, not adding to the list.", document.name)
-    
-    return documents
 
 def longest_common_substring(a, b, casesensitive=True, lastchance=False):
     """
@@ -333,3 +298,36 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
         return list(solutions)
     except RuntimeError: # maximum recursion depth
         return []
+
+@contextmanager
+def r_open(source, encoding='utf-8'):
+    '''Open in read mode either a file from the filename or a string.'''
+    
+    src = None
+    try:
+        src = open(source, 'r', encoding=encoding, newline='')
+    except Exception:
+        try:
+            s = source.decode(encoding)
+        except UnicodeDecodeError:
+            s = source
+        except UnicodeEncodeError:
+            s = source
+        except AttributeError:
+            s = source
+        src = StringIO(s)
+    finally:
+        yield src
+        try:
+            src.close()
+        except Exception:
+            pass
+
+def read_chunks(source, size=1024, encoding='utf-8'):
+    '''Read a source by chunks of a given size.'''
+    
+    with r_open(source, encoding) as input_stream:
+        buff = input_stream.read(size)
+        while buff:
+            yield buff
+            buff = input_stream.read(size)

@@ -40,9 +40,8 @@ class Exporter(DefaultExporter):
         pass
     
     def document_to_unicode(self, document, couples, **kwargs):
-        return self.corpus_to_unicode(document.corpus, couples, **kwargs)
-    
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
+        corpus = document.corpus
+        
         lower  = {}
         for field in couples:
             lower[field.lower()] = couples[field]
@@ -51,9 +50,9 @@ class Exporter(DefaultExporter):
             token_field = lower["word"]
         elif "token" in lower:
             token_field = lower["token"]
-        elif corpus.has_key(u"word"):
+        elif u"word" in corpus:
             token_field = u"word"
-        elif corpus.has_key(u"token"):
+        elif u"token" in corpus:
             token_field = u"token"
         else:
             raise RuntimeError("Cannot find token field")
@@ -62,7 +61,7 @@ class Exporter(DefaultExporter):
         for sentence in corpus:
             tokens = [token[token_field] for token in sentence]
             
-            if "pos" in lower and corpus.has_key(lower["pos"]):
+            if "pos" in lower and lower["pos"] in corpus:
                 pos = [u"" for _ in range(len(tokens))]
                 for annotation in get_pos(sentence, lower["pos"]):
                     tokens[annotation.ub-1] += u"/" + annotation.value
@@ -70,12 +69,12 @@ class Exporter(DefaultExporter):
                         tokens[i+1] = tokens[i] + u"_" + tokens[i+1]
                         tokens[i]   = u""
             
-            if "chunking" in lower and corpus.has_key(lower["chunking"]):
+            if "chunking" in lower and lower["chunking"] in corpus:
                 for annotation in get_chunks(sentence, lower["chunking"]):
                     tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
             
-            if "ner" in lower and corpus.has_key(lower["ner"]):
+            if "ner" in lower and lower["ner"] in corpus:
                 for annotation in get_chunks(sentence, lower["ner"]):
                     tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])

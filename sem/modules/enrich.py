@@ -33,9 +33,9 @@ SOFTWARE.
 
 import logging
 
-# measuring time laps
 import time
 from datetime import timedelta
+import codecs
 
 try:
     from xml.etree.cElementTree import ElementTree, tostring as element2string
@@ -45,15 +45,55 @@ except ImportError:
 from .sem_module import SEMModule as RootModule
 
 from sem.features import XML2Feature
-from sem.IO import KeyReader, KeyWriter
 from sem.logger import default_handler, file_handler
 from sem.misc import is_string
 from sem.importers import conll_file
 from sem.storage import Entry
 
+from sem.storage import Span, Document, Segmentation
+#1. from sem.storage.corpus1 import Corpus
+from sem.importers import read_conll
+
 import os.path
 enrich_logger = logging.getLogger("sem.{0}".format(os.path.basename(__file__).split(".")[0]))
 enrich_logger.addHandler(default_handler)
+
+#1. def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, chunkings=None):
+#1.     """
+#1.     Read CoNLL-formatted text from a file.
+#1.     """
+#1.     name = os.path.basename(filename)
+#1.     sents = [sent[:] for sent in read_conll(filename, encoding)]
+#1.     return conll_data(name, Corpus(fields, sents), word_field, encoding="utf-8", taggings=None, chunkings=None)
+#1. #1. 
+#1. def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunkings=None):
+#1.     """
+#1.     Create a Document from CoNLL-formatted data (SEM Corpus).
+#1.     """
+#1.     character_index  = 0
+#1.     sentence_index   = 0
+#1.     contents         = []
+#1.     word_spans       = []
+#1.     sentence_spans   = []
+#1.     word_index       = corpus.f2i[word_field]
+#1.     for sentence in corpus.sentences:
+#1.         contents.append([])
+#1.         for token in sentence:
+#1.             word = token[word_index]
+#1.             contents[-1].append(word[:])
+#1.             word_spans.append(Span(character_index, character_index+len(word)))
+#1.             character_index += len(word) + 1
+#1.         sentence_spans.append(Span(sentence_index, sentence_index+len(sentence)))
+#1.         sentence_index += len(sentence)
+#1.     document = Document(name, u"\n".join([u" ".join(content) for content in contents]), encoding)
+#1.     document._corpus = corpus # TODO: should not access field with _
+#1.     document.add_segmentation(Segmentation("tokens", spans=word_spans))
+#1.     document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans[:]))
+#1.     for tagging in (taggings or []):
+#1.         document.add_annotation(tag_annotation_from_corpus(document._corpus, tagging, tagging, reference=document.segmentation("tokens"), strict=True))
+#1.     for chunking in (chunkings or []):
+#1.         document.add_annotation(chunk_annotation_from_corpus(document._corpus, chunking, chunking, reference=document.segmentation("tokens"), strict=True))
+#1.     return document
 
 class SEMModule(RootModule):
     def __init__(self, path=None, bentries=None, aentries=None, features=None, mode=u"label", log_level="WARNING", log_file=None, **kwargs):
@@ -136,19 +176,28 @@ class SEMModule(RootModule):
         
         new_fields = [feature.name for feature in self.features if feature.display]
         document.corpus.fields += new_fields
+        #1. document.corpus.fields = \
+        #1.         [entry.name for entry in self.bentries] \
+        #1.         + [feature.name for feature in self.features] \
+        #1.         + [entry.name for entry in self.aentries]
         nth = 0
         for i, p in enumerate(document.corpus):
             for feature in self.features:
                 if feature.is_sequence:
                     for i, value in enumerate(feature(p)):
                         p[i][feature.name] = value
+                        #1. p.set(i, feature.name, value)
                 else:
                     for i in range(len(p)):
                         p[i][feature.name] = feature(p, i)
+                        #1. p.set(i, feature.name, feature(p, i))
                         if feature.is_boolean:
                             p[i][feature.name] = int(p[i][feature.name])
+                            #1. p.set(i, feature.name, int(p.get(i, feature.name)))
                         elif p[i][feature.name] is None:
+                        #1. elif p.get(i, feature.name) is None:
                             p[i][feature.name] = feature.default()
+                            #1. p.set(i, feature.name, feature.default())
             nth += 1
             if (0 == nth % 1000):
                 enrich_logger.debug(u'%i sentences enriched', nth)
@@ -251,12 +300,15 @@ def main(args):
     bentries = [entry.name for entry in processor.bentries]
     aentries = [entry.name for entry in processor.aentries]
     features = [feature.name for feature in processor.features if feature.display]
-    document = from_conll(args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc)
+    document = conll_file(args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc)
     
     processor.process_document(document)
-    with KeyWriter(args.outfile, args.oenc or args.enc, bentries + features + aentries) as O:
-        for p in document.corpus:
-            O.write_p(p)
+    str_format = u"\t".join([u"{{{}}}".format(field) for field in bentries + features + aentries]) + u"\n"
+    with codecs.open(args.outfile, "w", args.oenc or args.enc) as output_stream:
+        for sentence in document.corpus:
+            for token in sentence:
+                output_stream.write(str_format.format(**token))
+            output_stream.write(u"\n")
     
     laps = time.time() - start
     enrich_logger.info(u"done in %s", timedelta(seconds=laps))

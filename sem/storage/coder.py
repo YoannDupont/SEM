@@ -45,13 +45,6 @@ class Coder(object):
     def keys(self):
         return self._decoder[:]
     
-    @classmethod
-    def fromlist(cls, elements):
-        coder = Coder()
-        for element in elements:
-            coder.add(element)
-        return coder
-    
     def add(self, element, strict=False):
         if element not in self._encoder:
             self._encoder[element] = len(self)

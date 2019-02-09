@@ -46,7 +46,7 @@ import sem.annotators
 
 from sem.CRF.model import Model
 
-from sem.IO.columnIO import Reader
+from sem.importers import read_conll
 
 from sem.importers import conll_file
 from sem.exporters import CoNLLExporter
@@ -105,7 +105,7 @@ def main(args):
     
     length = -1
     fields = None
-    for sentence in Reader(infile, ienc):
+    for sentence in read_conll(infile, ienc):
         fields = fields or [unicode(i) for i in range(len(sentence[0]))]
         if length == -1:
             length = len(fields)

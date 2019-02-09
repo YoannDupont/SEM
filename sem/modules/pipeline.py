@@ -79,27 +79,3 @@ class Pipeline(SEMModule):
             else:
                 pipeline_logger.warn(u"pipe %s not executed", pipe)
         return document # allows multiprocessing
-    
-    @classmethod
-    def from_xml(cls, xmlpipes):
-        classes = {}
-        pipes = []
-        for xmlpipe in xmlpipes:
-            if xmlpipe.tag == "export": continue
-            
-            Class = classes.get(xmlpipe.tag, None)
-            if Class is None:
-                Class = get_module(xmlpipe.tag)
-                classes[xmlpipe.tag] = Class
-            arguments = {}
-            for key, value in xmlpipe.attrib.items():
-                if value.startswith(u"~/"):
-                    value = os.path.expanduser(value)
-                elif sem.misc.is_relative_path(value):
-                    value = os.path.abspath(os.path.join(os.path.dirname(master), value))
-                arguments[key.replace(u"-", u"_")] = value
-            for key, value in options.items():
-                if key not in arguments:
-                    arguments[key] = value
-            pipes.append(Class(**arguments))
-        pipeline = sem.modules.pipeline.Pipeline(pipes)

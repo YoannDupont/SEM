@@ -67,12 +67,11 @@ except ImportError:
 
 import sem
 from sem.constants import NUL
-from sem.misc import documents_from_list
 from sem.storage.document import Document, SEMCorpus
 from sem.storage.annotation import Tag, Annotation
 from sem.logger import extended_handler
 import sem.importers
-from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder2
+from sem.gui.misc import find_potential_separator, find_occurrences, random_color, Adder2, from_tagset
 from sem.gui.components import SEMTkTrainInterface, SearchFrame
 from sem.gui.components import SemTkMasterSelector, SemTkLangSelector # TODO: remove
 from sem.storage.annotation import str2filter
@@ -197,9 +196,6 @@ class AnnotationTool(tkinter.Frame):
         self.tag_document_btn = ttk.Button(self.toolbar, text="tag document", command=self.tag_document)
         self.tag_document_btn.pack(side="left")
         self.tag_document_btn.configure(state=tkinter.DISABLED)
-
-        #self.load_tagset_btn = ttk.Button(self.toolbar, text="load tagset", command=self.load_tagset_gui)
-        #self.load_tagset_btn.pack(side="left")
 
         self.type_combos = []
         self.add_type_lbls = []
@@ -1051,7 +1047,7 @@ class AnnotationTool(tkinter.Frame):
         self.type_combos[0].bind("<<ComboboxSelected>>", self.add_annotation)
         self.type_combos[0].pack(side="left")
         
-        self.adder = Adder2.from_tagset(tagset)
+        self.adder = from_tagset(tagset)
         for depth in range(self.adder.max_depth()):
             ## label
             self.add_type_lbls.append(ttk.Label(self.toolbar, text="add {0}type:".format("sub"*(depth))))

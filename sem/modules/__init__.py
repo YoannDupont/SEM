@@ -34,7 +34,6 @@ from .wapiti_label import SEMModule as WapitiLabelModule
 from .clean import SEMModule as CleanModule
 from .map_annotations import SEMModule as MapAnnotationsModule
 
-
 try:
     from importlib import import_module
 except ImportError: # backward compatibility for python < 2.7

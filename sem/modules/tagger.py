@@ -108,6 +108,18 @@ def get_section(cfg, section):
         return {}
 
 def load_master(master, force_format="default", pipeline_mode="all"):
+    """
+    Load a SEM workflow from a file.
+    
+    Parameters
+    ----------
+    master : str
+        the path to the file.
+    force_format : str ["default"]
+        if "default", use the normal format defined in master file. Otherwise,
+        use force_format.
+    """
+    
     try:
         tree = ET.parse(os.path.abspath(master))
         root = tree.getroot()
@@ -236,7 +248,7 @@ def main(args):
         opts["taggings"] = [tagging for tagging in opts.get("taggings", u"").split(u",") if tagging]
         opts["chunkings"] = [chunking for chunking in opts.get("chunkings", u"").split(u",") if chunking]
     
-    documents = sem.misc.documents_from_list(args.infiles, file_format, **opts)
+    documents = sem.importers.documents_from_list(args.infiles, file_format, **opts)
     
     n_procs = getattr(args, "n_procs", 1)
     if n_procs == 0:

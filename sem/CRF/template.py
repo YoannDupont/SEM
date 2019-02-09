@@ -142,7 +142,7 @@ class RegexPattern(IdentityPattern):
         return self._pattern.search(cell)"""
 
 class TestPattern(RegexPattern):
-    __pattern = re.compile('%t\\[\s*(-?[0-9]+),([0-9]+),"(.+)"\\]', re.I)
+    __pattern = re.compile(r'%t\[\s*(-?[0-9]+),([0-9]+),"(.+)"\]', re.I)
     
     def __str__(self):
         p = self._pattern.pattern[:]
@@ -168,7 +168,7 @@ class TestPattern(RegexPattern):
         return TestPattern(int(groups[0]),int(groups[1]),groups[2], case_insensitive=case_insensitive)
 
 class MatchPattern(RegexPattern):
-    __pattern = re.compile('%m\\[\s*(-?[0-9]+),([0-9]+),"([^"]+?)"\\]', re.I)
+    __pattern = re.compile(r'%m\[\s*(-?[0-9]+),([0-9]+),"([^"]+?)"\]', re.I)
     
     def __str__(self):
         p = self._pattern.pattern[:]

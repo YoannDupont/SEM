@@ -32,10 +32,10 @@ import sys, codecs, logging, re
 
 from .sem_module import SEMModule as RootModule
 
-from sem.storage import Tag, Trie
+from sem.storage import Tag, Trie, Span
 from sem.storage.annotation import chunk_annotation_from_sentence
 
-from sem.IO.columnIO import Reader
+from sem.importers import read_conll
 
 from sem.features import MultiwordDictionaryFeature, NUL
 
@@ -383,7 +383,7 @@ def main(args):
     
     entities = {}
     counts   = {}
-    for p in Reader(args.infile, ienc):
+    for p in read_conll(args.infile, ienc):
         G = chunk_annotation_from_sentence(p, column=args.tag_column)
         for entity in G:
             id   = entity.value
@@ -407,7 +407,7 @@ def main(args):
         feature = OverridingLabelConsistencyFeature(entities, ne_entry=args.tag_column, entry=args.token_column, entries=entities.keys())
     
     with codecs.open(args.outfile, "w", oenc) as O:
-        for p in Reader(args.infile, ienc):
+        for p in read_conll(args.infile, ienc):
             for i, value in enumerate(feature(p)):
                 p[i][args.tag_column] = value
                 O.write(u"\t".join(p[i]) + u"\n")

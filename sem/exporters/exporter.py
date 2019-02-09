@@ -45,57 +45,6 @@ class Exporter(object):
     def extension(cls):
         return cls.__ext
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        """
-        returns a unicode representation of the corpus for the given
-        export format.
-        
-        Parameters
-        ----------
-            corpus : list of list of dict (string -> string)
-                the input corpus to export. It is more or less a CoNLL
-                representation of the corpus.
-            couples : dict (string -> string)
-                the "entry name" <=> "entry index" that allows to
-                retrieve information to export.
-                ex: couples = {u"chunking":u"C", u"NER":u"N"}
-        """
-        raise NotImplementedError("export_to_string not implemented for class " + self.__class__)
-    
-    def corpus_to_file(self, corpus, couples, output, encoding="utf-8", **kwargs):
-        """
-        write the document to a file in the given export format.
-        
-        Parameters
-        ----------
-            corpus : list
-                the corpus to export
-            couples : dict (string -> string)
-                the "entry name" <=> "entry index" that allows to
-                retrieve information to export.
-                ex: couples = {u"chunking":u"C", u"NER":u"N"}
-            output : str
-                the name of the file to write into
-        """
-        with codecs.open(output, "w", encoding) as O:
-            O.write(self.corpus_to_unicode(corpus, couples, **kwargs))
-    
-    def document_to_unicode(document, couples, **kwargs):
-        """
-        returns a unicode representation of the document for the given
-        export format.
-        
-        Parameters
-        ----------
-            document : Document
-                the input document to export
-            couples : dict (string -> string)
-                the "entry name" <=> "entry index" that allows to
-                retrieve information to export.
-                ex: couples = {u"chunking":u"C", u"NER":u"N"}
-        """
-        raise NotImplementedError("export_to_string not implemented for class " + self.__class__)
-    
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         """
         write the document to a file in the given export format.

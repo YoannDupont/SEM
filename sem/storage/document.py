@@ -50,11 +50,11 @@ except ImportError:
 import sem
 import sem.misc
 from sem.logger import default_handler
-from .holder import Holder
-from .segmentation import Segmentation
-from .corpus import Corpus
-from .annotation import Tag, Annotation, tag_annotation_from_corpus, chunk_annotation_from_corpus, get_top_level
-from .span import Span
+from sem.storage.holder import Holder
+from sem.storage.segmentation import Segmentation
+from sem.storage.corpus import Corpus
+from sem.storage.annotation import Tag, Annotation, chunk_annotation_from_corpus, get_top_level
+from sem.storage.span import Span
 
 document_logger = logging.getLogger("sem.storage.document")
 document_logger.addHandler(default_handler)
@@ -104,43 +104,8 @@ class Document(Holder):
     def metadatas(self):
         return self._metadatas
     
-    @classmethod
-    def from_file(cls, filename, encoding="utf-8"):
-        return Document(basename(filename), content=codecs.open(filename, "rU", encoding).read().replace("\r",""), encoding=encoding)
-    
-    @classmethod
-    def from_conll(cls, filename, fields, word_field, taggings=None, chunkings=None, encoding="utf-8", **kwargs):
-        return Document.from_corpus(basename(filename), Corpus.from_conll(filename, fields, encoding=encoding), word_field, taggings=taggings, chunkings=chunkings, encoding=encoding, **kwargs)
-    
-    @classmethod
-    def from_corpus(cls, name, corpus, word_field, taggings=None, chunkings=None, encoding="utf-8", **kwargs):
-        document         = Document(name, encoding=encoding)
-        document._corpus = corpus
-        character_index  = 0
-        sentence_index   = 0
-        contents         = []
-        word_spans       = []
-        sentence_spans   = []
-        for sentence in document._corpus.sentences:
-            contents.append([])
-            for token in sentence:
-                word = token[word_field]
-                contents[-1].append(word[:])
-                word_spans.append(Span(character_index, character_index+len(word)))
-                character_index += len(word) + 1
-            sentence_spans.append(Span(sentence_index, sentence_index+len(sentence)))
-            sentence_index += len(sentence)
-        document._content = u"\n".join([u" ".join(content) for content in contents])
-        document.add_segmentation(Segmentation("tokens", spans=word_spans))
-        document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans[:]))
-        for tagging in (taggings or []):
-            document.add_annotation(tag_annotation_from_corpus(document._corpus, tagging, tagging, reference=document.segmentation("tokens"), strict=True))
-        for chunking in (chunkings or []):
-            document.add_annotation(chunk_annotation_from_corpus(document._corpus, chunking, chunking, reference=document.segmentation("tokens"), strict=True))
-        return document
-    
-    @classmethod
-    def from_xml(cls, xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
+    @staticmethod
+    def from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
         if sem.misc.is_string(xml):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
@@ -264,7 +229,7 @@ class Document(Holder):
     def write(self, f, depth=0, indent=4, add_header=False):
         if add_header:
             f.write(u'<?xml version="1.0" encoding="{0}" ?>\n'.format(f.encoding or u"ASCII"))
-        f.write(u'{0}<document name="{1}">\n'.format(depth*indent*u" ", self.name))
+        f.write(u'{0}<document name="{1}">\n'.format(depth*indent*u" ", self.name.replace(u'"', u'&quot;')))
         depth += 1
         f.write(u'{}<metadata'.format(depth*indent*" "))
         for metakey, metavalue in sorted(self._metadatas.items()):
@@ -406,8 +371,8 @@ class Document(Holder):
             self.add_chunking(tags, field, annotation_name)
         else:
             self.add_tagging(sem.misc.correct_pos_tags(tags), field, annotation_name)
-        if not self.corpus.has_key(field):
-            self.corpus.fields.append(field)
+        if field not in self.corpus:
+            self.corpus.fields += [field]
     
     def add_tagging(self, sentence_tags, field, annotation_name):
         nth_token  = 0
@@ -478,8 +443,8 @@ class SEMCorpus(Holder):
     def documents(self):
         return self._documents
     
-    @classmethod
-    def from_xml(cls, xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
+    @staticmethod
+    def from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator=u"."):
         if sem.misc.is_string(xml):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
@@ -508,7 +473,6 @@ class SEMCorpus(Holder):
         for document in self._documents:
             document.write(f, depth=1, indent=indent, add_header=False)
         f.write(u"</sem>")
-
 
 str2docfilter = {
     u"all documents" : lambda x,y : True,

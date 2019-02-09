@@ -55,6 +55,3 @@ class Exporter(DefaultExporter):
             parts.append(u"T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(id=id, annotation=annotation, txt=content[annotation.lb : annotation.ub].replace(u"\r",u"").replace(u"\n",u" ")))
         return u"\n".join(parts)
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        raise NotImplementedError("corpus_to_unicode not implemented for TEI exporter.")
-    

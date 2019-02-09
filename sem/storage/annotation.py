@@ -31,7 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .span import Span
+from sem.storage.span import Span
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 
 class Tag(object):
@@ -85,9 +85,6 @@ class Tag(object):
     def ub(self, ub):
         self._span.ub = ub
     
-    def toXML(self):
-        return '<tag v="{tag.value}" s="{tag.lb}" l="{tag.ub}" />'.format(tag=self)
-    
     def kind(self):
         return u"chunking"
     
@@ -123,8 +120,8 @@ class Tag(object):
     
 class Annotation(object):
     def __init__(self, name, reference=None, annotations=None):
-        self._name        = name
-        self._reference   = reference
+        self._name = name
+        self._reference = reference
         if annotations is None:
             self._annotations = []
         else:
@@ -177,10 +174,7 @@ class Annotation(object):
                     i += 1
                     break
                 i += 1
-        if i == len(self._annotations):
-            self._annotations.append(annotation)
-        else:
-            self._annotations.insert(i, annotation)
+        self._annotations.insert(i, annotation)
     
     def append(self, annotation):
         self._annotations.append(annotation)
@@ -248,7 +242,6 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
                 annotation.append(Tag(value, start+shift, 0, length=length))
             value  = ""
             length = 0
-        
         elif flag in BEGIN:
             if value != "": # begin after non-empty chunk ==> add annnotation
                 annotation.append(Tag(value, start+shift, 0, length=length))
@@ -257,25 +250,23 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
             length = 1
             if index == last: # last token ==> add annotation
                 annotation.append(Tag(value, start+shift, 0, length=length))
-        
         elif flag in IN:
             if value != tag[2:] and strict:
                 raise ValueError('Got different values for same chunk: "{0}" <> "{1}"'.format(tag[2:], value))
             length += 1
             if index == last: # last token ==> add annotation
                 annotation.append(Tag(value, start+shift, 0, length=length))
-        
         elif flag in LAST:
             annotation.append(Tag(value, start+shift, 0, length=length+1))
             value  = ""
             length = 0
-        
         elif flag in SINGLE:
             if value != "": # begin after non-empty chunk ==> add annnotation
                 annotation.append(Tag(value, start+shift, 0, length=length))
                 value  = ""
                 length = 0
             annotation.append(Tag(tag[2:], index+shift, 0, length=1))
+    
     return annotation
 
 def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=False):

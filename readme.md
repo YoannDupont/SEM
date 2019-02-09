@@ -3,7 +3,7 @@
 
 ## Main SEM features
 1. A GUI for manual annotation (requires TkInter)
-   1. from terminal: run ```python -m sem annotation_gui```
+   1. from terminal: run `python -m sem annotation_gui`
    2. fast annotation: keyboard shortcuts and document-wide annotation broadcast
    3. can load pre-annotated files
    4. support for hierarchical tags (dot-separated, eg: "noun.common")
@@ -12,7 +12,7 @@
 2. A GUI for easier use (requires TkInter)
    1. on Linux: double-clic on sem_gui.sh
    2. on Windows: double-clic on sem_gui.bat
-   3. from terminal: run ```python -m sem gui```
+   3. from terminal: run `python -m sem gui`
 3. segmentation
    1. segmentation for: French, English
    2. easy creation and integration of new tokenisers
@@ -34,12 +34,13 @@
 ## First steps with SEM
 1. install SEM
    1. see [install.md](install.md)
-   2. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in ```~/sem_data```
+   2. It will compile Wapiti and create necessary directories. Currently, SEM datas are located in `~/sem_data`
 2. run tests
-   1. run ```python -m sem --test``` in a terminal
+   1. run `python -m sem --test` in a terminal
 3. run SEM
    1. run GUI (see "main features" above) and annotate "non-regression/fr/in/segmentation.txt"
-   2. or run: ```python -m sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output```
+   2. or run: `python -m sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output`
+4. (optional) go through the [SEM tutorial](https://github.com/YoannDupont/SEM-tutorial)
 
 ## External resources used by SEM
 1. [French Treebank](http://www.llf.cnrs.fr/fr/Gens/Abeille/French-Treebank-fr.php) by [Abeillé et al. (2003)](http://link.springer.com/chapter/10.1007%2F978-94-010-0201-1_10): corpus used for POS and chunking.
@@ -50,15 +51,14 @@
 6. [Tkinter](https://wiki.python.org/moin/TkInter): for GUI modules (they will not be installed if Tkinter is not present).
 7. Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.
 8. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
-9. GUI-specific: [TkInter](https://wiki.python.org/moin/TkInter): if you want to launch SEM's GUI.
 
 ## Planned changes (for latest changes, see changelog.md)
-1. Add a tutorial. Some of it done in section "retrain SEM" in manual.
-2. add lemmatiser.
-3. have more unit tests
-4. improve segmentation
+1. add lemmatiser.
+2. have more unit tests
+3. improve segmentation
    1. handle URLs starting with country indicator (ex: "en.wikipedia.org")
    2. handle URLs starting with subdomain (ex: "blog.[...]")
+4. publish some benchmarks
 
 ## SEM references (with task[s] of interest)
 1. [DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)

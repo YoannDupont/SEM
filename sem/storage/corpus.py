@@ -31,8 +31,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.IO import KeyReader, KeyWriter
-
 _train_set = set([u"train", u"eval", u"evaluate", u"evaluation"])
 _train = u"train"
 _label_set = set([u"label", u"annotate", u"annotation"])
@@ -106,15 +104,6 @@ class Corpus(object):
     
     def __unicode__(self):
         return self.unicode(self.fields)
-    
-    @classmethod
-    def from_conll(cls, filename, fields, encoding="utf-8"):
-        def tab_split(s):
-            return s.split(u"\t")
-        corpus = Corpus(fields)
-        for sentence in KeyReader(filename, encoding, fields, splitter=tab_split):
-            corpus.append_sentence([token.copy() for token in sentence])
-        return corpus
     
     def unicode(self, fields, separator=u"\t"):
         fmt       = u"\t".join([u"{{{0}}}".format(field) for field in fields])

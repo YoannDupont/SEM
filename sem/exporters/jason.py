@@ -46,9 +46,6 @@ class Exporter(DefaultExporter):
     def document_to_unicode(self, document, couples, **kwargs):
         return json.dumps(self.document_to_data(document, couples, **kwargs), indent=2, ensure_ascii=False)
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        raise NotImplementedError("corpus_to_unicode not yet implemented for json exporter")
-    
     def document_to_data(self, document, couples, **kwargs):
         """
         This is just creating a dictionary from the document.

@@ -1,3 +1,3 @@
 @echo off
 
-python sem gui
+python -m sem gui

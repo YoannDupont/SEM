@@ -65,6 +65,20 @@ class DictGetterFeature(GetterFeature):
         
         return list2dict[current_position].get(self.entry, None)
 
+class SentenceGetterFeature(GetterFeature):
+    def __init__(self, *args, **kwargs):
+        super(SentenceGetterFeature, self).__init__(*args, **kwargs)
+        self.entry = kwargs.get("entry", "word")
+        self.shift = int(kwargs.get("shift", 0))
+    
+    def __call__(self, list2dict, position, *args, **kwargs):
+        current_position = position + self.shift
+        
+        if not(0 <= current_position < len(list2dict)):
+            return None
+        
+        return list2dict.get(current_position, self.entry)
+
 class FindFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
         super(FindFeature, self).__init__(*args, **kwargs)

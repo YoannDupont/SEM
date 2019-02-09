@@ -74,7 +74,6 @@ from sem.logger import default_handler
 from sem.storage import Annotation
 from sem.storage.annotation import str2filter
 from sem.storage.document import str2docfilter
-from sem.misc import find_suggestions
 
 class SemTkMasterSelector(ttk.Frame):
     def __init__(self, root, resource_dir, lang="fr"):
@@ -237,7 +236,7 @@ class SemTkExportSelector(ttk.Frame):
         self.root = root
         self.label = ttk.Label(self.root, text=u"select output format:")
         
-        self.export_formats = ["default"] + [exporter[:-3] for exporter in os.listdir(os.path.join(sem.SEM_HOME, "exporters")) if (exporter.endswith(".py") and not exporter.startswith("_") and not exporter == "exporter.py")]
+        self.export_formats = ["default"] + sorted([exporter[:-3] for exporter in os.listdir(os.path.join(sem.SEM_HOME, "exporters")) if (exporter.endswith(".py") and not exporter.startswith("_") and not exporter == "exporter.py")])
         self.export_combobox = ttk.Combobox(self.root)
         self.export_combobox["values"] = self.export_formats
         self.export_combobox.current(0)

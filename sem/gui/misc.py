@@ -46,7 +46,7 @@ def fill_with(t, value):
     fill_rec(t.data)
 
 def find_potential_separator(target):
-    regex = re.compile(u"(\W+)", re.U)
+    regex = re.compile(u"(\\W+)", re.U)
     found = list(set(regex.findall(target)))
     if len(found) == 1:
         return found[0]
@@ -184,36 +184,6 @@ class Adder2(object):
         self.current_annotation = None
         self.current_hierarchy_level = 0
     
-    @classmethod
-    def from_tagset(cls, tagset):
-        levels = [tag.split(u".") for tag in tagset]
-        chars = list(u"abcdefghijklmnopqrstuvwxyz") + [u'F1', u'F2', u'F3', u'F4', u'F5', u'F6', u'F7', u'F8', u'F9', u'F10', u'F11', u'F12', u'*']
-        trie = Trie()
-        for level in levels:
-            trie.add(level)
-        fill_with(trie, chars)
-        shortcut_trie = Trie()
-        for level in levels:
-            hierarchy = []
-            for depth, sublevel in enumerate(level):
-                ident = u".".join(hierarchy + [sublevel])
-                if hierarchy + [sublevel] in shortcut_trie:
-                    hierarchy.append(sublevel)
-                    continue
-                sub = trie.goto(hierarchy)
-                available = sub[NUL]
-                for c in sublevel.lower():
-                    found =  c in available
-                    if found:
-                        available.remove(c)
-                        break
-                if not found:
-                    c = available[0]
-                    available.remove(c)
-                hierarchy.append(sublevel)
-                shortcut_trie.add_with_value(hierarchy, c)
-        return Adder2(tagset, levels, shortcut_trie)
-    
     def max_depth(self):
         return max([len(l) for l in self.levels])
     
@@ -241,3 +211,32 @@ class Adder2(object):
         for key,val in sub.items():
             if key != NUL and val[NUL] == letter:
                 return key
+
+def from_tagset(tagset):
+    levels = [tag.split(u".") for tag in tagset]
+    chars = list(u"abcdefghijklmnopqrstuvwxyz") + [u'F1', u'F2', u'F3', u'F4', u'F5', u'F6', u'F7', u'F8', u'F9', u'F10', u'F11', u'F12', u'*']
+    trie = Trie()
+    for level in levels:
+        trie.add(level)
+    fill_with(trie, chars)
+    shortcut_trie = Trie()
+    for level in levels:
+        hierarchy = []
+        for depth, sublevel in enumerate(level):
+            ident = u".".join(hierarchy + [sublevel])
+            if hierarchy + [sublevel] in shortcut_trie:
+                hierarchy.append(sublevel)
+                continue
+            sub = trie.goto(hierarchy)
+            available = sub[NUL]
+            for c in sublevel.lower():
+                found =  c in available
+                if found:
+                    available.remove(c)
+                    break
+            if not found:
+                c = available[0]
+                available.remove(c)
+            hierarchy.append(sublevel)
+            shortcut_trie.add_with_value(hierarchy, c)
+    return Adder2(tagset, levels, shortcut_trie)

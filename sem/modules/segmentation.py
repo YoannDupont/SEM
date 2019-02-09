@@ -41,7 +41,7 @@ from .sem_module import SEMModule as RootModule
 
 from sem.misc import strip_html, is_string
 
-from sem.tokenisers           import get_tokeniser
+from sem.tokenisers           import get_tokeniser, bounds2spans
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
 from sem.logger               import default_handler, file_handler
@@ -55,8 +55,7 @@ class SEMModule(RootModule):
         
         if is_string(tokeniser):
             segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
-            Tokeniser = get_tokeniser(tokeniser)
-            self._tokeniser = Tokeniser()
+            self._tokeniser = get_tokeniser(tokeniser)
         else:
             self._tokeniser = tokeniser
     
@@ -95,9 +94,11 @@ class SEMModule(RootModule):
             try:
                 token_spans = current_tokeniser.word_spans(content)
             except NotImplementedError:
-                token_spans = current_tokeniser.bounds2spans(current_tokeniser.word_bounds(content))
-            sentence_spans = current_tokeniser.bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
-            paragraph_spans = current_tokeniser.bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
+                token_spans = bounds2spans(current_tokeniser.word_bounds(content))
+            except AttributeError:
+                token_spans = bounds2spans(current_tokeniser.word_bounds(content))
+            sentence_spans = bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
+            paragraph_spans = bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
         else:
             segmentation_logger.info(u'{0} already has segmenation, not computing'.format(document.name))
             token_spans = document.segmentation("tokens").spans

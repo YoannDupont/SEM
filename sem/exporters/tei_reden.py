@@ -66,9 +66,6 @@ class Exporter(DefaultExporter):
         return u'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' \
                + ET.tostring(self.document_to_data(document, couples), encoding=encoding)
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        raise NotImplementedError("corpus_to_unicode not implemented for TEI exporter.")
-    
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         teiDocument = self.document_to_data(document, couples=couples)
         content = ET.tostring(teiDocument, encoding="utf-8").decode("utf-8")

@@ -66,7 +66,8 @@ class Annotator(RootAnnotator):
         
         tags = []
         for sequence in document.corpus:
-            tagging, _, _ = self._model.tag_viterbi(document.corpus.to_matrix(sequence))
+            #tagging, _, _ = self._model.tag_viterbi(document.corpus.to_matrix(sequence))
+            tagging, _, _ = self._model.tag_viterbi(sequence)
             tags.append(tagging[:])
         
         document.add_annotation_from_tags(tags, self._field, annotation_name)

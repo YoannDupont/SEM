@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python sem gui
+python -m sem gui

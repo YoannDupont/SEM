@@ -31,7 +31,7 @@ from __future__ import print_function
 import sys
 import codecs
 
-from sem.IO.columnIO import Reader
+from sem.importers import read_conll
 from sem.storage import Tag, Annotation, Document
 from sem.storage.annotation import annotation_from_sentence
 
@@ -188,11 +188,13 @@ def main(args):
         R = []
         keys = None
         nth = -1
-        for n_line, p in Reader(infile, ienc).line_iter():
+        n_line = 0
+        for p in read_conll(infile, ienc):
             nth += 1
             keys = keys or range(len(p[0]))
             L.extend(annotation_from_sentence(p, column=reference_column, shift=n_line-nth))
             R.extend(annotation_from_sentence(p, column=tagging_column, shift=n_line-nth))
+            n_line += len(p)+1
         document = sem.importers.conll_file(infile, keys, keys[0], encoding=ienc)
         L = Annotation("", annotations=L, reference=document.segmentation("tokens")).get_reference_annotations()
         R = Annotation("", annotations=R, reference=document.segmentation("tokens")).get_reference_annotations()

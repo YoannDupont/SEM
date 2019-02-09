@@ -86,20 +86,6 @@ class Span(object):
     def ub(self, ub):
         self._ub = max(ub, self._lb)
     
-    def toXML(self):
-        return '<span s="{0}" l="{1}" />'.format(self._lb, len(self))
-    
-    @classmethod
-    def fromXML(cls, xml):
-        if sem.misc.is_string(node):
-            node = ET.fromstring(xml)
-        else:
-            node = xml
-        start  = node.attrib.get(u"start", node.attrib[u"s"])
-        end    = node.attrib.get(u"end", node.attrib.get(u"e", start))
-        length = node.attrib.get(u"length", node.attrib.get(u"l", -1))
-        return Span(start, end, length=length)
-    
     def strictly_contains(self, i):
         return i > self._lb and i < self.ub
     

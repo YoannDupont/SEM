@@ -41,7 +41,6 @@ import sem.importers
 from sem.misc import str2bool, is_string
 from .sem_module import SEMModule as RootModule
 
-from sem.IO.columnIO      import Reader
 from sem.storage.document import Document, SEMCorpus
 from sem.exporters        import get_exporter
 from sem.logger           import default_handler, file_handler

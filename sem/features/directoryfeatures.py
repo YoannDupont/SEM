@@ -37,6 +37,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
+import sem
 from . import Feature
 from . import DEFAULT_GETTER, DictGetterFeature
 from . import MultiwordDictionaryFeature, MapperFeature
@@ -70,7 +71,10 @@ class DirectoryFeature(Feature):
         self.order = self.order[::-1]
         
         for name in self.order:
-            self.features.append(x2f.parse(ET.fromstring(open(os.path.join(self.path, name), "rU").read())))
+            if sem.PY2:
+                self.features.append(x2f.parse(ET.fromstring(open(os.path.join(self.path, name), "rU").read())))
+            else:
+                self.features.append(x2f.parse(ET.parse(os.path.join(self.path, name)).getroot()))
             self.features[-1]._name = name
             if not (self.features[-1].is_boolean or self.features[-1].is_sequence or isinstance(self.features[-1], MapperFeature) or (isinstance(self.features[-1], TriggeredFeature) and isinstance(self.features[-1].operation, MapperFeature)) or (isinstance(self.features[-1], SubsequenceFeature))):
                 raise ValueError("In {0} feature: {1} is neither boolean nor sequence".format(self.name, name))

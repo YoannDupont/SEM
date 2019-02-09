@@ -31,13 +31,14 @@ SOFTWARE.
 import unittest
 import codecs, os.path
 
+import sem.importers
+
 from sem import SEM_DATA_DIR
 
 from sem.storage import Document, Corpus
 
 from sem.modules import EnrichModule, CleanModule, WapitiLabelModule, LabelConsistencyModule
 
-#from sem.information import Entry, Informations
 from sem.modules.enrich import Entry
 from sem.features import DictGetterFeature
 from sem.features import BOSFeature, EOSFeature
@@ -134,7 +135,7 @@ class TestModules(unittest.TestCase):
                 {u"word":u".", u"tag":u"O"}
             ],
         ])
-        document = Document.from_corpus("document", corpus, u"word")
+        document = sem.importers.conll_data("document", corpus, "word")
         tags = []
         for sentence in document._corpus.sentences:
             for token in sentence:

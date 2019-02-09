@@ -69,9 +69,5 @@ class Exporter(DefaultExporter):
             
             return document.corpus.unicode(fields)
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        values = couples.values()
-        return u"\n\n".join([u"\n".join([u"\t".join([fields for i,fields in enumerate(token) if i in values]) for token in sentence]) for sentence in corpus])
-    
     def document_to_data(self, document, couples, **kwargs):
         return document.corpus.sentences

@@ -43,9 +43,6 @@ class Exporter(DefaultExporter):
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         document.write(codecs.open(output, "w", encoding), add_header=True)
     
-    def corpus_to_unicode(self, corpus, couples, **kwargs):
-        raise NotImplementedError("corpus_to_unicode not yet implemented for SEM exporter")
-    
     def document_to_data(self, document, couples, **kwargs):
         """
         This is just creating a dictionary from the document.

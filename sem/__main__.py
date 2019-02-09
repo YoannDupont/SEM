@@ -83,16 +83,10 @@ def main(args=None):
             print("\t{0}".format(module))
         print()
         print("for SEM's current version: -v or --version\n")
-        print("for informations about the last revision: -i or --informations")
+        print("for informations about SEM: see readme.md")
         print("for playing all tests: --test")
     elif operation in ["-v", "--version"]:
         print(sem.full_name())
-    elif operation in ["-i", "--informations"]:
-        informations = sem.informations()
-        try:
-            print(informations)
-        except UnicodeEncodeError:
-            print(informations.encode(sys.getfilesystemencoding(), errors="replace"))
     elif operation == "--test":
         testsuite = unittest.TestLoader().discover(os.path.join(sem.SEM_HOME, "tests"))
         unittest.TextTestRunner(verbosity=2).run(testsuite)

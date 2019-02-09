@@ -34,7 +34,6 @@ import re
 
 from os.path import abspath, dirname, join
 
-#import sem.information
 import sem.misc
 
 from sem.storage import Entry
@@ -51,6 +50,8 @@ from . import DirectoryFeature, FillerFeature
 from . import RuleFeature, OrRuleFeature
 
 from . import TriggeredFeature
+
+from sem.features.getterfeatures import SentenceGetterFeature
 
 class XML2Feature(object):
     def __init__(self, entries, path=None):
@@ -77,6 +78,10 @@ class XML2Feature(object):
             getter = DictGetterFeature(entry=attrib.get("entry", self._default_entry), shift=attrib.get("shift", self._default_shift))
         if isinstance(getter, DictGetterFeature):
             self.check_entry(getter.entry, attrib)
+        #1. if getter is None:
+        #1.     getter = SentenceGetterFeature(entry=attrib.get("entry", self._default_entry), shift=attrib.get("shift", self._default_shift))
+        #1. if isinstance(getter, SentenceGetterFeature):
+        #1.     self.check_entry(getter.entry, attrib)
         
         if attrib.get("name", None):
             self._features[attrib["name"]] = Entry(attrib["name"], mode="label")
