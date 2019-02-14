@@ -126,7 +126,8 @@ def word_spans(content):
                 continue
             # commas
             prev = span[0]
-            for find in _comma_not_number.finditer(text):
+            find = _comma_not_number.search(text)
+            if find:
                 tmp.extend(
                     [
                         (prev, shift+find.start()),
@@ -177,8 +178,10 @@ def word_spans(content):
                 continue
             i += 1
         
-        cur = [Span(s[0]+offset, s[1]+offset) for s in l1]
-        if cur[-1].ub == len(part):
+        cur = [Span(s[0]+offset, s[1]+offset) for s in l1 if s[0] < s[1]]
+        if not cur:
+            rem = part[:]
+        elif cur[-1].ub == len(part):
             rem = part[cur[-1].lb : ]
             del cur[-1]
         offset += len(part) - len(rem)
