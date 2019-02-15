@@ -45,10 +45,12 @@ _cls = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))\b", re.U + 
 _is_abn = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\.?$", re.U + re.I)
 _abbrev = re.compile(r"\b(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
 _digit_valid = set(u"0123456789,.-")
+_simple_smileys = re.compile("^[:;x=],?-?[()DdPp]+$")
 
 _forbidden.append(_is_abn)
 _forbidden.append(_abbrev)
 _forbidden.append(_cls)
+_forbidden.append(_simple_smileys)
 
 _force.append(_cls)
 _force.append(sem.constants.url_re)
