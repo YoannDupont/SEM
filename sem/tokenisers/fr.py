@@ -67,127 +67,119 @@ def word_spans(content):
     spans = []
     offset = 0
     rem = u""
+    
+    part = content
+    l = [match.span() for match in _spaces.finditer(part)]
 
-    for subpart in read_chunks(content, size=1024):
-        part = rem + subpart
-        l = [match.span() for match in _spaces.finditer(part)]
-
-        if l:
-            l1 = [(l[i][1], l[i+1][0]) for i in range(len(l)-1)]
-            if l[0][0] != 0:
-                l1.insert(0, (0, l[0][0]))
-            if l[-1][1] != len(part):
-                l1.append((l[-1][1], len(part)))
-        else:
-            l1 = [(0, len(part))]
-        
-        i = 0
-        while i < len(l1):
-            span = l1[i]
-            text = part[span[0] : span[1]]
-            shift = span[0]
-            if len(text) == 1:
-                i += 1
-                continue
-            if _word.match(text):
-                i += 1
-                continue
-            found = False
-            for force in _force:
-                found = force.match(text)
-                if found:
-                    s,e = found.start(), found.end()
-                    del l1[i]
-                    l1.insert(i, (shift+e, shift+len(text)))
-                    l1.insert(i, (shift+s, shift+e))
-                    i += 1
-                    break
-            if found:
-                continue
-            for forbidden in _forbidden:
-                found = forbidden.match(text)
-                if found:
-                    i += 1
-                    break
-            if found:
-                continue
-            tmp = []
-            # atomic characters, they are always split
-            prev = span[0]
-            for find in _atomic.finditer(text):
-                if prev != shift+find.start():
-                    tmp.append((prev, shift+find.start()))
-                tmp.append((shift+find.start(), shift+find.end()))
-                prev = shift+find.end()
-            if tmp:
-                if prev != span[1]:
-                    tmp.append((prev, span[1]))
-                del l1[i]
-                for t in reversed(tmp):
-                    l1.insert(i, t)
-                continue
-            # commas
-            prev = span[0]
-            find = _comma_not_number.search(text)
-            if find:
-                tmp.extend(
-                    [
-                        (prev, shift+find.start()),
-                        (shift+find.start(), shift+find.end()),
-                        (shift+find.end(), span[1])
-                    ]
-                )
-                prev = shift+find.end()+1
-            if tmp:
-                del l1[i]
-                for t in reversed(tmp):
-                    l1.insert(i, t)
-                continue
-            # apostrophes
-            prev = span[0]
-            for find in _apostrophe.finditer(text):
-                tmp.append((prev, shift+find.start()+1))
-                prev = shift+find.start()+1
-            if prev < span[1]:
-                tmp.append((prev, span[1]))
-            if len(tmp) > 1:
-                del l1[i]
-                for t in reversed(tmp):
-                    l1.insert(i, t)
-                continue
-            del tmp[:]
-            # number with unit
-            prev = span[0]
-            for find in _number_with_unit.finditer(text):
-                tmp.append((prev, span[0]+find.start()+1))
-                prev = span[0]+find.start()+1
-            if tmp:
-                tmp.append((prev, span[1]))
-                del l1[i]
-                for t in reversed(tmp):
-                    l1.insert(i, t)
-                continue
-            # dots and ending commas
-            if text and (text[-1] in u".," and not (len(text) == 2 and text[0].isupper())):
-                mdots = _dots.search(text)
-                length = (len(mdots.group(1)) if mdots else 1)
-                if length != len(text):
-                    tmp = [(span[0], span[1]-length), (span[1]-length, span[1])]
-            if tmp:
-                del l1[i]
-                for t in reversed(tmp):
-                    l1.insert(i, t)
-                continue
+    if l:
+        l1 = [(l[i][1], l[i+1][0]) for i in range(len(l)-1)]
+        if l[0][0] != 0:
+            l1.insert(0, (0, l[0][0]))
+        if l[-1][1] != len(part):
+            l1.append((l[-1][1], len(part)))
+    else:
+        l1 = [(0, len(part))]
+    
+    i = 0
+    while i < len(l1):
+        span = l1[i]
+        text = part[span[0] : span[1]]
+        shift = span[0]
+        if len(text) == 1:
             i += 1
-        
-        cur = [Span(s[0]+offset, s[1]+offset) for s in l1 if s[0] < s[1]]
-        if not cur:
-            rem = part[:]
-        elif cur[-1].ub == len(part):
-            rem = part[cur[-1].lb : ]
-            del cur[-1]
-        offset += len(part) - len(rem)
-        spans.extend(cur)
+            continue
+        if _word.match(text):
+            i += 1
+            continue
+        found = False
+        for force in _force:
+            found = force.match(text)
+            if found:
+                s,e = found.start(), found.end()
+                del l1[i]
+                l1.insert(i, (shift+e, shift+len(text)))
+                l1.insert(i, (shift+s, shift+e))
+                i += 1
+                break
+        if found:
+            continue
+        for forbidden in _forbidden:
+            found = forbidden.match(text)
+            if found:
+                i += 1
+                break
+        if found:
+            continue
+        tmp = []
+        # atomic characters, they are always split
+        prev = span[0]
+        for find in _atomic.finditer(text):
+            if prev != shift+find.start():
+                tmp.append((prev, shift+find.start()))
+            tmp.append((shift+find.start(), shift+find.end()))
+            prev = shift+find.end()
+        if tmp:
+            if prev != span[1]:
+                tmp.append((prev, span[1]))
+            del l1[i]
+            for t in reversed(tmp):
+                l1.insert(i, t)
+            continue
+        # commas
+        prev = span[0]
+        find = _comma_not_number.search(text)
+        if find:
+            tmp.extend(
+                [
+                    (prev, shift+find.start()),
+                    (shift+find.start(), shift+find.end()),
+                    (shift+find.end(), span[1])
+                ]
+            )
+            prev = shift+find.end()+1
+        if tmp:
+            del l1[i]
+            for t in reversed(tmp):
+                l1.insert(i, t)
+            continue
+        # apostrophes
+        prev = span[0]
+        for find in _apostrophe.finditer(text):
+            tmp.append((prev, shift+find.start()+1))
+            prev = shift+find.start()+1
+        if prev < span[1]:
+            tmp.append((prev, span[1]))
+        if len(tmp) > 1:
+            del l1[i]
+            for t in reversed(tmp):
+                l1.insert(i, t)
+            continue
+        del tmp[:]
+        # number with unit
+        prev = span[0]
+        for find in _number_with_unit.finditer(text):
+            tmp.append((prev, span[0]+find.start()+1))
+            prev = span[0]+find.start()+1
+        if tmp:
+            tmp.append((prev, span[1]))
+            del l1[i]
+            for t in reversed(tmp):
+                l1.insert(i, t)
+            continue
+        # dots and ending commas
+        if text and (text[-1] in u".," and not (len(text) == 2 and text[0].isupper())):
+            mdots = _dots.search(text)
+            length = (len(mdots.group(1)) if mdots else 1)
+            if length != len(text):
+                tmp = [(span[0], span[1]-length), (span[1]-length, span[1])]
+        if tmp:
+            del l1[i]
+            for t in reversed(tmp):
+                l1.insert(i, t)
+            continue
+        i += 1
+    
+    spans = [Span(s[0]+offset, s[1]+offset) for s in l1 if s[0] < s[1]]
     spans = [span for span in spans if len(span) > 0]
     return spans
 

@@ -39,15 +39,47 @@ from datetime import timedelta
 
 from .sem_module import SEMModule as RootModule
 
-from sem.misc import strip_html, is_string
+from sem.misc import strip_html, is_string, read_chunks
 
 from sem.tokenisers           import get_tokeniser, bounds2spans
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
+from sem.storage              import Span
 from sem.logger               import default_handler, file_handler
 
 segmentation_logger = logging.getLogger("sem.segmentation")
 segmentation_logger.addHandler(default_handler)
+
+def token_spans_buffered(tokeniser, content):
+    """Return the token spans of content.
+    This does the same as tokeniser.word_spans, but this method buffers
+    the input to allow a quicker processing of large content.
+    """
+    rem = ''  # remainder of unsegmented tokens
+    shift = 0
+    token_spans = []
+    for chunk in read_chunks(content):
+        chnk = rem + chunk
+        spans = tokeniser.word_spans(chnk)
+        if not spans:
+            rem = chnk
+            continue
+        elif spans[-1].ub < len(chnk):
+            rem = chnk[spans[-1].ub : ]
+        elif spans[-1].ub == len(chnk):
+            rem = chnk[spans[-1].lb : ]
+            del spans[-1]
+        else:
+            rem = ''
+        token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
+        shift += len(chnk) - len(rem)
+        del spans[:]
+    
+    if rem:
+        spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
+        token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
+    return token_spans
+
 
 class SEMModule(RootModule):
     def __init__(self, tokeniser, log_level="WARNING", log_file=None, **kwargs):
@@ -91,12 +123,7 @@ class SEMModule(RootModule):
         
         do_segmentation = document.segmentation("tokens") is None or document.segmentation("sentences") is None or document.segmentation("paragraphs") is None
         if do_segmentation:
-            try:
-                token_spans = current_tokeniser.word_spans(content)
-            except NotImplementedError:
-                token_spans = bounds2spans(current_tokeniser.word_bounds(content))
-            except AttributeError:
-                token_spans = bounds2spans(current_tokeniser.word_bounds(content))
+            token_spans = token_spans_buffered(current_tokeniser, document.content)
             sentence_spans = bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
             paragraph_spans = bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
         else:
@@ -118,11 +145,12 @@ class SEMModule(RootModule):
         laps = time.time() - start
         segmentation_logger.info(u'in {0}'.format(timedelta(seconds=laps)))
 
+
 def main(args):
     if args.log_file is not None:
         segmentation_logger.addHandler(file_handler(args.log_file))
     segmentation_logger.setLevel(args.log_level)
-    
+
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
     segmenter = SEMModule(args.tokeniser_name, log_level=args.log_level)
