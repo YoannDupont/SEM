@@ -83,35 +83,6 @@ except ImportError:
     except ImportError:
         tkinter_available = False
 
-#
-# compiling Wapiti
-#
-
-ext_dir = "./ext/"
-wapiti_tar = os.path.join(ext_dir, [f for f in os.listdir("./ext") if f.startswith("wapiti") and f.endswith("tar.gz")][0])
-cwd = os.path.abspath(".")
-if not os.path.exists(os.path.join(ext_dir, "wapiti")):
-    with tarfile.open(wapiti_tar, "r:gz") as tar:
-        tar.extractall(os.path.dirname(ext_dir))
-os.chdir(os.path.join(ext_dir, "wapiti"))
-if ON_WINDOWS:
-    cmd = [r".\make.bat", "wapiti"]
-    wapiti_exec = os.path.join(ext_dir, "wapiti", "wapiti.exe")
-else:
-    cmd = ["make"]
-    wapiti_exec = os.path.join(ext_dir, "wapiti", "wapiti")
-if not os.path.exists(wapiti_exec):
-    exit_status = subprocess.call(cmd, shell=True)
-    os.chdir(cwd)
-    if exit_status == 0:
-        print()
-        print()
-        print("Wapiti compilation successful!")
-    else:
-        raise RuntimeError("Could not compile Wapiti: error code {}".format(exit_status))
-else:
-    print(wapiti_exec, "already exists, not compiling.")
-    print()
 
 #
 # preparing SEM data
@@ -143,10 +114,6 @@ if override or not already_exists:
         pass
     try:
         shutil.copytree("./images", os.path.join(os.path.expanduser(u"~"), "sem_data", "resources", "images"))
-    except:
-        pass
-    try:
-        shutil.copytree("./ext", os.path.join(os.path.expanduser(u"~"), "sem_data", "ext"))
     except:
         pass
     try:

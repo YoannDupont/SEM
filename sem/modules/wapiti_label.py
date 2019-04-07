@@ -28,11 +28,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from wapiti.api import Model as WapitiModel
+
 import logging, codecs, time, os.path
 
 from datetime import timedelta
 
-from .sem_module import SEMModule as RootModule
+from sem.modules.sem_module import SEMModule as RootModule
 import sem.wapiti
 from sem import PY2
 
@@ -41,17 +43,10 @@ from sem.storage.segmentation import Segmentation
 from sem.logger               import default_handler, file_handler
 from sem.misc                 import check_model_available
 
+
 wapiti_label_logger = logging.getLogger("sem.wapiti_label")
 wapiti_label_logger.addHandler(default_handler)
 wapiti_label_logger.setLevel("INFO")
-
-try:
-    from wapiti.api import Model as WapitiModel
-    wapiti_api = True
-    wapiti_label_logger.info("using python-wapiti wrapper instead of command-line")
-except ImportError:
-    wapiti_api = False
-    wapiti_label_logger.warn("failed to load python-wapiti wrapper, using command-line instead. You can download it at https://github.com/adsva/python-wapiti")
 
 class SEMModule(RootModule):
     def __init__(self, model, field, annotation_fields=None, log_level="WARNING", log_file=None, **kwargs):
@@ -62,15 +57,11 @@ class SEMModule(RootModule):
         self._field = field
         self._annotation_fields = annotation_fields
         
-        if wapiti_api:
-            if self.pipeline_mode == "all" or expected_mode in ("all", self.pipeline_mode):
-                check_model_available(model, logger=wapiti_label_logger)
-                self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            else:
-                self._wapiti_model = None
-            self._label_document = self._label_doc_as_wrapper
+        if self.pipeline_mode == "all" or expected_mode in ("all", self.pipeline_mode):
+            check_model_available(model, logger=wapiti_label_logger)
+            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
         else:
-            self._label_document = self._label_doc_as_cl
+            self._wapiti_model = None
     
     @property
     def field(self):
@@ -119,10 +110,7 @@ class SEMModule(RootModule):
         laps = time.time() - start
         wapiti_label_logger.info('in %s', timedelta(seconds=laps))
     
-    def _label_doc_as_cl(self, document, encoding="utf-8"):
-        sem.wapiti.label_document(document, self._model, self._field, encoding, annotation_name=self._field, annotation_fields=self._annotation_fields)
-    
-    def _label_doc_as_wrapper(self, document, encoding="utf-8"):
+    def _label_document(self, document, encoding="utf-8"):
         if self._annotation_fields:
             fields = [document.corpus.entry(field) for field in self._annotation_fields]
         else:

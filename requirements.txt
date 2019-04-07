@@ -1,0 +1,1 @@
+-e git://github.com/adsva/python-wapiti#egg=libwapiti
