@@ -78,6 +78,9 @@ def token_spans_buffered(tokeniser, content):
     if rem:
         spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
         token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
+    if not content[token_spans[-1].lb : token_spans[-1].ub].strip():
+        del token_spans[-1]
+    
     return token_spans
 
 

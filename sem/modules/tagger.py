@@ -267,7 +267,7 @@ def main(args):
         encoding=oenc,
         lang_style=get_option(options, "export", "lang_style", "default.css")
     )
-    if sem.ON_WINDOWS:
+    if sem.ON_WINDOWS or n_procs == 1:
         for document in documents:
             do_process(document)
     else:
