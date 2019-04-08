@@ -34,10 +34,10 @@ import logging, codecs, time, os.path
 
 from datetime import timedelta
 
-from sem.modules.sem_module import SEMModule as RootModule
-import sem.wapiti
-from sem import PY2
-
+import sem.importers
+from sem.exporters.conll      import Exporter as CoNLLExporter
+from sem.modules.sem_module   import SEMModule as RootModule
+from sem                      import PY2
 from sem.storage.document     import Document
 from sem.storage.segmentation import Segmentation
 from sem.logger               import default_handler, file_handler
@@ -131,7 +131,19 @@ class SEMModule(RootModule):
         return s.strip().split(u"\n")
 
 def main(args):
-    sem.wapiti.label(args.infile, args.model, args.outfile)
+    for sentence in sem.importers.read_conll():
+        fields = ["field-{}".format(i) for i in range(len(sentence[0]))]
+        word_field = fields[0]
+        break
+    
+    document = sem.importers.conll_file(args.infile, fields, word_field)
+    labeler = SEMModule(args.model, fields)
+    exporter = CoNLLExporter()
+    
+    labeler.process_document(document)
+    
+    exporter.document_to_file(document, None, args.outfile)
+    #sem.wapiti.label(args.infile, args.model, args.outfile)
 
 
 import sem

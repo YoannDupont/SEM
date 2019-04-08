@@ -64,7 +64,7 @@ import shutil
 import logging
 
 import sem
-import sem.wapiti, sem.exporters.conll
+import sem.exporters.conll
 import sem.importers
 
 from sem.storage import Holder, Document, SEMCorpus
@@ -74,6 +74,9 @@ from sem.logger import default_handler
 from sem.storage import Annotation
 from sem.storage.annotation import str2filter
 from sem.storage.document import str2docfilter
+
+from wapiti.api import Model as WapitiModel
+
 
 class SemTkMasterSelector(ttk.Frame):
     def __init__(self, root, resource_dir, lang="fr"):
@@ -464,7 +467,21 @@ class SEMTkWapitiTrain(ttk.Frame):
             O.write(u"number of processors\t{0}\n".format(nprocs))
             O.write(u"compact\t{0}\n".format(compact))
         
-        sem.wapiti.train(train_file, pattern=pattern_file, output=model_file, algorithm=alg, rho1=l1, rho2=l2, nthreads=nprocs, compact=compact)
+        #sem.wapiti.train(train_file, pattern=pattern_file, output=model_file, algorithm=alg, rho1=l1, rho2=l2, nthreads=nprocs, compact=compact)
+        model = WapitiModel(
+            pattern=pattern_file,
+            algo=alg,
+            rho1=l1,
+            rho2=l2,
+            nthreads=nprocs,
+            compact=compact
+        )
+        sequences = []
+        for sequence in sem.importers.read_conll(train_file, "utf-8"):
+            sequences.append(u"\n".join(u"\t".join(seq) for seq in sequence) + u"\n")
+        model.train(sequences)
+        model.save(model_file)
+        del model
         
         model_update_message = "\n\nNo candidate location found, model update has to be done manually"
         if target_model:
