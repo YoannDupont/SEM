@@ -32,20 +32,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-from .trie import Trie
-
-from sem.constants import NUL
+from sem.storage.trie import Trie
 
 def compile_token(infile, encoding):
     tokens = set()
-    for line in codecs.open(infile, "rU", encoding):
+    for line in open(infile, "rU", encoding=encoding):
         line = line.strip()
         if line != "":
             tokens.add(line)
@@ -53,20 +44,20 @@ def compile_token(infile, encoding):
 
 def compile_multiword(infile, encoding):
     trie = Trie()
-    for line in codecs.open(infile, "rU", encoding):
+    for line in open(infile, "rU", encoding=encoding):
         seq = line.strip().split()
         trie.add(seq)
     return trie
 
 def compile_map(infile, encoding):
     out_map = {}
-    for line in codecs.open(infile, "rU", encoding):
+    for line in open(infile, "rU", encoding=encoding):
         line = line.strip()
         if line != "":
             try:
-                key, value = line.split(u"\t")
+                key, value = line.split("\t")
             except ValueError:
                 key = line
-                value = u""
+                value = ""
             out_map[key] = value
     return out_map

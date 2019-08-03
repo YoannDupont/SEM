@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 file: tagger.py
@@ -30,11 +30,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs
 import logging
 import os
 import shutil
 import multiprocessing
+import time
+import pathlib
+from datetime import timedelta
+from functools import partial
 
 try:
     import ConfigParser as configparser
@@ -43,20 +46,11 @@ except ImportError:
 
 try:
     from xml.etree import cElementTree as ET
-except importError:
+except ImportError:
     from xml.etree import ElementTree as ET
 
-# measuring time laps
-import time
-import os.path
-from datetime import timedelta
-from functools import partial
-
 import sem
-
-from sem.logger import logging_format, default_handler
-from sem.storage import Document
-
+from sem.logger import default_handler, file_handler
 from sem.modules import get_module
 import sem.modules.pipeline
 import sem.modules.export
@@ -68,7 +62,9 @@ import sem.misc
 sem_tagger_logger = logging.getLogger("sem.tagger")
 sem_tagger_logger.addHandler(default_handler)
 if sem.ON_WINDOWS:
-    sem_tagger_logger.warn("multiprocessing not handled on Windows. Documents will be processed sequentially.")
+    sem_tagger_logger.warn(
+        "multiprocessing not handled on Windows. Documents will be processed sequentially."
+    )
 
 __pipeline = None
 def process(document, exporter, output_directory, couples, encoding, lang_style):
@@ -78,27 +74,31 @@ def process(document, exporter, output_directory, couples, encoding, lang_style)
     The function is written to work sequentially on Windows to avoid dupe.
     """
     __pipeline.process_document(document)
-    
+
     if exporter is not None:
         name = document.escaped_name()
-        if u"html" in exporter.extension():
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, u"css", u"tabs.css"), output_directory)
-            shutil.copy(os.path.join(sem.SEM_RESOURCE_DIR, u"css", exporter._lang, lang_style), output_directory)
-        
-        shortname, ext = os.path.splitext(name)
-        out_path = os.path.join(output_directory, u"{0}.{1}".format(shortname, exporter.extension()))
-        if exporter.extension() == u"ann":
-            filename = shortname + u".txt"
-            with codecs.open(os.path.join(output_directory, filename), "w", encoding) as O:
-                O.write(document.content)
+        if "html" in exporter.extension():
+            shutil.copy(sem.SEM_RESOURCE_DIR / "css" / "tabs.css", output_directory)
+            shutil.copy(
+                sem.SEM_RESOURCE_DIR / "css" / exporter._lang / lang_style,
+                output_directory
+            )
+
+        shortname = pathlib.Path(name).stem
+        out_path = output_directory / "{0}.{1}".format(shortname, exporter.extension())
+        if exporter.extension() == "ann":
+            filename = shortname + ".txt"
+            with open(output_directory / filename, "w", encoding=encoding) \
+                    as output_stream:
+                output_stream.write(document.content)
         exporter.document_to_file(document, couples, out_path, encoding=encoding)
-        
+
     return document
-    
+
 def get_option(cfg, section, option, default=None):
     try:
         return cfg.get(section, option)
-    except:
+    except Exception:
         return default
 
 def get_section(cfg, section):
@@ -110,7 +110,7 @@ def get_section(cfg, section):
 def load_master(master, force_format="default", pipeline_mode="all"):
     """
     Load a SEM workflow from a file.
-    
+
     Parameters
     ----------
     master : str
@@ -119,14 +119,14 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         if "default", use the normal format defined in master file. Otherwise,
         use force_format.
     """
-    
+
     try:
-        tree = ET.parse(os.path.abspath(master))
+        tree = ET.parse(str(master.resolve()))
         root = tree.getroot()
     except IOError:
         root = ET.fromstring(master)
     xmlpipes, xmloptions = list(root)
-    
+
     options = configparser.RawConfigParser()
     exporter = None
     couples = {}
@@ -135,7 +135,7 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         options.add_section(section)
         attribs = {}
         for key, val in xmloption.attrib.items():
-            key = key.replace(u"-", u"_")
+            key = key.replace("-", "_")
             try:
                 attribs[key] = sem.misc.str2bool(val)
             except ValueError:
@@ -149,16 +149,17 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 sem_tagger_logger.info("using forced format: {0}".format(force_format))
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
-    
+
     if get_option(options, "log", "log_file") is not None:
         sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
     sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
-    
+
     classes = {}
     pipes = []
     for xmlpipe in xmlpipes:
-        if xmlpipe.tag == "export": continue
-        
+        if xmlpipe.tag == "export":
+            continue
+
         Class = classes.get(xmlpipe.tag, None)
         if Class is None:
             Class = get_module(xmlpipe.tag)
@@ -166,13 +167,16 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         arguments = {}
         arguments["expected_mode"] = pipeline_mode
         for key, value in xmlpipe.attrib.items():
-            if value.startswith(u"~/"):
-                value = os.path.expanduser(value)
-            elif sem.misc.is_relative_path(value):
-                value = os.path.abspath(os.path.join(os.path.dirname(master), value))
-            arguments[key.replace(u"-", u"_")] = value
+            path = pathlib.Path(value)
+            user_path = path.expanduser()
+            if path != user_path:  # path startswith "~"
+                value = str(user_path)
+            elif str(path).startswith("../") or str(path).startswith("./"):
+                value = str((pathlib.Path(master).parent / path).resolve())
+            arguments[key.replace("-", "_")] = value
         for section in options.sections():
-            if section == "export": continue
+            if section == "export":
+                continue
             for key, value in options.items(section):
                 if key not in arguments:
                     arguments[key] = value
@@ -181,13 +185,13 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         sem_tagger_logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
-    
+
     return pipeline, options, exporter, couples
 
 def main(args):
     """
     Return a document after it passed through a pipeline.
-    
+
     Parameters
     ----------
     masterfile : str
@@ -204,52 +208,53 @@ def main(args):
         If n_procs is greater than the number of documents, it will be
         adjusted.
     """
-    
+
     start = time.time()
-    
+
     global __pipeline
-    
+
     try:
-        output_directory = args.output_directory
+        output_directory = pathlib.Path(args.output_directory)
     except AttributeError:
-        output_directory = u"."
+        output_directory = pathlib.Path()
     try:
         force_format = args.force_format
     except AttributeError:
         force_format = "default"
-    
+
     try:
         pipeline = args.pipeline
         options = args.options
         exporter = args.exporter
         couples = args.couples
     except AttributeError:
-        pipeline, options, exporter, couples = load_master(args.master, force_format)
+        master = pathlib.Path(args.master)
+        pipeline, options, exporter, couples = load_master(master, force_format)
     __pipeline = pipeline
-    
+
     if get_option(options, "log", "log_file") is not None:
         sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
     sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
-    
-    if not os.path.exists(output_directory):
+
+    if not output_directory.exists():
         os.makedirs(output_directory)
-    
-    exports = {} # keeping track of already done exports
-    
-    nth = 1
-    ienc = get_option(options, "encoding", "input_encoding", "utf-8")
+
     oenc = get_option(options, "encoding", "output_encoding", "utf-8")
-    
+
     file_format = get_option(options, "file", "format", "guess")
     opts = get_section(options, "file")
     opts.update(get_section(options, "encoding"))
     if file_format == "conll":
-        opts["fields"] = opts["fields"].split(u",")
-        opts["taggings"] = [tagging for tagging in opts.get("taggings", u"").split(u",") if tagging]
-        opts["chunkings"] = [chunking for chunking in opts.get("chunkings", u"").split(u",") if chunking]
-    
+        opts["fields"] = opts["fields"].split(",")
+        opts["taggings"] = [tagging for tagging in opts.get("taggings", "").split(",") if tagging]
+        opts["chunkings"] = [
+            chunking
+            for chunking in opts.get("chunkings", "").split(",")
+            if chunking
+        ]
+
     documents = sem.importers.documents_from_list(args.infiles, file_format, **opts)
-    
+
     n_procs = getattr(args, "n_procs", 1)
     if n_procs == 0:
         n_procs = multiprocessing.cpu_count()
@@ -258,7 +263,7 @@ def main(args):
         n_procs = min(max(n_procs, 1), multiprocessing.cpu_count())
     if n_procs > len(documents):
         n_procs = len(documents)
-    
+
     do_process = partial(
         process,
         exporter=exporter,
@@ -276,13 +281,16 @@ def main(args):
         beg = 0
         batch_size = dpp * n_procs
         while beg <= len(documents):
-            documents[beg : beg + batch_size] = pool.map(do_process, documents[beg : beg + batch_size])
+            documents[beg : beg + batch_size] = pool.map(
+                do_process,
+                documents[beg : beg + batch_size]
+            )
             beg += batch_size
         pool.terminate()
-    
+
     laps = time.time() - start
     sem_tagger_logger.info('done in %s', timedelta(seconds=laps))
-    
+
     return documents
 
 
@@ -290,15 +298,20 @@ import sem
 
 _subparsers = sem.argument_subparsers
 
-parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0], description="Performs various operations given in a master configuration file that defines a pipeline.")
+parser = _subparsers.add_parser(
+    pathlib.Path(__file__).stem,
+    description="Performs various operations given in a master configuration file"
+                " that defines a pipeline."
+)
 
 parser.add_argument("master",
-                    help="The master configuration file. Defines at least the pipeline and may provide some options.")
+                    help="The master configuration file."
+                         " Defines at least the pipeline and may provide some options.")
 parser.add_argument("infiles", nargs="+",
                     help="The input file(s) for the tagger.")
 parser.add_argument("-o", "--output-directory", dest="output_directory", default=".",
                     help='The output directory (default: "%(default)s").')
 parser.add_argument("-f", "--force-format", dest="force_format", default="default",
-                    help='Force the output format given in "master", default otherwise (default: "%(default)s").')
+                    help='Force the output format given in "master" (default: "%(default)s").')
 parser.add_argument("-p", "--processors", dest="n_procs", type=int, default=1,
                     help='The number of processors to use (default: "%(default)s").')

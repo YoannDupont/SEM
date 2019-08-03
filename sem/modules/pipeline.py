@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 file: pipeline.py
@@ -29,11 +29,9 @@ SOFTWARE.
 """
 
 import logging
-import multiprocessing
-import functools
 
-from .sem_module import SEMModule
-from sem.logger import default_handler, file_handler
+from sem.modules.sem_module import SEMModule
+from sem.logger import default_handler
 
 pipeline_logger = logging.getLogger("sem.pipeline")
 pipeline_logger.addHandler(default_handler)
@@ -41,41 +39,41 @@ pipeline_logger.addHandler(default_handler)
 class Pipeline(SEMModule):
     def __init__(self, pipes, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
         super(Pipeline, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
-        
+
         self._pipes = pipes
         self._pipeline_mode = pipeline_mode
-    
+
     def __iter__(self):
         for pipe in self._pipes:
             yield pipe
-    
+
     def __len__(self):
         return len(self._pipes)
-    
+
     @property
     def pipes(self):
         return self._pipes
-    
+
     @property
     def pipeline_mode(self):
         return self._pipeline_mode
-    
+
     @pipeline_mode.setter
     def pipeline_mode(self, mode):
         self.pipeline_mode = mode
         for pipe in self._pipes:
             pipe.check_mode(self.pipeline_mode)
-    
+
     def append(self, pipe):
         self._pipes.append(pipe)
-    
+
     def remove(self, pipe):
         self._pipes.remove(pipe)
-    
+
     def process_document(self, document, **kwargs):
         for pipe in self._pipes:
             if self.pipeline_mode == "all" or pipe.pipeline_mode in ("all", self.pipeline_mode):
                 pipe.process_document(document, **kwargs)
             else:
-                pipeline_logger.warn(u"pipe %s not executed", pipe)
+                pipeline_logger.warn("pipe %s not executed", pipe)
         return document # allows multiprocessing

@@ -32,46 +32,59 @@ SOFTWARE.
 
 import json
 
-from .exporter import Exporter as DefaultExporter
-from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
+from sem.exporters.exporter import Exporter as DefaultExporter
 from sem.storage.segmentation import Segmentation
-from sem.misc import is_string
 
 class Exporter(DefaultExporter):
     __ext = "json"
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
+
     def document_to_unicode(self, document, couples, **kwargs):
-        return json.dumps(self.document_to_data(document, couples, **kwargs), indent=2, ensure_ascii=False)
-    
+        return json.dumps(
+            self.document_to_data(document, couples, **kwargs),
+            indent=2,
+            ensure_ascii=False
+        )
+
     def document_to_data(self, document, couples, **kwargs):
         """
         This is just creating a dictionary from the document.
         Nearly copy-pasta of the Document.unicode method.
         """
-        
+
         json_dict = {}
-        json_dict[u"name"] = document.name
-        json_dict[u"content"] = document.content
-        json_dict[u"metadatas"] = document.metadatas
-        
-        json_dict[u"segmentations"] = {}
-        refs = [seg.reference for seg in document.segmentations.values() if seg.reference]
+        json_dict["name"] = document.name
+        json_dict["content"] = document.content
+        json_dict["metadatas"] = document.metadatas
+
+        json_dict["segmentations"] = {}
         for seg in document.segmentations.values():
-            json_dict[u"segmentations"][seg.name] = {}
+            json_dict["segmentations"][seg.name] = {}
             ref = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
             if ref:
-                json_dict[u"segmentations"][seg.name]["reference"] = ref
-            json_dict[u"segmentations"][seg.name]["spans"] = [{u"s":span.lb, u"l":len(span)} for span in seg.spans]
-        
-        json_dict[u"annotations"] = {}
+                json_dict["segmentations"][seg.name]["reference"] = ref
+            json_dict["segmentations"][seg.name]["spans"] = [
+                {"s": span.lb, "l": len(span)}
+                for span in seg.spans
+            ]
+
+        json_dict["annotations"] = {}
         for annotation in document.annotations.values():
-            json_dict[u"annotations"][annotation.name] = {}
-            reference = ("" if not annotation.reference else (annotation.reference if is_string(annotation.reference) else annotation.reference.name))
+            json_dict["annotations"][annotation.name] = {}
+            reference = (
+                "" if not annotation.reference
+                else (
+                    annotation.reference if isinstance(annotation.reference, str)
+                    else annotation.reference.name
+                )
+            )
             if reference:
-                json_dict[u"annotations"][annotation.name][u"reference"] = reference
-            json_dict[u"annotations"][annotation.name]["annotations"] = [{u"v":tag.value, u"s":tag.lb, u"l":len(tag)} for tag in annotation]
-        
+                json_dict["annotations"][annotation.name]["reference"] = reference
+            json_dict["annotations"][annotation.name]["annotations"] = [
+                {"v": tag.value, "s": tag.lb, "l": len(tag)}
+                for tag in annotation
+            ]
+
         return json_dict

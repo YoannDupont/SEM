@@ -26,12 +26,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .annotation import Tag, Annotation
-from .coder import Coder
-from .corpus import Entry, Corpus
-from .dictionaries import NUL, compile_token, compile_multiword, compile_map
-from .document import Document, SEMCorpus
-from .holder import Holder
-from .segmentation import Segmentation
-from .span import Span, SpannedBounds
-from .trie import Trie
+from sem.storage.annotation import Tag, Annotation
+from sem.storage.coder import Coder
+from sem.storage.corpus import Entry, Corpus
+from sem.storage.dictionaries import compile_token, compile_multiword, compile_map
+from sem.storage.document import Document, SEMCorpus
+from sem.storage.holder import Holder
+from sem.storage.segmentation import Segmentation
+from sem.storage.span import Span, SpannedBounds
+from sem.storage.trie import Trie

@@ -30,25 +30,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs
-import os.path
-
-from sem.misc import is_string
 
 class Exporter(object):
     __ext = None
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
+
     @classmethod
     def extension(cls):
         return cls.__ext
-    
+
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         """
         write the document to a file in the given export format.
-        
+
         Parameters
         ----------
             document : Document
@@ -56,21 +52,22 @@ class Exporter(object):
             couples : dict (string -> string)
                 the "entry name" <=> "entry index" that allows to
                 retrieve information to export.
-                ex: couples = {u"chunking":u"C", u"NER":u"N"}
+                ex: couples = {"chunking":"C", "NER":"N"}
             output : str
                 the name of the file to write into
         """
-        if is_string(output):
-            with codecs.open(output, "w", encoding) as O:
-                O.write(self.document_to_unicode(document, couples, **kwargs))
-        else:
-            output.write(self.document_to_unicode(document, couples, **kwargs))
-    
+        to_write = self.document_to_unicode(document, couples, **kwargs)
+        try:
+            output.write(to_write)
+        except AttributeError:
+            with open(output, "w", encoding=encoding, newline="") as output_stream:
+                output_stream.write(to_write)
+
     def document_to_data(self, document, couples, **kwargs):
         """
         creates a new variable representing the document in the given
         export format.
-        
+
         Parameters
         ----------
             document : Document
@@ -78,6 +75,8 @@ class Exporter(object):
             couples : dict (string -> string)
                 the "entry name" <=> "entry index" that allows to
                 retrieve information to export.
-                ex: couples = {u"chunking":u"C", u"NER":u"N"}
+                ex: couples = {"chunking":"C", "NER":"N"}
         """
-        raise NotImplementedError("export_to_data not implemented for class " + self.__class__)
+        raise NotImplementedError(
+            "export_to_data not implemented for class {}".format(self.__class__)
+        )

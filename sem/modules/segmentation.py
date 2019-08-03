@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 file: segmentation.py
@@ -33,19 +33,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging, codecs, time, os.path
-
+import logging
+import time
+import pathlib
 from datetime import timedelta
 
-from .sem_module import SEMModule as RootModule
-
-from sem.misc import strip_html, is_string, read_chunks
-
-from sem.tokenisers           import get_tokeniser, bounds2spans
-from sem.storage.document     import Document
+from sem.modules.sem_module import SEMModule as RootModule
+from sem.misc import strip_html, read_chunks
+from sem.tokenisers import get_tokeniser, bounds2spans
+from sem.storage.document import Document
 from sem.storage.segmentation import Segmentation
-from sem.storage              import Span
-from sem.logger               import default_handler, file_handler
+from sem.storage import Span
+from sem.logger import default_handler, file_handler
 
 segmentation_logger = logging.getLogger("sem.segmentation")
 segmentation_logger.addHandler(default_handler)
@@ -74,31 +73,31 @@ def token_spans_buffered(tokeniser, content):
         token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
         shift += len(chnk) - len(rem)
         del spans[:]
-    
+
     if rem:
         spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
         token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
     if not content[token_spans[-1].lb : token_spans[-1].ub].strip():
         del token_spans[-1]
-    
+
     return token_spans
 
 
 class SEMModule(RootModule):
     def __init__(self, tokeniser, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
-        
-        if is_string(tokeniser):
+
+        if isinstance(tokeniser, str):
             segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
             self._tokeniser = get_tokeniser(tokeniser)
         else:
             self._tokeniser = tokeniser
-    
+
     def process_document(self, document, **kwargs):
         """
         Updates a document with various segmentations and creates
         an sem.corpus (CoNLL-formatted data) using field argument as index.
-        
+
         Parameters
         ----------
         document : sem.storage.Document
@@ -109,7 +108,7 @@ class SEMModule(RootModule):
             if not None, the file to log to (does not remove command-line
             logging).
         """
-        
+
         start = time.time()
 
         if self._log_file is not None:
@@ -118,35 +117,65 @@ class SEMModule(RootModule):
 
         current_tokeniser = self._tokeniser
 
-        segmentation_logger.debug(u'segmenting "%s" content', document.name)
+        segmentation_logger.debug('segmenting "%s" content', document.name)
 
         content = document.content
         if document.metadata("MIME") == "text/html":
             content = strip_html(content, keep_offsets=True)
-        
-        do_segmentation = document.segmentation("tokens") is None or document.segmentation("sentences") is None or document.segmentation("paragraphs") is None
+
+        do_segmentation = (
+            document.segmentation("tokens") is None
+            or document.segmentation("sentences") is None
+            or document.segmentation("paragraphs") is None
+        )
         if do_segmentation:
             token_spans = token_spans_buffered(current_tokeniser, document.content)
             sentence_spans = bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
-            paragraph_spans = bounds2spans(current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans))
+            paragraph_spans = bounds2spans(current_tokeniser.paragraph_bounds(
+                content,
+                sentence_spans,
+                token_spans
+            ))
         else:
-            segmentation_logger.info(u'{0} already has segmenation, not computing'.format(document.name))
+            segmentation_logger.info('{0} already has segmenation, not computing'.format(
+                document.name
+            ))
             token_spans = document.segmentation("tokens").spans
             sentence_spans = document.segmentation("sentences").spans
             paragraph_spans = document.segmentation("paragraphs").spans
-        segmentation_logger.info(u'"{0}" segmented in {1} sentences, {2} tokens'.format(document.name, len(sentence_spans), len(token_spans)))
-        
+        segmentation_logger.info('"{0}" segmented in {1} sentences, {2} tokens'.format(
+            document.name,
+            len(sentence_spans),
+            len(token_spans)
+        ))
+
         if document.segmentation("tokens") is None:
             document.add_segmentation(Segmentation("tokens", spans=token_spans))
         if document.segmentation("sentences") is None:
-            document.add_segmentation(Segmentation("sentences", reference=document.segmentation("tokens"), spans=sentence_spans))
+            document.add_segmentation(
+                Segmentation(
+                    "sentences",
+                    reference=document.segmentation("tokens"),
+                    spans=sentence_spans
+                )
+            )
         if document.segmentation("paragraphs") is None:
-            document.add_segmentation(Segmentation("paragraphs", reference=document.segmentation("sentences"), spans=paragraph_spans))
+            document.add_segmentation(
+                Segmentation(
+                    "paragraphs",
+                    reference=document.segmentation("sentences"),
+                    spans=paragraph_spans
+                )
+            )
         if len(document.corpus) == 0:
-            document.corpus.from_segmentation(document.content, document.segmentation("tokens"), document.segmentation("sentences"))
+            document.corpus.from_segmentation(
+                document.content,
+                document.segmentation("tokens"),
+                document.segmentation("sentences")
+            )
 
         laps = time.time() - start
-        segmentation_logger.info(u'in {0}'.format(timedelta(seconds=laps)))
+        segmentation_logger.info('in {0}'.format(timedelta(seconds=laps)))
 
 
 def main(args):
@@ -157,27 +186,34 @@ def main(args):
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
     segmenter = SEMModule(args.tokeniser_name, log_level=args.log_level)
-    document = Document(os.path.basename(args.infile), content=codecs.open(args.infile, "rU", ienc).read().replace(u"\r", u""))
+    document = Document(
+        pathlib.Path(args.infile).name,
+        content=open(args.infile, "rU", encoding=ienc).read().replace("\r", "")
+    )
     segmenter.process_document(document, log_level=args.log_level)
     tokens_spans = document.segmentation("tokens")
     sentence_spans = document.segmentation("sentences")
-    joiner = (u"\n" if args.output_format == "vector" else u" ")
+    joiner = ("\n" if args.output_format == "vector" else " ")
     content = document.content
-    with codecs.open(args.outfile, "w", oenc) as O:
+    with open(args.outfile, "w", encoding=oenc) as output_stream:
         for sentence in sentence_spans:
             sentence_token_spans = tokens_spans[sentence.lb : sentence.ub]
             sentence_tokens = [content[s.lb : s.ub] for s in sentence_token_spans]
-            O.write(joiner.join(sentence_tokens))
+            output_stream.write(joiner.join(sentence_tokens))
             if args.output_format == "vector":
-                O.write(u"\n")
-            O.write(u"\n")
+                output_stream.write("\n")
+            output_stream.write("\n")
 
 
 import sem
 
 _subparsers = sem.argument_subparsers
 
-parser = _subparsers.add_parser(os.path.splitext(os.path.basename(__file__))[0], description="Segments the textual content of a sentence into tokens. They can either be outputted line per line or in a vectorised format.")
+parser = _subparsers.add_parser(
+    pathlib.Path(__file__).stem,
+    description="Segments the textual content of a sentence into tokens."
+                " They can either be outputted line per line or in a vectorised format."
+)
 
 parser.add_argument("infile",
                     help="The input file (raw text)")
@@ -185,7 +221,8 @@ parser.add_argument("tokeniser_name",
                     help="The name of the tokeniser to import")
 parser.add_argument("outfile",
                     help="The output file")
-parser.add_argument("--output-format", dest="output_format", choices=("line", "vector"), default="vector",
+parser.add_argument("--output-format", dest="output_format",
+                    choices=("line", "vector"), default="vector",
                     help="The output format (default: %(default)s)")
 parser.add_argument("--input-encoding", dest="ienc",
                     help="Encoding of the input (default: UTF-8)")
@@ -193,7 +230,8 @@ parser.add_argument("--output-encoding", dest="oenc",
                     help="Encoding of the input (default: UTF-8)")
 parser.add_argument("--encoding", dest="enc", default="UTF-8",
                     help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level", choices=("DEBUG","INFO","WARNING","ERROR","CRITICAL"), default="WARNING",
+parser.add_argument("-l", "--log", dest="log_level",
+                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
                     help="Increase log level (default: %(default)s)")
 parser.add_argument("--log-file", dest="log_file",
                     help="The name of the log file")

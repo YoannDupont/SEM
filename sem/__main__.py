@@ -31,46 +31,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from __future__ import print_function
-
 import logging
-import os.path
+import pathlib
 import unittest
 import sys
 
 import sem
 import sem.modules
 
-from sem.logger import logging_format
 from sem.misc import find_suggestions
 
 sem_logger = logging.getLogger("sem")
 
 def valid_module(m):
-    return m.endswith(".py") and not (m.startswith(u"_") or m in ["sem_module.py", "pipeline.py"])
+    return not (m.startswith("_") or m in ["sem_module.py", "pipeline.py"])
 
 def main(args=None):
     def banter():
         def username():
             import os
-            return os.environ.get("USERNAME", os.environ.get("USER", os.path.split(os.path.expanduser(u"~"))[-1]))
+            return os.environ.get(
+                "USERNAME",
+                os.environ.get("USER", pathlib.Path.home().name)
+            )
         import random
-        l = [
-            u"Do thou mockest me?",
-            u"Try again?",
-            u"I'm sorry {0}, I'm afraid I can't do that.".format(username()),
-            u'The greatest trick this module ever pulled what convincing the users it did not exist.',
-            u"It's just a typo."
+        banters = [
+            "Do thou mockest me?",
+            "Try again?",
+            "I'm sorry {0}, I'm afraid I can't do that.".format(username()),
+            'The greatest trick this module ever pulled what convincing the users it did not exist.',
+            "It's just a typo."
         ]
-        random.shuffle(l)
-        return l[0]
-        
+        random.shuffle(banters)
+        return banters[0]
+
     modules = {}
-    for element in os.listdir(os.path.join(sem.SEM_HOME, "modules")):
-        m = element[:-3]
-        if valid_module(element):
-            modules[m] = sem.modules.get_package(m)
-    name = os.path.basename(sys.argv[0])
+    for element in (sem.SEM_HOME / "modules").glob("*.py"):
+        m = element.stem
+        if valid_module(element.name):
+            try:
+                modules[m] = sem.modules.get_package(m)
+            except Exception as exc:
+                print("cannot load module {}: {}".format(m, exc.args[0]))
+    name = pathlib.Path(sys.argv[0]).name
     operation = (sys.argv[1] if len(sys.argv) > 1 else "-h")
 
     if operation in modules:
@@ -88,10 +91,10 @@ def main(args=None):
     elif operation in ["-v", "--version"]:
         print(sem.full_name())
     elif operation == "--test":
-        testsuite = unittest.TestLoader().discover(os.path.join(sem.SEM_HOME, "tests"))
+        testsuite = unittest.TestLoader().discover(pathlib.Path(sem.SEM_HOME) / "tests")
         unittest.TextTestRunner(verbosity=2).run(testsuite)
     else:
-        print("Module not found: " + operation)
+        print("Module not found: {}".format(operation))
         suggestions = find_suggestions(operation, modules)
         if len(suggestions) > 0:
             print("Did you mean one of the following?")

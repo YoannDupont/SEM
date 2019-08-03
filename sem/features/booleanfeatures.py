@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .feature import Feature
+from sem.features.feature import Feature
 
 class BooleanFeature(Feature):
     def __init__(self, *args, **kwargs):
@@ -45,7 +45,7 @@ class UnaryFeature(BooleanFeature):
 class NotFeature(UnaryFeature):
     def __init__(self, element, *args, **kwargs):
         super(NotFeature, self).__init__(element, *args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         return not self.element(*args, **kwargs)
 
@@ -58,13 +58,13 @@ class BinaryFeature(BooleanFeature):
 class AndFeature(BinaryFeature):
     def __init__(self, left, right, *args, **kwargs):
         super(AndFeature, self).__init__(left, right, *args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         return self.left(*args, **kwargs) and self.right(*args, **kwargs)
 
 class OrFeature(BinaryFeature):
     def __init__(self, left, right, *args, **kwargs):
         super(OrFeature, self).__init__(left, right, *args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         return self.left(*args, **kwargs) or self.right(*args, **kwargs)

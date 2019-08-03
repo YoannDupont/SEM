@@ -32,16 +32,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import re
-
-from .feature import Feature
+from sem.features.feature import Feature
 
 class ListFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(ListFeature, self).__init__(*args, **kwargs)
-        self._elements   = args
+        self._elements = args
         self._is_boolean = True
-        
+
         for element in self._elements:
             if not element.is_boolean:
                 raise TypeError("Non boolean element in list node: {0}".format(element.__class__.__name__))
@@ -49,7 +47,7 @@ class ListFeature(Feature):
 class SomeFeature(ListFeature):
     def __init__(self, *args, **kwargs):
         super(SomeFeature, self).__init__(*args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         for element in self._elements:
             if element(*args, **kwargs):
@@ -59,7 +57,7 @@ class SomeFeature(ListFeature):
 class AllFeature(ListFeature):
     def __init__(self, *args, **kwargs):
         super(AllFeature, self).__init__(*args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         for element in self._elements:
             if not element(*args, **kwargs):
@@ -69,7 +67,7 @@ class AllFeature(ListFeature):
 class NoneFeature(ListFeature):
     def __init__(self, *args, **kwargs):
         super(NoneFeature, self).__init__(*args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         for element in self._elements:
             if element(*args, **kwargs):

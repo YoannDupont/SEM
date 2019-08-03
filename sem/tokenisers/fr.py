@@ -32,8 +32,7 @@ SOFTWARE.
 
 import re
 
-from sem.misc import read_chunks
-from sem.storage import Span, SpannedBounds
+from sem.storage import Span
 import sem.tokenisers.default
 import sem.constants
 
@@ -44,7 +43,7 @@ _dots = re.compile(r"(\.{2,})$")
 _cls = re.compile(r"(-je|-tu|-nous|-vous|(:?-t)?-(:?on|ils?|elles?))\b", re.U + re.I)
 _is_abn = re.compile(r"\b(dr|me?lles?|mme?s?|mr?s?|st)\.?$", re.U + re.I)
 _abbrev = re.compile(r"\b(i\.e\.|e\.g\.|c-à-d)", re.U + re.I)
-_digit_valid = set(u"0123456789,.-")
+_digit_valid = set("0123456789,.-")
 _simple_smileys = re.compile("^[:;x=],?-?[()DdPp]+$")
 
 _forbidden.append(_is_abn)
@@ -57,17 +56,16 @@ _force.append(sem.constants.url_re)
 _force.append(sem.constants.email_re)
 
 _spaces = sem.tokenisers.default.spaces
-_word = re.compile(u"^[^\\W\\d]+$", re.U + re.M)
-_number_with_unit = re.compile(u"([0-9][^0-9,.])|([^0-9,.][0-9])")
-_atomic = re.compile(u"[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
-_comma_not_number = re.compile(u"(?<=[^0-9]),(?![0-9])", re.U + re.M)
-_apostrophe = re.compile(u"(?=['ʼ’])", re.U + re.M)
+_word = re.compile("^[^\\W\\d]+$", re.U + re.M)
+_number_with_unit = re.compile("([0-9][^0-9,.])|([^0-9,.][0-9])")
+_atomic = re.compile("[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
+_comma_not_number = re.compile("(?<=[^0-9]),(?![0-9])", re.U + re.M)
+_apostrophe = re.compile("(?=['ʼ’])", re.U + re.M)
 
 def word_spans(content):
     spans = []
     offset = 0
-    rem = u""
-    
+
     part = content
     l = [match.span() for match in _spaces.finditer(part)]
 
@@ -79,7 +77,7 @@ def word_spans(content):
             l1.append((l[-1][1], len(part)))
     else:
         l1 = [(0, len(part))]
-    
+
     i = 0
     while i < len(l1):
         span = l1[i]
@@ -95,7 +93,7 @@ def word_spans(content):
         for force in _force:
             found = force.match(text)
             if found:
-                s,e = found.start(), found.end()
+                s, e = found.start(), found.end()
                 del l1[i]
                 l1.insert(i, (shift+e, shift+len(text)))
                 l1.insert(i, (shift+s, shift+e))
@@ -167,7 +165,7 @@ def word_spans(content):
                 l1.insert(i, t)
             continue
         # dots and ending commas
-        if text and (text[-1] in u".," and not (len(text) == 2 and text[0].isupper())):
+        if text and (text[-1] in ".," and not (len(text) == 2 and text[0].isupper())):
             mdots = _dots.search(text)
             length = (len(mdots.group(1)) if mdots else 1)
             if length != len(text):
@@ -178,36 +176,39 @@ def word_spans(content):
                 l1.insert(i, t)
             continue
         i += 1
-    
+
     spans = [Span(s[0]+offset, s[1]+offset) for s in l1 if s[0] < s[1]]
     spans = [span for span in spans if len(span) > 0]
     return spans
 
 
 def sentence_bounds(content, token_spans):
-    sent_bounds = SpannedBounds()
+    sent_bounds = []
     tokens = [content[t.lb : t.ub] for t in token_spans]
     opening_counts = [0 for i in token_spans]
     count = 0
     for i in range(len(opening_counts)):
-        if tokens[i] in u"«([":
+        if tokens[i] in "«([":
             count += 1
-        elif tokens[i] in u"»)]":
+        elif tokens[i] in "»)]":
             count -= 1
         opening_counts[i] = count
-    
+
     sent_bounds.append(Span(0, 0))
     for index, span in enumerate(token_spans):
         token = tokens[index]
-        if re.match(u"^[?!]+$", token) or token == u"…" or re.match(u"\\.\\.+", token):
+        if re.match("^[?!]+$", token) or token == "…" or re.match("\\.\\.+", token):
             sent_bounds.append(Span(index+1, index+1))
-        elif token == u".":
+        elif token == ".":
             if opening_counts[index] == 0:
                 sent_bounds.append(Span(index+1, index+1))
-        elif index < len(token_spans)-1 and content[span.ub : token_spans[index+1].lb].count("\n") > 1:
+        elif (
+            index < len(token_spans) - 1
+            and content[span.ub : token_spans[index+1].lb].count("\n") > 1
+        ):
             sent_bounds.append(Span(index+1, index+1))
     sent_bounds.append(Span(len(tokens), len(tokens)))
-    
+
     return sent_bounds
 
 

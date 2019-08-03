@@ -34,25 +34,24 @@ SOFTWARE.
 
 import re
 
-from .feature        import Feature
-from .getterfeatures import DEFAULT_GETTER
+from sem.features.feature import Feature
+from sem.features.getterfeatures import DEFAULT_GETTER
 
 class MatchFeature(Feature):
-    def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, default=u"#", *args, **kwargs):
+    def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, default="#", *args, **kwargs):
         super(MatchFeature, self).__init__(pattern, *args, flags=flags, getter=getter, **kwargs)
         self._regexp = re.compile(pattern, flags)
         self._getter = getter
         self._default = default
-    
+
     def __call__(self, *args, **kwargs):
-        got = self._getter(*args, **kwargs)
         return self._regexp.search(self._getter(*args, **kwargs))
 
 class CheckFeature(MatchFeature):
     def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, *args, **kwargs):
         super(CheckFeature, self).__init__(pattern, flags=flags, getter=getter, *args, **kwargs)
         self._is_boolean = True
-    
+
     def __call__(self, *args, **kwargs):
         return super(CheckFeature, self).__call__(*args, **kwargs) is not None
 

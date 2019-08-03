@@ -35,31 +35,31 @@ from sem.misc import str2bool
 
 class Feature(object):
     def __init__(self, *args, **kwargs):
-        self._is_boolean  = False
+        self._is_boolean = False
         self._is_sequence = False
-        self._name        = kwargs.pop("name", None)
-        self._display     = kwargs.pop("display", "yes").lower()
-        
+        self._name = kwargs.pop("name", None)
+        self._display = kwargs.pop("display", "yes").lower()
+
         self._display = str2bool(self._display)
-    
+
     def __call__(self, *args, **kwargs):
         raise TypeError('Cannot call {0} object'.format(self.__class__.__name__))
-    
+
     @property
     def is_boolean(self):
         return self._is_boolean
-    
+
     @property
     def is_sequence(self):
         return self._is_sequence
-    
+
     @property
     def name(self):
         return self._name
-    
+
     @property
     def display(self):
         return self._display
-    
+
     def default(self):
-        return u"#"
+        return "#"

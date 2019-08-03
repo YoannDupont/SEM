@@ -28,9 +28,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .annotator import Annotator
-from .wapiti import Annotator as WapitiAnnotator
-from .lexicon import Annotator as LexiconAnnotator
+from sem.annotators.annotator import Annotator
+from sem.annotators.wapiti import Annotator as WapitiAnnotator
+from sem.annotators.lexicon import Annotator as LexiconAnnotator
 
 try:
     from importlib import import_module

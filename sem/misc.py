@@ -31,15 +31,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os.path
+import pathlib
 import re
 import tarfile
 
 from contextlib import contextmanager
 from io import open, StringIO
-
-from sem import PY2
-import sem.storage
 
 def find_suggestions(target, candidates, case_sensitive=True):
     trgt = (target if case_sensitive else target.lower())
@@ -56,7 +53,7 @@ def ranges_to_set(ranges, length, include_zero=False):
     Returns a set of integers based of ranges over a reference list. Ranges are
     inclusive both in the lower and upper bound, unlike in python where they are
     inclusive only in the lower but not the upper bound.
-    
+
     Parameters
     ----------
     ranges : str
@@ -67,39 +64,44 @@ def ranges_to_set(ranges, length, include_zero=False):
         the reference length to use in case of negative indexing.
     """
     result = set()
-    
+
     for current_range in ranges.split(','):
         if ':' in current_range:
             lo, hi = [int(i) for i in current_range.split(":")]
         else:
             lo = int(current_range)
             hi = lo
-        
-        if (hi < lo): continue
-        
-        if lo < 0: lo = length + lo
-        if hi < 0: hi = length + hi
-        
-        for i in range(lo, hi+1): result.add(i)
-    
-    if include_zero: result.add(0)
-    
+
+        if (hi < lo):
+            continue
+
+        if lo < 0:
+            lo = length + lo
+        if hi < 0:
+            hi = length + hi
+
+        for i in range(lo, hi+1):
+            result.add(i)
+
+    if include_zero:
+        result.add(0)
+
     return result
 
 def correct_pos_tags(tags):
     """
     Correct POS tags following the "tag _tag" scheme to remove impossible transitions.
     """
-    corrected   = [[level2 for level2 in level1] for level1 in tags]
+    corrected = [[level2 for level2 in level1] for level1 in tags]
     corrections = 0
     for i in range(len(corrected)):
         value = ""
-        j     = len(corrected[i])-1
+        j = len(corrected[i])-1
         while j >= 0:
             if value != "":
                 if corrected[i][j][0] == "_":
                     if corrected[i][j][1:] != value:
-                        corrected[i][j] = u"_" + value
+                        corrected[i][j] = "_{}".format(value)
                         corrections += 1
                 else:
                     if corrected[i][j][0] != "_" and corrected[i][j] != value:
@@ -111,40 +113,24 @@ def correct_pos_tags(tags):
             j -= 1
     return corrected
 
-def is_relative_path(s):
-    """
-    Return whether the path given in argument is relative or not.
-    """
-    tmp = s.replace(u"\\", u"/")
-    return tmp.startswith(u"../") or tmp.startswith(u"~/") or tmp.startswith(u"./")
-
-if PY2:
-    def is_string(s):
-        """
-        Return whether the argument is a string class or not.
-        """
-        return isinstance(s, basestring)
-else:
-    def is_string(s):
-        """
-        Return whether the argument is a string class or not.
-        """
-        return isinstance(s, str)
-
 def check_model_available(model, logger=None):
-    if not os.path.exists(model):
-        if os.path.exists(model + ".tar.gz"):
+    path = pathlib.Path(model)
+    if not path.exists():
+        targz = pathlib.Path(str(path) + ".tar.gz")
+        if targz.exists():
             if logger is not None:
-                logger.info("Model not extracted, extracting {0}".format(os.path.normpath(model + ".tar.gz")))
-            with tarfile.open(model + ".tar.gz", "r:gz") as tar:
-                tar.extractall(os.path.dirname(model))
+                logger.info("Model not extracted, extracting {0}".format(
+                    str(targz.resolve())
+                ))
+            with tarfile.open(targz, "r:gz") as tar:
+                tar.extractall(targz.parent)
         else:
-            raise IOError("Cannot find model file: {0}".format(model))
+            raise FileNotFoundError("Cannot find model file: {0}".format(model))
 
 def strip_html(html, keep_offsets=False):
     """
     Take an str containing HTML data and strip the HTML markup.
-    
+
     Parameters
     ----------
     html : str
@@ -153,20 +139,20 @@ def strip_html(html, keep_offsets=False):
         if True, markups are replaced by spaces, otherwise replace by single space.
     """
     def replace_same_size(m):
-        return u" " * (m.end() - m.start())
-    
+        return " " * (m.end() - m.start())
+
     preprocessed_html = html[:]
     to_remove = []
-    to_remove.append(re.compile(u"<script.*?>.+?</script>", re.M + re.U + re.DOTALL))
-    to_remove.append(re.compile(u"<head>.+?</head>", re.M + re.U + re.DOTALL))
-    to_remove.append(re.compile(u"<nav.*?>.+?</nav>", re.M + re.U + re.DOTALL))
+    to_remove.append(re.compile("<script.*?>.+?</script>", re.M + re.U + re.DOTALL))
+    to_remove.append(re.compile("<head>.+?</head>", re.M + re.U + re.DOTALL))
+    to_remove.append(re.compile("<nav.*?>.+?</nav>", re.M + re.U + re.DOTALL))
     for remove in to_remove:
         preprocessed_html = remove.sub(replace_same_size, preprocessed_html)
-    
+
     to_keep = []
-    to_keep.append(re.compile(u"<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL))
-    to_keep.append(re.compile(u"<p.*?>.+?</p>", re.M + re.U + re.DOTALL))
-    
+    to_keep.append(re.compile("<h[1][^>]*?>.+?</h[0-9]>", re.M + re.U + re.DOTALL))
+    to_keep.append(re.compile("<p.*?>.+?</p>", re.M + re.U + re.DOTALL))
+
     parts = []
     s_e = []
     for keep in to_keep:
@@ -185,38 +171,41 @@ def strip_html(html, keep_offsets=False):
 
     if keep_offsets:
         non_space = re.compile("[^ \n\r]")
-        parts.append(u" " * s_e[0][0])
+        parts.append(" " * s_e[0][0])
     else:
         non_space = re.compile("[^ \n\r]+")
     for i in range(len(s_e)):
         if i > 0:
-            parts.append(non_space.sub(u" ", preprocessed_html[s_e[i-1][1] : s_e[i][0]]))
+            parts.append(non_space.sub(" ", preprocessed_html[s_e[i-1][1] : s_e[i][0]]))
         parts.append(preprocessed_html[s_e[i][0] : s_e[i][1]])
-    stripped_html = u"".join(parts)
-    
+    stripped_html = "".join(parts)
+
     tag = re.compile("<.+?>", re.U + re.M + re.DOTALL)
-    repl = (replace_same_size if keep_offsets else u"")
+    repl = (replace_same_size if keep_offsets else "")
     if keep_offsets:
-        stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", u"      ").replace(u"&#160;", u"      ")
+        stripped_html = tag.sub(repl, stripped_html) \
+                .replace("&nbsp;", "      ").replace("&#160;", "      ")
     else:
-        stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", u" ").replace(u"&#160;", u" ")
-    
+        stripped_html = tag.sub(repl, stripped_html) \
+                .replace("&nbsp;", " ").replace("&#160;", " ")
+
     return stripped_html
 
 def str2bool(s):
     """
     Return a boolean value from string.
-    
+
     Parameters
     ----------
     s : str
         the string value to convert to boolean.
     """
-    
+
     s = s.lower()
-    res = {"yes":True,"y":True,"true":True, "no":False,"n":False,"false":False}.get(s, None)
+    res = {"yes": True, "y": True, "true": True, "no": False, "n": False, "false": False} \
+        .get(s, None)
     if res is None:
-        raise ValueError(u'Cannot convert to boolean: "{0}"'.format(s))
+        raise ValueError('Cannot convert to boolean: "{0}"'.format(s))
     return res
 
 def longest_common_substring(a, b, casesensitive=True, lastchance=False):
@@ -225,16 +214,21 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
     a short form.
     It will generate a list of candidate solutions that have exactly the
     same number of matching tokens as the LCS algorithm found.
-    
+
     """
     if len(a) < len(b):
         # left should be the longest sequence, but here right is.
         # We invert them so we do not have to deal with the mirroring of the checks.
-        # However, in the end, the indexes will be switched between the two tokens, so we put them back in place.
-        return [[(y,x) for (x,y) in solution] for solution in longest_common_substring(b, a, casesensitive)]
+        # However, in the end, the indexes will be switched between the two tokens,
+        # so we put them back in place.
+        return [
+            [(y, x) for (x, y) in solution]
+            for solution in longest_common_substring(b, a, casesensitive)
+        ]
     if not casesensitive:
         # simple and dirty python to easily simulate case insensitivity.
-        # Even though it works for most cases, it will not for some specific unicode characters which I do not recall.
+        # Even though it works for most cases, it will not for some specific
+        # unicode characters which I do not recall.
         return longest_common_substring(a.lower(), b.lower(), casesensitive=True)
 
     lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
@@ -251,39 +245,48 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
         The recursive algorithm that finds solutions by backtracking
         """
         if x == 0 or y == 0:
-            if current == []: return # empty solution
-            if len(current) != lengths[-1][-1]: return
-            
-            z,t = current[0]
-            if z > 0 and a[z-1].isalpha(): return # we start in the middle of a word of the long form
-            if t != 0: return                     # we do not take the first character of the short form
-            
+            if current == []: # empty solution
+                return
+            if len(current) != lengths[-1][-1]:
+                return
+
+            z, t = current[0]
+            # we start in the middle of a word of the long form
+            if z > 0 and a[z-1].isalpha():
+                return
+            # we do not take the first character of the short form
+            if t != 0:
+                return
+
             solutions.add(tuple(current))
             return
         if a[x-1] == b[y-1]:
             try:
                 a_x2_ok = a[x-2].isalpha()
-            except:
+            except Exception:
                 a_x2_ok = False
-            
+
             if current != []:
                 if a[current[0][0]-1].isalpha():
                     bcktrck(x-1, y, current)
                     return
-                if " " in a[x-1 : current[0][0]].strip() and a_x2_ok: # generated more than one token, and splitted one of them
+                # generated more than one token, and splitted one of them
+                if " " in a[x-1 : current[0][0]].strip() and a_x2_ok:
                     bcktrck(x-1, y, current)
                     return
             else:
-                if "-" in a[x-1 : ] and not a[x-1] == "-": # we cut somewhere after a hyphen
+                # we cut somewhere after a hyphen
+                if "-" in a[x-1 : ] and not a[x-1] == "-":
                     if lengths[x-1][y] == lengths[x][y]:
                         bcktrck(x-1, y, current)
                     return
-                if " " in a[x-1:].strip() and (x>1 and a_x2_ok): # generated more than one token *and* splitted one of them
+                # generated more than one token *and* splitted one of them
+                if " " in a[x-1:].strip() and (x > 1 and a_x2_ok):
                     if lengths[x-1][y] == lengths[x][y]:
                         bcktrck(x-1, y, current)
                     return
-            
-            bcktrck(x-1, y-1, [(x-1,y-1)] + current)
+
+            bcktrck(x-1, y-1, [(x-1, y-1)] + current)
             if lengths[x][y] == lengths[x-1][y]:
                 bcktrck(x-1, y, current)
             if lengths[x][y] == lengths[x][y-1]:
@@ -292,7 +295,7 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
             bcktrck(x-1, y, current)
         elif lengths[x][y] == lengths[x][y-1]:
             bcktrck(x, y-1, current)
-    
+
     try:
         bcktrck(len(a), len(b), [])
         return list(solutions)
@@ -302,7 +305,7 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
 @contextmanager
 def r_open(source, encoding='utf-8'):
     '''Open in read mode either a file from the filename or a string.'''
-    
+
     src = None
     try:
         src = open(source, 'r', encoding=encoding, newline='')
@@ -325,7 +328,7 @@ def r_open(source, encoding='utf-8'):
 
 def read_chunks(source, size=1024, encoding='utf-8'):
     '''Read a source by chunks of a given size.'''
-    
+
     with r_open(source, encoding) as input_stream:
         buff = input_stream.read(size)
         while buff:

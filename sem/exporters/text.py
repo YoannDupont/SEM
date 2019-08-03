@@ -30,58 +30,62 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .exporter import Exporter as DefaultExporter
-from sem.storage.annotation import tag_annotation_from_sentence as get_pos, chunk_annotation_from_sentence as get_chunks
+from sem.exporters.exporter import Exporter as DefaultExporter
+from sem.storage.annotation import (
+    tag_annotation_from_sentence as get_pos,
+    chunk_annotation_from_sentence as get_chunks
+)
 
 class Exporter(DefaultExporter):
     __ext = "txt"
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
+
     def document_to_unicode(self, document, couples, **kwargs):
         corpus = document.corpus
-        
-        lower  = {}
+
+        lower = {}
         for field in couples:
             lower[field.lower()] = couples[field]
-        
+
         if "word" in lower:
             token_field = lower["word"]
         elif "token" in lower:
             token_field = lower["token"]
-        elif u"word" in corpus:
-            token_field = u"word"
-        elif u"token" in corpus:
-            token_field = u"token"
+        elif "word" in corpus:
+            token_field = "word"
+        elif "token" in corpus:
+            token_field = "token"
         else:
             raise RuntimeError("Cannot find token field")
-        
+
         data = []
         for sentence in corpus:
             tokens = [token[token_field] for token in sentence]
-            
+
             if "pos" in lower and lower["pos"] in corpus:
-                pos = [u"" for _ in range(len(tokens))]
                 for annotation in get_pos(sentence, lower["pos"]):
-                    tokens[annotation.ub-1] += u"/" + annotation.value
-                    for i in range(annotation.lb, annotation.ub-1): # regrouping tokens for tags spanning over >2 tokens
-                        tokens[i+1] = tokens[i] + u"_" + tokens[i+1]
-                        tokens[i]   = u""
-            
+                    tokens[annotation.ub-1] += "/{}".format(annotation.value)
+                    # regrouping tokens for tags spanning over >2 tokens
+                    for i in range(annotation.lb, annotation.ub-1):
+                        tokens[i+1] = "{}{}{}".format(tokens[i], "_", tokens[i+1])
+                        tokens[i] = ""
+
             if "chunking" in lower and lower["chunking"] in corpus:
                 for annotation in get_chunks(sentence, lower["chunking"]):
                     tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
-            
+
             if "ner" in lower and lower["ner"] in corpus:
                 for annotation in get_chunks(sentence, lower["ner"]):
                     tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
                     tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
-            
-            tokens = [token for token in tokens if token != ""] # if regrouping tokens, some are empty and would generate superfluous spaces
-            data.append(u" ".join(tokens[:]))
-        return u"\n".join(data)
-    
+
+            # if regrouping tokens, some are empty and would generate superfluous spaces
+            tokens = [token for token in tokens if token != ""]
+            data.append(" ".join(tokens[:]))
+        return "\n".join(data)
+
     def document_to_data(self, document, couples, **kwargs):
-        return self.document_to_unicode(document, couples).split(u"\n")
+        return self.document_to_unicode(document, couples).split("\n")

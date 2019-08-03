@@ -31,9 +31,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-_train_set = set([u"train", u"eval", u"evaluate", u"evaluation"])
-_train = u"train"
-_label_set = set([u"label", u"annotate", u"annotation"])
+_train_set = set(["train", "eval", "evaluate", "evaluation"])
+_train = "train"
+_label_set = set(["label", "annotate", "annotation"])
 _label = "label"
 _modes = _train_set | _label_set
 _equivalence = dict([[mode, _train] for mode in _train_set] + [[mode, _label] for mode in _label_set])
@@ -44,39 +44,39 @@ class Entry(object):
     An Entry may be used only in certain circumstances: for example, the
     output tag may only appear in train mode.
     """
-    def __init__(self, name, mode=u"label"):
+    def __init__(self, name, mode="label"):
         if mode not in _modes:
             raise ValueError("Unallowed mode for entry: {0}".format(mode))
         self._name = name
         self._mode = _equivalence[mode]
-    
+
     def __eq__(self, other):
         return self.name == other.name
-    
+
     @property
     def name(self):
         return self._name
-    
+
     @property
     def mode(self):
         return self._mode
-    
+
     @mode.setter
     def mode(self, mode):
         self._mode = _equivalence[mode]
-    
+
     @property
     def is_train(self):
         return self._mode == _train
-    
+
     @property
     def is_label(self):
         return self._mode == _label
-    
+
     @staticmethod
     def fromXML(xml_element):
         return Entry(**xml_element.attrib)
-    
+
     def has_mode(self, mode):
         return self.mode == _equivalence[mode]
 
@@ -86,72 +86,74 @@ class Corpus(object):
             self.fields = fields[:]
         else:
             self.fields = []
-        
+
         if sentences:
             self.sentences = sentences[:]
         else:
             self.sentences = []
-    
+
     def __contains__(self, item):
         return item in self.fields
-    
+
     def __len__(self):
         return len(self.sentences)
-    
+
     def __iter__(self):
         for element in self.iterate_on_sentences():
             yield element
-    
+
     def __unicode__(self):
         return self.unicode(self.fields)
-    
-    def unicode(self, fields, separator=u"\t"):
-        fmt       = u"\t".join([u"{{{0}}}".format(field) for field in fields])
+
+    def unicode(self, fields, separator="\t"):
+        fmt = "\t".join(["{{{0}}}".format(field) for field in fields])
         sentences = []
         for sentence in self:
             sentences.append([])
             for token in sentence:
-                sentences[-1].append((fmt.format(**token)) + u"\n")
-        return u"\n".join([u"".join(sentence) for sentence in sentences])
-    
+                sentences[-1].append((fmt.format(**token)) + "\n")
+        return "\n".join(["".join(sentence) for sentence in sentences])
+
     def to_matrix(self, sentence):
         sent = []
         for token in sentence:
             sent.append([token[field] for field in self.fields])
         return sent
-    
+
     def iterate_on_sentences(self):
         for element in self.sentences:
             yield element
-    
+
     def is_empty(self):
         return 0 == len(self.sentences)
-    
+
     def has_key(self, key):
         return key in self.fields
-    
+
     def append_sentence(self, sentence):
         self.sentences.append(sentence)
-    
-    def from_sentences(self, sentences, field_name=u"word"):
+
+    def from_sentences(self, sentences, field_name="word"):
         del self.fields[:]
         del self.sentences[:]
-        
+
         self.fields = [field_name]
         for sentence in sentences:
             self.sentences.append([])
             for token in sentence:
-                self.sentences[-1].append({field_name : token})
-    
-    def from_segmentation(self, content, tokens, sentences, field_name=u"word"):
+                self.sentences[-1].append({field_name: token})
+
+    def from_segmentation(self, content, tokens, sentences, field_name="word"):
         self.fields = [field_name]
         for sentence in sentences.spans:
-            sentence_tokens = []
-            self.append_sentence([{field_name:content[token.lb : token.ub]} for token in tokens.spans[sentence.lb : sentence.ub]])
-    
+            self.append_sentence([
+                {field_name: content[token.lb : token.ub]}
+                for token in tokens.spans[sentence.lb : sentence.ub]
+            ])
+
     def write(self, fd, fields=None):
-        fmt = u"\t".join(["{{{0}}}".format(field) for field in (fields or self.fields)]) + u"\n"
+        fmt = "\t".join(["{{{0}}}".format(field) for field in (fields or self.fields)]) + "\n"
         for sentence in self:
             for token in sentence:
                 fd.write(fmt.format(**token))
-            fd.write(u"\n")
+            fd.write("\n")

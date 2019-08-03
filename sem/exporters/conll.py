@@ -30,44 +30,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .exporter import Exporter as DefaultExporter
+from sem.exporters.exporter import Exporter as DefaultExporter
 
 class Exporter(DefaultExporter):
     __ext = "conll"
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
+
     def document_to_unicode(self, document, couples, **kwargs):
         logger = kwargs.get("logger", None)
         if len(document.corpus.fields) == 0:
             if logger is not None:
                 logger.warn("No fields found for Corpus, cannot create string.")
-            return u""
-        
-        if not couples or (len(couples)==0) or (len(couples)==1 and (couples.keys()[0].lower() in ["word", "token"])):
-            return unicode(document.corpus)
+            return ""
+
+        if (
+            not couples
+            or (len(couples) == 0)
+            or (
+                len(couples) == 1
+                and couples.keys()[0].lower() in ["word", "token"]
+            )
+        ):
+            return str(document.corpus)
         else:
-            lower  = {}
+            lower = {}
             fields = []
             for field in couples:
                 lower[field.lower()] = couples[field]
-            
-            if "word" in lower:    fields.append(lower["word"])
-            elif "token" in lower: fields.append(lower["token"])
-            else:                  fields.append(document.corpus.fields[0])
-            
-            if "pos" in lower:      fields.append(lower["pos"])
-            if "chunking" in lower: fields.append(lower["chunking"])
-            if "ner" in lower:      fields.append(lower["ner"])
-            
+
+            if "word" in lower:
+                fields.append(lower["word"])
+            elif "token" in lower:
+                fields.append(lower["token"])
+            else:
+                fields.append(document.corpus.fields[0])
+
+            if "pos" in lower:
+                fields.append(lower["pos"])
+            if "chunking" in lower:
+                fields.append(lower["chunking"])
+            if "ner" in lower:
+                fields.append(lower["ner"])
+
             for field in fields:
                 if field not in document.corpus:
                     if logger is not None:
                         logger.warn('field "%s" not in corpus, adding', field)
                     document.add_to_corpus(field)
-            
+
             return document.corpus.unicode(fields)
-    
+
     def document_to_data(self, document, couples, **kwargs):
         return document.corpus.sentences

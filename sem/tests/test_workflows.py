@@ -1,4 +1,4 @@
-#-*- encoding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 """
 file: test_workflows.py
@@ -28,58 +28,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from __future__ import print_function
-
 import unittest
-import os.path
-import sys
 
 from sem import SEM_RESOURCE_DIR
-
 from sem.storage import Document, Corpus, Holder
-
 import sem.modules.tagger
 
-document = Document("document", "Ceci est un test.")
-corpus = Corpus([u"word"], sentences=[[
-    {u"word":u"Ceci"},
-    {u"word":u"est"},
-    {u"word":u"un"},
-    {u"word":u"test"},
-    {u"word":u"."}
-]])
-document._corpus = corpus
 
 def launch(path_to_master):
+    document = Document("document", "Ceci est un test.")
+    corpus = Corpus(
+        ["word"],
+        sentences=[[
+            {"word": "Ceci"},
+            {"word": "est"},
+            {"word": "un"},
+            {"word": "test"},
+            {"word": "."}
+        ]]
+    )
+    document._corpus = corpus
     pipeline, options, exporter, couples = sem.modules.tagger.load_master(
         path_to_master
     )
-    
     args = Holder(
-        pipeline = pipeline,
-        options = options,
-        exporter = None,
-        couples = couples,
-        infiles = [document]
+        pipeline=pipeline,
+        options=options,
+        exporter=None,
+        couples=couples,
+        infiles=[document]
     )
-    
     sem.modules.tagger.main(args)
+
 
 class TestWorkflows(unittest.TestCase):
     def test_pos(self):
-        launch(os.path.join(SEM_RESOURCE_DIR, "master", "fr", "pos.xml"))
-    
+        launch(SEM_RESOURCE_DIR / "master" / "fr" / "pos.xml")
+
     def test_pos_leff(self):
-        launch(os.path.join(SEM_RESOURCE_DIR, "master", "fr", "pos-lefff.xml"))
-    
+        launch(SEM_RESOURCE_DIR / "master" / "fr" / "pos-lefff.xml")
+
     def test_chunking(self):
-        launch(os.path.join(SEM_RESOURCE_DIR, "master", "fr", "chunking.xml"))
-    
+        launch(SEM_RESOURCE_DIR / "master" / "fr" / "chunking.xml")
+
     def test_no_chunking(self):
-        launch(os.path.join(SEM_RESOURCE_DIR, "master", "fr", "np_chunking.xml"))
-    
+        launch(SEM_RESOURCE_DIR / "master" / "fr" / "np_chunking.xml")
+
     def test_ner(self):
-        launch(os.path.join(SEM_RESOURCE_DIR, "master", "fr", "NER.xml"))
+        launch(SEM_RESOURCE_DIR / "master" / "fr" / "NER.xml")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

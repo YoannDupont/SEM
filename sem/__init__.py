@@ -28,29 +28,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import sys
-import os.path
 import argparse
-
-from os.path import dirname, abspath, join, expanduser
-
+import pathlib
 import platform
+
 SYSTEM = platform.system().lower()
 ON_WINDOWS = (SYSTEM == "windows")
-PY2 = sys.version_info.major == 2
 
-if PY2:
-    SEM_HOME = dirname(abspath(__file__)).decode(sys.getfilesystemencoding())
-else:
-    SEM_HOME = dirname(abspath(__file__))
-SEM_DATA_DIR = join(expanduser(u"~"), u"sem_data")
-SEM_RESOURCE_DIR = join(SEM_DATA_DIR, u"resources")
-SEM_EXT_DIR = join(SEM_DATA_DIR, u"ext")
-SEM_HOMEPAGE = u"http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
+SEM_HOME = pathlib.Path(__file__).resolve().parent
+SEM_DATA_DIR = pathlib.Path.home() / "sem_data"
+SEM_RESOURCE_DIR = pathlib.Path(SEM_DATA_DIR) / "resources"
+SEM_HOMEPAGE = "http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
 argument_parser = argparse.ArgumentParser()
 argument_subparsers = argument_parser.add_subparsers()
 
-_name = u"SEM"
+_name = "SEM"
 
 __version__ = "3.3.0"
 
@@ -61,4 +53,4 @@ def version():
     return __version__
 
 def full_name():
-    return u"{} v{}".format(name(), version())
+    return "{} v{}".format(name(), version())

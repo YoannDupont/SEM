@@ -30,23 +30,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs
-
-from .exporter import Exporter as DefaultExporter
+from sem.exporters.exporter import Exporter as DefaultExporter
+import sem.storage.document
 
 class Exporter(DefaultExporter):
     __ext = "sem.xml"
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
-    def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
-        document.write(codecs.open(output, "w", encoding), add_header=True)
-    
+
+    def document_to_file(self, document: sem.storage.document.Document, couples, output, encoding="utf-8", **kwargs):
+        document.write(open(output, "w", encoding=encoding), add_header=True)
+
     def document_to_data(self, document, couples, **kwargs):
         """
         This is just creating a dictionary from the document.
         Nearly copy-pasta of the Document.unicode method.
         """
-        
-        return self
+
+        return document

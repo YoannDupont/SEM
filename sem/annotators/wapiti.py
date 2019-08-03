@@ -30,14 +30,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    from xml.etree import ElementTree as ET
-
 import logging
 
-from . import Annotator as RootAnnotator
+from sem.annotators.annotator import Annotator as RootAnnotator
 from sem.logger import default_handler
 from sem.CRF.model import Model as WapitiModel
 
@@ -50,24 +45,18 @@ wapiti_logger.setLevel("INFO")
 class Annotator(RootAnnotator):
     def __init__(self, field, location, input_encoding=None, *args, **kwargs):
         super(Annotator, self).__init__(field, location, input_encoding=input_encoding, *args, **kwargs)
-        
+
         check_model_available(self._location, logger=wapiti_logger)
-        
+
         self._model = WapitiModel.from_wapiti_model(self._location, encoding=input_encoding)
 
     def process_document(self, document, annotation_name=None, annotation_fields=None, *args, **kwargs):
-        if annotation_fields is None:
-            fields = document.corpus.fields
-        else:
-            fields = annotation_fields
-        
         if annotation_name is None:
-            annotation_name = unicode(self._field)
-        
+            annotation_name = str(self._field)
+
         tags = []
         for sequence in document.corpus:
-            #tagging, _, _ = self._model.tag_viterbi(document.corpus.to_matrix(sequence))
             tagging, _, _ = self._model.tag_viterbi(sequence)
             tags.append(tagging[:])
-        
+
         document.add_annotation_from_tags(tags, self._field, annotation_name)

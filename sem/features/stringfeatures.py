@@ -30,20 +30,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .feature        import Feature
-from .getterfeatures import DEFAULT_GETTER
+from sem.features.feature import Feature
+from sem.features.getterfeatures import DEFAULT_GETTER
 
 class StringFeature(Feature):
     def __init__(self, reference, getter=DEFAULT_GETTER, *args, **kwargs):
         super(StringFeature, self).__init__(self, reference, *args, **kwargs)
         self._reference = reference
-        self._getter    = getter
+        self._getter = getter
 
 class EqualFeature(StringFeature):
     def __init__(self, reference, *args, **kwargs):
         super(EqualFeature, self).__init__(reference, *args, **kwargs)
         self._is_boolean = True
-    
+
     def __call__(self, *args, **kwargs):
         return self._reference == self._getter(*args, **kwargs)
 
@@ -51,8 +51,7 @@ class EqualCaselessFeature(StringFeature):
     def __init__(self, reference, *args, **kwargs):
         super(EqualCaselessFeature, self).__init__(reference, *args, **kwargs)
         self._is_boolean = True
-        self._reference  = self._reference.lower()
-    
+        self._reference = self._reference.lower()
+
     def __call__(self, *args, **kwargs):
         return self._reference == self._getter(*args, **kwargs).lower()
-

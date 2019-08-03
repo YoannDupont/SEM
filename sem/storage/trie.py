@@ -32,38 +32,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs
-
 from sem.constants import NUL
 
 class Trie(object):
     """
     The Trie object.
-    
+
     Attributes
     ----------
     _data : dict
         the structure where all the entries of a multiword dictionary
         are loaded.
     """
-    
+
     def __init__(self, filename=None, encoding=None):
         self._data = {}
-        
+
         if filename:
-            encoding = encoding or u"UTF-8"
-            for l in codecs.open(filename, u"rU", encoding):
+            encoding = encoding or "UTF-8"
+            for l in open(filename, "rU", encoding=encoding):
                 seq = l.strip().split()
-                
+
                 self.add(seq)
-    
+
     def __iter__(self):
         seq = []
         # Depth First Search
         def dfs(dic):
-            keys  = set(dic.keys())
+            keys = set(dic.keys())
             found = NUL in keys
-            
+
             if found:
                 keys.remove(NUL)
                 if dic[NUL]:
@@ -75,63 +73,63 @@ class Trie(object):
                 for i in dfs(dic[k]):
                     yield i
                 seq.pop()
-        
+
         for i in dfs(self._data):
             yield i
-    
+
     def __len__(self):
         length = 0
         for i in self:
             length += 1
         return length
-    
+
     @property
     def data(self):
         return self._data
-    
+
     def add(self, sequence):
         iterator = sequence.__iter__()
-        d        = self._data
-        
+        d = self._data
+
         try:
             while True:
                 token = next(iterator)
-                
+
                 if token not in d:
                     d[token] = {}
 
                 d = d[token]
         except StopIteration:
             pass
-        
+
         d[NUL] = {}
-    
+
     def add_with_value(self, sequence, value):
         iterator = iter(sequence)
-        d        = self._data
-        
+        d = self._data
+
         try:
             while True:
                 token = next(iterator)
-                
+
                 if token not in d:
                     d[token] = {}
 
                 d = d[token]
         except StopIteration:
             pass
-        
+
         d[NUL] = value
-    
+
     def contains(self, sequence):
         iterator = iter(sequence)
-        d        = self._data
-        result   = True
-        
+        d = self._data
+        result = True
+
         try:
             while True:
                 token = next(iterator)
-                
+
                 if token not in d:
                     result = False
                     break
@@ -139,9 +137,9 @@ class Trie(object):
                 d = d[token]
         except StopIteration:
             pass
-        
+
         return result and (NUL in d)
-    
+
     def remove(self, sequence):
         def remove(dic, iterator):
             try:
@@ -155,16 +153,16 @@ class Trie(object):
                     del dic[NUL]
 
         remove(self._data, iter(sequence))
-    
+
     def goto(self, sequence):
         iterator = iter(sequence)
-        d        = self._data
-        result   = True
-        
+        d = self._data
+        result = True
+
         try:
             while True:
                 token = next(iterator)
-                
+
                 if token not in d:
                     result = False
                     break
@@ -172,7 +170,7 @@ class Trie(object):
                 d = d[token]
         except StopIteration:
             pass
-        
+
         if result:
             return d
         else:

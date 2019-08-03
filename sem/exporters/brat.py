@@ -30,28 +30,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    from xml.etree import ElementTree as ET
-
-from .exporter import Exporter as DefaultExporter
+from sem.exporters.exporter import Exporter as DefaultExporter
 
 class Exporter(DefaultExporter):
     __ext = "ann"
-    
+
     def __init__(self, *args, **kwargs):
         pass
-    
+
     def document_to_unicode(self, document, couples, **kwargs):
-        lowers = dict([(x.lower(), y) for (x,y) in couples.items()])
+        lowers = dict([(x.lower(), y) for (x, y) in couples.items()])
         if "ner" not in lowers:
-            return u""
+            return ""
         if not document.annotation(lowers["ner"]):
-            return u""
+            return ""
         content = document.content
         parts = []
         for id, annotation in enumerate(document.annotation(lowers["ner"]).get_reference_annotations(), 1):
-            parts.append(u"T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(id=id, annotation=annotation, txt=content[annotation.lb : annotation.ub].replace(u"\r",u"").replace(u"\n",u" ")))
-        return u"\n".join(parts)
-    
+            parts.append(
+                "T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(
+                    id=id,
+                    annotation=annotation,
+                    txt=content[annotation.lb : annotation.ub].replace("\r", "").replace("\n", " "))
+            )
+        return "\n".join(parts)

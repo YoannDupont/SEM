@@ -35,12 +35,12 @@ SOFTWARE.
 class Holder(object):
     def __init__(self, **kwargs):
         self.__dict__ = kwargs
-    
+
     def __getitem__(self, field):
         return getattr(self, field)
-    
+
     def __setitem__(self, field, value):
         return setattr(self, field, value)
-    
+
     def get(self, field, default=None):
         return getattr(self, field, default)

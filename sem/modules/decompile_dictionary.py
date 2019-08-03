@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 file: decompile_dictionary.py
@@ -34,7 +34,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import codecs, logging
+import logging
+from sem.logger import file_handler
 
 try:
     import cPickle as pickle
@@ -52,10 +53,12 @@ def _entry_token(token):
 
 # in multiword dictionaries, one entry = multiple tokens
 def _entry_multiword(tokens):
-    return u" ".join(tokens)
+    return " ".join(tokens)
 
-_entry   = {"token"    :_entry_token,
-            "multiword":_entry_multiword}
+_entry = {
+    "token": _entry_token,
+    "multiword": _entry_multiword
+}
 _choices = set(_entry.keys())
 
 def decompile_dictionary(infile, outfile, kind="token",
@@ -64,48 +67,59 @@ def decompile_dictionary(infile, outfile, kind="token",
     if log_file is not None:
         decompile_dictionary_logger.addHandler(file_handler(log_file))
     decompile_dictionary_logger.setLevel(log_level)
-    
+
     if kind not in _choices:
         raise RuntimeError("Invalid kind: {0}".format(kind))
-    
-    compile_dictionary_logger.info(u'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile))
-    
+
+    decompile_dictionary_logger.info('compiling {0} dictionary from "{1}" to "{2}"'.format(
+        kind,
+        infile,
+        outfile
+    ))
+
     resource = pickle.load(open(infile))
-    entry    = _entry[kind]
-    with codecs.open(outfile, "w", oenc) as O:
+    entry = _entry[kind]
+    with open(outfile, "w", encoding=oenc) as output_stream:
         tokens = []
         for token in resource:
             tokens.append(token[:])
         for token in sorted(tokens):
-            O.write(entry(token) + u"\n")
-    
-    compile_dictionary_logger.info(u"done")
+            output_stream.write(entry(token) + "\n")
 
+    decompile_dictionary_logger.info("done")
 
 
 if __name__ == "__main__":
-    import argparse, sys
-    
-    parser = argparse.ArgumentParser(description="Takes a dictionary and compiles it in a readable format for the enrich module. A dictionary is a text file containing one entry per line. There are to kinds of dictionaries: those that only contain entries which apply to a single token (token), and those who contain entries which may be applied to sequences of tokens (multiword).")
-    
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(
+        description="Takes a dictionary and compiles it in a readable format for the enrich module."
+                    " A dictionary is a text file containing one entry per line."
+                    " There are two kinds of dictionaries:"
+                    " those that only contain entries which apply to a single token (token), and"
+                    " those with entries which may be applied to sequences of tokens (multiword)."
+    )
+
     parser.add_argument("infile",
                         help="The input file (one term per line)")
     parser.add_argument("outfile",
                         help="The output file (pickled file)")
     parser.add_argument("-k", "--kind", choices=_choices, dest="kind", default="token",
-                        help="The kind of entries that the dictionary contains (default: %(default)s)")
+                        help="The kind of entries that the dictionary contains"
+                             " (default: %(default)s)")
     parser.add_argument("-o", "--output-encoding", dest="oenc", default="utf-8",
                         help="Encoding of the output (default: %(default)s)")
     parser.add_argument("-l", "--log", dest="log_level", action="count",
                         help="Increase log level (default: critical)")
     parser.add_argument("--log-file", dest="log_file",
                         help="The name of the log file")
-    
+
     if __package__:
         args = parser.parse_args(sys.argv[2:])
     else:
         args = parser.parse_args()
-    
+
     decompile_dictionary(args.infile, args.outfile,
                          kind=args.kind,
                          oenc=args.oenc,

@@ -36,18 +36,18 @@ import re
 #
 # Chunking flags.
 #
-    
-BEGIN  = "B"  # begin flags
-IN     = "I"  # in flags
-LAST   = "LE" # end flags
-SINGLE = "US" # single flags
-OUT    = "O"
+
+BEGIN = "B"  # begin flags
+IN = "I"  # in flags
+LAST = "LE"  # end flags
+SINGLE = "US"  # single flags
+OUT = "O"
 
 #
 # Some useful constants for tries.
 #
 
-NUL = u""
+NUL = ""
 
 #
 # Some useful regular expressions.
@@ -57,20 +57,20 @@ NUL = u""
 # URLs recognition. Validating URL is both hard and all urls may not be
 # valid when analysing textual information. Hence, validity checking is
 # kept to bare minimum, covering being more important.
-protocol = u"(?:http|ftp|news|nntp|telnet|gopher|wais|file|prospero)"
-mailto   = u"mailto"
-url_body = u"\S+[0-9A-Za-z/]"
-url      = u"<?(?:{0}://|{1}:|www\.){2}>?".format(protocol, mailto, url_body)
-url_re   = re.compile(url, re.I)
+protocol = r"(?:http|ftp|news|nntp|telnet|gopher|wais|file|prospero)"
+mailto = r"mailto"
+url_body = r"\S+[0-9A-Za-z/]"
+url = r"<?(?:{0}://|{1}:|www\.){2}>?".format(protocol, mailto, url_body)
+url_re = re.compile(url, re.I)
 
 # email addresses recognition. See URLs.
-localpart_border = u"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]"
-localpart_inside = u"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]"
-localpart        = u"{0}{1}*".format(localpart_border, localpart_inside)
-subdomain_start  = u"[A-Za-z]"
-subdomain_inside = u"[A-Za-z0-9\\-]"
-subdomain_end    = u"[A-Za-z0-9]"
-subdomain        = u"{0}{1}*{2}".format(subdomain_start, subdomain_inside, subdomain_end)
-domain           = u"{0}(?:\\.{1})*".format(subdomain, subdomain)
-email_str        = u"{0}@{1}".format(localpart, domain)
-email_re         = re.compile(email_str)
+localpart_border = r"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]"
+localpart_inside = r"[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~.]"
+localpart = f"{localpart_border}{localpart_inside}*"
+subdomain_start = r"[A-Za-z]"
+subdomain_inside = r"[A-Za-z0-9\\-]"
+subdomain_end = r"[A-Za-z0-9]"
+subdomain = f"{subdomain_start}{subdomain_inside}*{subdomain_end}"
+domain = rf"{subdomain}(?:\.{subdomain})*"
+email_str = rf"{localpart}@{domain}"
+email_re = re.compile(email_str)

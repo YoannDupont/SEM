@@ -30,16 +30,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .feature        import Feature
-from .getterfeatures import DEFAULT_GETTER
+from sem.features.feature import Feature
 
 class RuleFeature(Feature):
     def __init__(self, features, *args, **kwargs):
         super(RuleFeature, self).__init__(self, *args, **kwargs)
-        self._is_boolean  = False
+        self._is_boolean = False
         self._is_sequence = True
         self._features = features
-    
+
     def __call__(self, list2dict, *args, **kwargs):
         l = ["O"]*len(list2dict)
         pos_beg = 0
@@ -51,7 +50,12 @@ class RuleFeature(Feature):
         matches = []
         func = (feat.__call__ if feat.is_boolean else feat.step)
         while pos_beg < len(list2dict)-1:
-            while remain_min <= 0 and not pos_cur >= len(list2dict) and not func(list2dict, pos_cur) and feat_index < len(self._features)-1:
+            while (
+                remain_min <= 0
+                and not pos_cur >= len(list2dict)
+                and not func(list2dict, pos_cur)
+                and feat_index < len(self._features) - 1
+            ):
                 feat_index += 1
                 feat = self._features[feat_index]
                 func = (feat.__call__ if feat.is_boolean else feat.step)
@@ -103,12 +107,12 @@ class RuleFeature(Feature):
                 func = (feat.__call__ if feat.is_boolean else feat.step)
                 remain_min = feat.min_match
                 remain_max = feat.max_match
-        for lo,hi in matches:
+        for lo, hi in matches:
             l[lo] = "B-{0}".format(self.name)
             for i in range(lo+1, hi):
                 l[i] = "I-{0}".format(self.name)
         return l
-    
+
     def step(self, list2dict, i):
         pos_beg = i
         pos_cur = pos_beg
@@ -116,10 +120,13 @@ class RuleFeature(Feature):
         feat = self._features[feat_index]
         remain_min = feat.min_match
         remain_max = feat.max_match
-        matches = []
         func = (feat.__call__ if feat.is_boolean else feat.step)
         while pos_beg < len(list2dict)-1:
-            while remain_min <= 0 and not func(list2dict, pos_cur) and feat_index < len(self._features)-1:
+            while (
+                remain_min <= 0
+                and not func(list2dict, pos_cur)
+                and feat_index < len(self._features) - 1
+            ):
                 feat_index += 1
                 feat = self._features[feat_index]
                 func = (feat.__call__ if feat.is_boolean else feat.step)
@@ -157,18 +164,14 @@ class RuleFeature(Feature):
 class OrRuleFeature(Feature):
     def __init__(self, features, *args, **kwargs):
         super(OrRuleFeature, self).__init__(self, *args, **kwargs)
-        self._is_boolean  = False
+        self._is_boolean = False
         self._is_sequence = True
         self._features = features
-    
+
     def step(self, list2dict, i):
         pos_beg = i
-        pos_cur = pos_beg
         feat_index = 0
         feat = self._features[feat_index]
-        remain_min = feat.min_match
-        remain_max = feat.max_match
-        matches = []
         best_end = -1
         for feat in self._features:
             func = (feat.__call__ if feat.is_boolean else feat.step)

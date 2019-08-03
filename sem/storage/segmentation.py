@@ -36,7 +36,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .span import Span
+from sem.storage.span import Span
 
 class Segmentation(object):
     """
@@ -57,46 +57,49 @@ class Segmentation(object):
         spans: list of span
         bounds: list of span
         """
-        
-        self._name      = name
-        self._document  = None
+
+        self._name = name
+        self._document = None
         self._reference = reference
-        self._spans     = spans
-    
+        self._spans = spans
+
     def __len__(self):
         return len(self.spans)
-    
+
     def __getitem__(self, i):
         return self._spans[i]
-    
+
     def __iter__(self):
         for element in self.spans:
             yield element
-    
+
     def append(self, span):
         if self._spans is None:
             self._spans = []
         self._spans.append(span)
-    
+
     @property
     def name(self):
         return self._name
-    
+
     @property
     def reference(self):
         return self._reference
-    
+
     @property
     def spans(self):
         return self._spans
-    
+
     def get_reference_spans(self):
         """
         returns spans according to the reference chain.
         """
-        
+
         if self.reference is None:
             return self.spans
         else:
             reference_spans = self.reference.get_reference_spans()
-            return [Span(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub) for element in self.spans]
+            return [
+                Span(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub)
+                for element in self.spans
+            ]

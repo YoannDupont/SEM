@@ -30,14 +30,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os.path
+import pathlib
 
-from .feature        import Feature
-from .getterfeatures import DEFAULT_GETTER
+from sem.features.feature import Feature
+from sem.features.getterfeatures import DEFAULT_GETTER
 
-from sem.storage import NUL
+from sem.constants import NUL
 from sem.storage import Trie
-from sem.storage import compile_token, compile_multiword , compile_map
+from sem.storage import compile_token, compile_multiword, compile_map
 
 try:
     import cPickle as pickle
@@ -49,8 +49,8 @@ class DictionaryFeature(Feature):
         super(DictionaryFeature, self).__init__(*args, **kwargs)
         self._path = path
         if path is not None:
-            self._path = os.path.abspath(os.path.expanduser(path))
-        self._value  = value
+            self._path = pathlib.Path(path).expanduser().resolve()
+        self._value = value
         self._getter = getter
         self._entries = entries
 
@@ -58,7 +58,7 @@ class TokenDictionaryFeature(DictionaryFeature):
     def __init__(self, getter=DEFAULT_GETTER, *args, **kwargs):
         super(TokenDictionaryFeature, self).__init__(getter=getter, *args, **kwargs)
         self._is_boolean = True
-        
+
         if self._path is not None:
             try:
                 self._value = pickle.load(open(self._path))
@@ -71,9 +71,9 @@ class TokenDictionaryFeature(DictionaryFeature):
                 entry = entry.strip()
                 if entry:
                     self._value.add(entry)
-        
+
         assert self._value is not None
-    
+
     def __call__(self, *args, **kwargs):
         return self._getter(*args, **kwargs) in self._value
 
@@ -81,9 +81,9 @@ class MultiwordDictionaryFeature(DictionaryFeature):
     def __init__(self, *args, **kwargs):
         super(MultiwordDictionaryFeature, self).__init__(*args, **kwargs)
         self._is_sequence = True
-        self._entry       = kwargs["entry"]
-        self._appendice   = kwargs.get("appendice", "")
-        
+        self._entry = kwargs["entry"]
+        self._appendice = kwargs.get("appendice", "")
+
         if self._path is not None:
             try:
                 self._value = pickle.load(open(self._path))
@@ -98,81 +98,84 @@ class MultiwordDictionaryFeature(DictionaryFeature):
                     self._value.add(entry.split())
         else:
             self._value = Trie()
-    
+
     def __call__(self, list2dict, *args, **kwargs):
-        l         = ["O"]*len(list2dict)
-        tmp       = self._value._data
-        length    = len(list2dict)
-        fst       = 0
-        lst       = -1 # last match found
-        cur       = 0
-        ckey      = None  # Current KEY
-        entry     = self._entry
+        l = ["O"]*len(list2dict)
+        tmp = self._value._data
+        length = len(list2dict)
+        fst = 0
+        lst = -1 # last match found
+        cur = 0
+        ckey = None  # Current KEY
+        entry = self._entry
         appendice = self._appendice
         while fst < length - 1:
             cont = True
             while cont and (cur < length):
-                ckey  = list2dict[cur][entry]
+                ckey = list2dict[cur][entry]
                 if NUL in tmp: lst = cur
-                tmp   = tmp.get(ckey, {})
-                cont  = len(tmp) != 0
-                cur  += int(cont)
-            
-            if NUL in tmp: lst = cur
-            
+                tmp = tmp.get(ckey, {})
+                cont = len(tmp) != 0
+                cur += int(cont)
+
+            if NUL in tmp:
+                lst = cur
+
             if lst != -1:
-                l[fst] = u'B' + appendice
+                l[fst] = 'B{}'.format(appendice)
                 for i in range(fst+1, lst):
-                    l[i] = u'I' + appendice
+                    l[i] = 'I{}'.format(appendice)
                 fst = lst
                 cur = fst
             else:
                 fst += 1
-                cur  = fst
-            
+                cur = fst
+
             tmp = self._value._data
             lst = -1
-        
+
         if NUL in self._value._data.get(list2dict[-1][entry], []):
-            l[-1] = u'B' + appendice
-        
+            l[-1] = 'B{}'.format(appendice)
+
         return l
-    
+
     def step(self, list2dict, i, *args, **kwargs):
-        tmp       = self._value._data
-        length    = len(list2dict)
-        fst       = i
-        lst       = -1 # last match found
-        cur       = fst
-        ckey      = None  # Current KEY
-        entry     = self._entry
+        tmp = self._value._data
+        length = len(list2dict)
+        fst = i
+        lst = -1 # last match found
+        cur = fst
+        ckey = None  # Current KEY
+        entry = self._entry
         while fst < length - 1:
             cont = True
             while cont and (cur < length):
-                ckey  = list2dict[cur][entry]
-                if NUL in tmp: lst = cur
-                tmp   = tmp.get(ckey, {})
-                cont  = len(tmp) != 0
-                cur  += int(cont)
-            
-            if NUL in tmp: lst = cur
-            
+                ckey = list2dict[cur][entry]
+                if NUL in tmp:
+                    lst = cur
+                tmp = tmp.get(ckey, {})
+                cont = len(tmp) != 0
+                cur += int(cont)
+
+            if NUL in tmp:
+                lst = cur
+
             if lst != -1:
                 return lst - fst
-            
+
             return 0
-        
+
         if NUL in self._value._data.get(list2dict[-1][entry], []):
             return 1
-        
+
         return 0
 
 class MapperFeature(DictionaryFeature):
     def __init__(self, getter=DEFAULT_GETTER, default="O", *args, **kwargs):
         super(MapperFeature, self).__init__(getter=getter, *args, **kwargs)
-        
+
         self._default = default
-        
+
         if self._path is not None:
             self._value = compile_map(self._path, "utf-8")
             self._entries = None
@@ -181,11 +184,10 @@ class MapperFeature(DictionaryFeature):
             for entry in self._entries:
                 entry = entry.strip()
                 if entry:
-                    key,value = entry.split(u"\t")
+                    key, value = entry.split("\t")
                     self._value[key] = value
-        
+
         assert self._value is not None
-    
+
     def __call__(self, *args, **kwargs):
         return self._value.get(self._getter(*args, **kwargs), self._default)
-
