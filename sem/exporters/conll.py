@@ -32,6 +32,7 @@ SOFTWARE.
 
 from sem.exporters.exporter import Exporter as DefaultExporter
 
+
 class Exporter(DefaultExporter):
     __ext = "conll"
 
@@ -48,10 +49,7 @@ class Exporter(DefaultExporter):
         if (
             not couples
             or (len(couples) == 0)
-            or (
-                len(couples) == 1
-                and couples.keys()[0].lower() in ["word", "token"]
-            )
+            or (len(couples) == 1 and couples.keys()[0].lower() in ["word", "token"])
         ):
             return str(document.corpus)
         else:

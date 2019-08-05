@@ -28,22 +28,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .brat import Exporter as BratExporter
-from .conll import Exporter as CoNLLExporter
-from .gate import Exporter as GateExporter
-from .html import Exporter as HTMLExporter
-from .jason import Exporter as JSONExporter
-from .sem_xml import Exporter as SEMExporter
-from .tei_analec import Exporter as AnalecTEIExporter
-from .tei_reden import Exporter as REDENTEIExporter
-from .tei_np import Exporter as TEINPExporter
-from .text import Exporter as TextExporter
+from sem.exporters.brat import Exporter as BratExporter
+from sem.exporters.conll import Exporter as CoNLLExporter
+from sem.exporters.gate import Exporter as GateExporter
+from sem.exporters.html import Exporter as HTMLExporter
+from sem.exporters.jason import Exporter as JSONExporter
+from sem.exporters.sem_xml import Exporter as SEMExporter
+from sem.exporters.tei_analec import Exporter as AnalecTEIExporter
+from sem.exporters.tei_reden import Exporter as REDENTEIExporter
+from sem.exporters.tei_np import Exporter as TEINPExporter
+from sem.exporters.text import Exporter as TextExporter
 
 try:
     from importlib import import_module
-except ImportError: # backward compatibility for python < 2.7
+except ImportError:  # backward compatibility for python < 2.7
+
     def import_module(module_name):
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
+
 
 def get_exporter(name):
     module = import_module("sem.exporters.{0}".format(name))

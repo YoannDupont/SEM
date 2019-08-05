@@ -34,6 +34,7 @@ SOFTWARE.
 from sem.storage.span import Span
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 
+
 class Tag(object):
 
     __slots__ = ("_span", "_value", "levels", "ids")
@@ -101,7 +102,7 @@ class Tag(object):
         self.levels[nth] = value
         while self.levels[-1] == "":
             del self.levels[-1]
-        while len(self.levels) > nth+1:
+        while len(self.levels) > nth + 1:
             del self.levels[-1]
         self._value = ".".join(self.levels).strip(".")
 
@@ -119,6 +120,7 @@ class Tag(object):
             if do_it:
                 values.append(value)
         return ".".join(values)
+
 
 class Annotation(object):
     def __init__(self, name, reference=None, annotations=None):
@@ -187,7 +189,7 @@ class Annotation(object):
     def remove(self, annotation):
         try:
             self._annotations.remove(annotation)
-        except ValueError: # annotation not in annotations
+        except ValueError:  # annotation not in annotations
             pass
 
     def sort(self):
@@ -202,84 +204,85 @@ class Annotation(object):
                 Tag(
                     element.value,
                     reference_spans[element.lb].lb,
-                    reference_spans[element.ub-1].ub
+                    reference_spans[element.ub - 1].ub,
                 )
                 for element in self.annotations
             ]
+
 
 def get_top_level(annotations):
     result = annotations[:]
     modified = True
     while modified:
         modified = False
-        for i in range(len(result)-1):
-            modified = result[i].lb <= result[i+1].lb and result[i].ub > result[i+1].lb
+        for i in range(len(result) - 1):
+            modified = result[i].lb <= result[i + 1].lb and result[i].ub > result[i + 1].lb
             if modified:
-                del result[i+1]
+                del result[i + 1]
                 break
     return result
+
 
 def get_bottom_level(annotations):
     result = annotations[:]
     modified = True
     while modified:
         modified = False
-        for i in range(len(result)-1):
-            modified = result[i].lb <= result[i+1].lb <= result[i].ub
+        for i in range(len(result) - 1):
+            modified = result[i].lb <= result[i + 1].lb <= result[i].ub
             if modified:
                 del result[i]
                 break
     return result
 
-str2filter = {
-    "top level": get_top_level,
-    "bottom level": get_bottom_level
-}
+
+str2filter = {"top level": get_top_level, "bottom level": get_bottom_level}
+
 
 def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
     annotation = Annotation("")
     start = 0
     length = 0
     value = ""
-    last = len(sentence)-1
+    last = len(sentence) - 1
     for index, element in enumerate(sentence):
         tag = element[column]
         flag = tag[0]
 
         if tag in OUT:
-            if value != "": # we just got out of a chunk
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if value != "":  # we just got out of a chunk
+                annotation.append(Tag(value, start + shift, 0, length=length))
             value = ""
             length = 0
         elif flag in BEGIN:
-            if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if value != "":  # begin after non-empty chunk ==> add annnotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
             value = tag[2:]
             start = index
             length = 1
-            if index == last: # last token ==> add annotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if index == last:  # last token ==> add annotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
         elif flag in IN:
             if value != tag[2:] and strict:
-                raise ValueError('Got different values for same chunk: "{}" <> "{}"'.format(
-                    tag[2:],
-                    value
-                ))
+                raise ValueError(
+                    'Got different values for same chunk: "{}" <> "{}"'.format(tag[2:], value)
+                )
             length += 1
-            if index == last: # last token ==> add annotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if index == last:  # last token ==> add annotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
         elif flag in LAST:
-            annotation.append(Tag(value, start+shift, 0, length=length+1))
+            annotation.append(Tag(value, start + shift, 0, length=length + 1))
             value = ""
             length = 0
         elif flag in SINGLE:
-            if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if value != "":  # begin after non-empty chunk ==> add annnotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
                 value = ""
                 length = 0
-            annotation.append(Tag(tag[2:], index+shift, 0, length=1))
+            annotation.append(Tag(tag[2:], index + shift, 0, length=1))
 
     return annotation
+
 
 def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
     """
@@ -294,17 +297,13 @@ def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=Fa
 
     annotation = Annotation(name, reference=reference)
     shift = 0
-    for nth, sentence in enumerate(corpus): # enumerate for better exception message
+    for nth, sentence in enumerate(corpus):  # enumerate for better exception message
         annotation.extend(
-            chunk_annotation_from_sentence(
-                sentence,
-                column,
-                shift=shift,
-                strict=strict
-            ).annotations
+            chunk_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations
         )
         shift += len(sentence)
     return annotation
+
 
 def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
     def is_begin(tag):
@@ -314,32 +313,32 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
     start = 0
     length = 0
     value = ""
-    last = len(sentence)-1
+    last = len(sentence) - 1
     for index, element in enumerate(sentence):
         tag = element[column]
 
         if is_begin(tag):
-            if value != "": # begin after non-empty chunk ==> add annnotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if value != "":  # begin after non-empty chunk ==> add annnotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
             value = tag
             start = index
             length = 1
-            if index == last: # last token ==> add annotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if index == last:  # last token ==> add annotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
 
         else:
             if value != tag[1:]:
                 if strict:
-                    raise ValueError('Got different values for same POS: "{}" <> "{}"'.format(
-                        tag[1:],
-                        value
-                    ))
+                    raise ValueError(
+                        'Got different values for same POS: "{}" <> "{}"'.format(tag[1:], value)
+                    )
                 else:
-                    value = tag[1:] # most probable tag at the end.
+                    value = tag[1:]  # most probable tag at the end.
             length += 1
-            if index == last: # last token ==> add annotation
-                annotation.append(Tag(value, start+shift, 0, length=length))
+            if index == last:  # last token ==> add annotation
+                annotation.append(Tag(value, start + shift, 0, length=length))
     return annotation
+
 
 def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
     """
@@ -352,17 +351,13 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
 
     annotation = Annotation(name, reference=reference)
     shift = 0
-    for nth, sentence in enumerate(corpus): # enumerate for better exception message
+    for nth, sentence in enumerate(corpus):  # enumerate for better exception message
         annotation.extend(
-            tag_annotation_from_sentence(
-                sentence,
-                column,
-                shift=shift,
-                strict=strict
-            ).annotations
+            tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations
         )
         shift += len(sentence)
     return annotation
+
 
 def annotation_from_sentence(sentence, column, shift=0, strict=False):
     """

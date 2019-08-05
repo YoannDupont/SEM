@@ -60,6 +60,7 @@ document_logger = logging.getLogger("sem.storage.document")
 document_logger.addHandler(default_handler)
 document_logger.setLevel("WARNING")
 
+
 class Document(Holder):
     def __init__(self, name, content=None, encoding=None, lang=None, mime_type=None, **kwargs):
         super(Document, self).__init__(**kwargs)
@@ -110,7 +111,7 @@ class Document(Holder):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
             data = xml
-        elif isinstance(xml, type(ET.Element("a"))): # did not ind a better way to do this
+        elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
             data = xml
         else:
             raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
@@ -138,18 +139,16 @@ class Document(Holder):
                         Span(
                             lb=int(span.attrib.get("start", span.attrib["s"])),
                             ub=0,
-                            length=int(span.attrib.get("length", span.attrib["l"]))
+                            length=int(span.attrib.get("length", span.attrib["l"])),
                         )
                         for span in list(segmentation)
                     ]
                     reference = segmentation.get("reference", None)
                     if reference:
                         reference = document.segmentation(reference)
-                    document.add_segmentation(Segmentation(
-                        segmentation.attrib["name"],
-                        spans=spans,
-                        reference=reference
-                    ))
+                    document.add_segmentation(
+                        Segmentation(segmentation.attrib["name"], spans=spans, reference=reference)
+                    )
             elif element.tag == "annotations":
                 for annotation in list(element):
                     tags = []
@@ -157,12 +156,14 @@ class Document(Holder):
                         value = tag.attrib.get("value", tag.attrib["v"])
                         if not load_subtypes:
                             value = value.strip(type_separator).split(type_separator)[0]
-                        tags.append(Tag(
-                            value=value,
-                            lb=int(tag.attrib.get("start", tag.attrib["s"])),
-                            ub=0,
-                            length=int(tag.attrib.get("length", tag.attrib["l"]))
-                        ))
+                        tags.append(
+                            Tag(
+                                value=value,
+                                lb=int(tag.attrib.get("start", tag.attrib["s"])),
+                                ub=0,
+                                length=int(tag.attrib.get("length", tag.attrib["l"])),
+                            )
+                        )
                     reference = annotation.get("reference", None)
                     if reference:
                         reference = document.segmentation(reference)
@@ -174,7 +175,7 @@ class Document(Holder):
             document.corpus.from_segmentation(
                 document.content,
                 document.segmentation("tokens"),
-                document.segmentation("sentences")
+                document.segmentation("sentences"),
             )
 
             if chunks_to_load is not None:
@@ -194,13 +195,13 @@ class Document(Holder):
                             if tuple([cur_annot[i].lb, cur_annot[i].ub]) not in present:
                                 raise Exception
                             i += 1
-                        l = ["O" for _ in range(len(sentence))]
+                        l1 = ["O" for _ in range(len(sentence))]
                         for annot in annots:
-                            l[annot.lb-shift] = "B-{0}".format(annot.value)
-                            for j in range(annot.lb+1-shift, annot.ub-shift):
-                                l[j] = "I-{}".format(annot.value)
-                        for j in range(len(l)):
-                            sent[j]["NER"] = l[j]
+                            l1[annot.lb - shift] = "B-{0}".format(annot.value)
+                            for j in range(annot.lb + 1 - shift, annot.ub - shift):
+                                l1[j] = "I-{}".format(annot.value)
+                        for j in range(len(l1)):
+                            sent[j]["NER"] = l1[j]
                         shift += len(sentence)
                     document.corpus.fields.append(chunk_to_load)
 
@@ -217,7 +218,7 @@ class Document(Holder):
         tokens = []
         content = self.content
         for span in self.segmentation("tokens"):
-            tokens.append(content[span.lb : span.ub])
+            tokens.append(content[span.lb: span.ub])
         return tokens
 
     def set_content(self, content):
@@ -249,94 +250,93 @@ class Document(Holder):
     def write(self, f, depth=0, indent=4, add_header=False):
         if add_header:
             f.write('<?xml version="1.0" encoding="{0}" ?>\n'.format(f.encoding or "ASCII"))
-        f.write('{0}<document name="{1}">\n'.format(
-            depth*indent*" ", self.name.replace('"', '&quot;')
-        ))
+        f.write(
+            '{0}<document name="{1}">\n'.format(
+                depth * indent * " ", self.name.replace('"', "&quot;")
+            )
+        )
         depth += 1
-        f.write('{}<metadata'.format(depth*indent*" "))
+        f.write("{}<metadata".format(depth * indent * " "))
         for metakey, metavalue in sorted(self._metadatas.items()):
             f.write(' {0}="{1}"'.format(metakey, metavalue))
-        f.write(' />\n')
-        f.write('{0}<content>{1}</content>\n'.format(depth*indent*" ", cgi.escape(self.content)))
+        f.write(" />\n")
+        f.write(
+            "{0}<content>{1}</content>\n".format(depth * indent * " ", cgi.escape(self.content))
+        )
 
         if len(self.segmentations) > 0:
-            f.write('{0}<segmentations>\n'.format(depth*indent*" "))
+            f.write("{0}<segmentations>\n".format(depth * indent * " "))
             refs = [seg.reference for seg in self.segmentations.values() if seg.reference]
             for seg in sorted(
                 self.segmentations.values(),
-                key=lambda x: (x.reference is not None and x.reference.reference in refs, x.name)
+                key=lambda x: (x.reference is not None and x.reference.reference in refs, x.name),
             ):
                 depth += 1
                 ref = (
-                    seg.reference.name
-                    if isinstance(seg.reference, Segmentation)
-                    else seg.reference
+                    seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference
                 )
-                ref_str = ("" if ref is None else ' reference="{0}"'.format(ref))
-                f.write('{0}<segmentation name="{1}"{2}>'.format(
-                    depth*indent*" ", seg.name, ref_str
-                ))
+                ref_str = "" if ref is None else ' reference="{0}"'.format(ref)
+                f.write(
+                    '{0}<segmentation name="{1}"{2}>'.format(
+                        depth * indent * " ", seg.name, ref_str
+                    )
+                )
                 depth += 1
                 for i, element in enumerate(seg):
                     lf = i == 0 or (i % 5 == 0)
                     if lf:
-                        f.write('\n{0}'.format(depth*indent*" "))
-                    f.write('{0}<s s="{1}" l="{2}" />'.format(
-                        ("" if lf else " "), element.lb, len(element)
-                    ))
+                        f.write("\n{0}".format(depth * indent * " "))
+                    f.write(
+                        '{0}<s s="{1}" l="{2}" />'.format(
+                            ("" if lf else " "), element.lb, len(element)
+                        )
+                    )
                 f.write("\n")
                 depth -= 1
-                f.write('{0}</segmentation>\n'.format(depth*indent*" "))
+                f.write("{0}</segmentation>\n".format(depth * indent * " "))
                 depth -= 1
-            f.write('{0}</segmentations>\n'.format(depth*indent*" "))
+            f.write("{0}</segmentations>\n".format(depth * indent * " "))
 
         if len(self.annotations) > 0:
-            f.write('{0}<annotations>\n'.format(depth*indent*" "))
+            f.write("{0}<annotations>\n".format(depth * indent * " "))
             for annotation in self.annotations.values():
                 depth += 1
                 reference = (
-                    "" if not annotation.reference
+                    ""
+                    if not annotation.reference
                     else ' reference="{0}"'.format(
-                        annotation.reference if isinstance(annotation.reference, str)
+                        annotation.reference
+                        if isinstance(annotation.reference, str)
                         else annotation.reference.name
                     )
                 )
-                f.write('{0}<annotation name="{1}"{2}>\n'.format(
-                    depth*indent*" ",
-                    annotation.name,
-                    reference
-                ))
+                f.write(
+                    '{0}<annotation name="{1}"{2}>\n'.format(
+                        depth * indent * " ", annotation.name, reference
+                    )
+                )
                 depth += 1
                 for tag in annotation:
-                    f.write('{0}<tag v="{1}" s="{2}" l="{3}"/>\n'.format(
-                        depth*indent*" ",
-                        tag.getValue(),
-                        tag.lb,
-                        len(tag)
-                    ))
+                    f.write(
+                        '{0}<tag v="{1}" s="{2}" l="{3}"/>\n'.format(
+                            depth * indent * " ", tag.getValue(), tag.lb, len(tag)
+                        )
+                    )
                 depth -= 1
-                f.write('{0}</annotation>\n'.format(depth*indent*" "))
+                f.write("{0}</annotation>\n".format(depth * indent * " "))
                 depth -= 1
-            f.write('{0}</annotations>\n'.format(depth*indent*" "))
+            f.write("{0}</annotations>\n".format(depth * indent * " "))
 
         depth -= 1
-        f.write('{0}</document>\n'.format(depth*indent*" "))
+        f.write("{0}</document>\n".format(depth * indent * " "))
 
     def set_reference(
-        self,
-        annotation_name,
-        reference_name,
-        add_to_corpus=False,
-        filter=get_top_level
+        self, annotation_name, reference_name, add_to_corpus=False, filter=get_top_level
     ):
         annot = self.annotation(annotation_name)
 
-        if (
-            annot is not None
-            and (
-                annot.reference is None
-                or annot.reference.name != reference_name
-            )
+        if annot is not None and (
+            annot.reference is None or annot.reference.name != reference_name
         ):
             spans = self.segmentation(reference_name).get_reference_spans()
             begin = 0
@@ -344,14 +344,14 @@ class Document(Holder):
             for j, annotation in enumerate(annot):
                 start = annotation.lb
                 end = annotation.ub
-                while not(spans[i].lb <= start and start < spans[i].ub):
+                while not (spans[i].lb <= start and start < spans[i].ub):
                     i += 1
                 begin = i
                 while spans[i].ub < end:
                     i += 1
                 annotation.lb = begin
                 annotation.ub = i + 1
-                i = max(begin-1, 0)
+                i = max(begin - 1, 0)
                 begin = 0
             annot._reference = self.segmentation(reference_name)
 
@@ -361,19 +361,19 @@ class Document(Holder):
     def add_to_corpus(self, annotation_name, filter=get_top_level):
         base_annotations = self.annotation(annotation_name)
         if not base_annotations:
-            raise KeyError('{0} annotation not found.'.format(annotation_name))
+            raise KeyError("{0} annotation not found.".format(annotation_name))
         annotations = base_annotations.get_reference_annotations()
 
         spans = self.segmentation("tokens").get_reference_spans()
         begin = 0
         i = 0
-        to_remove = [] # annotations that cannot be aligned with tokens will be removed
+        to_remove = []  # annotations that cannot be aligned with tokens will be removed
         for j, annotation in enumerate(annotations):
             start = annotation.lb
             end = annotation.ub
             while (i > 0) and start < spans[i].lb:
                 i -= 1
-            while (i < len(spans)) and not(spans[i].lb <= start < spans[i].ub):
+            while (i < len(spans)) and not (spans[i].lb <= start < spans[i].ub):
                 i += 1
             if i < len(spans):
                 begin = i
@@ -406,19 +406,15 @@ class Document(Holder):
                 token[annotation_name] = "O"
             while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
                 sentence[cur_annot.lb - shift][annotation_name] = "B-{0}".format(cur_annot.value)
-                for k in range(cur_annot.lb+1, cur_annot.ub):
+                for k in range(cur_annot.lb + 1, cur_annot.ub):
                     sentence[k - shift][annotation_name] = "I-{0}".format(cur_annot.value)
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]
                 except IndexError:
                     cur_annot = None
-            if (
-                cur_annot is not None
-                and (
-                    (span.lb <= cur_annot.lb < span.ub)
-                    and cur_annot.ub > span.ub
-                )
+            if cur_annot is not None and (
+                (span.lb <= cur_annot.lb < span.ub) and cur_annot.ub > span.ub
             ):
                 # annotation spans over at least two sentences
                 document_logger.warn(
@@ -452,17 +448,17 @@ class Document(Holder):
                 tags[0] = tags[0].lstrip("_")
 
             index = len(annotation)
-            i = len(tags)-1
+            i = len(tags) - 1
             n = 0
-            current = None # current tag value (for multiword tags)
+            current = None  # current tag value (for multiword tags)
             while i >= 0:
-                change = not(current is None or tags[i].lstrip("_") == current)
+                change = not (current is None or tags[i].lstrip("_") == current)
 
                 if tags[i][0] != "_":
                     if change:
                         tags[i] = current
 
-                    annotation.insert(index, Tag(tags[i], nth_token+i, 0, length=n+1))
+                    annotation.insert(index, Tag(tags[i], nth_token + i, 0, length=n + 1))
                     current = None
                     n = 0
                 else:
@@ -477,8 +473,7 @@ class Document(Holder):
                 i -= 1
             nth_token += len(tags)
         self._annotations[annotation_name] = Annotation(
-            annotation_name,
-            reference=self.segmentation("tokens")
+            annotation_name, reference=self.segmentation("tokens")
         )
         self._annotations[annotation_name].annotations = annotation[:]
 
@@ -487,10 +482,7 @@ class Document(Holder):
             for i in range(len(tags)):
                 self.corpus.sentences[nth_sentence][i][field] = tags[i]
         self._annotations[annotation_name] = chunk_annotation_from_corpus(
-            self.corpus,
-            field,
-            annotation_name,
-            reference=self.segmentation("tokens")
+            self.corpus, field, annotation_name, reference=self.segmentation("tokens")
         )
 
 
@@ -522,7 +514,7 @@ class SEMCorpus(Holder):
             data = ET.parse(xml)
         elif isinstance(xml, ET.ElementTree):
             data = xml
-        elif isinstance(xml, type(ET.Element("a"))): # did not ind a better way to do this
+        elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
             data = xml
         else:
             raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
@@ -547,7 +539,8 @@ class SEMCorpus(Holder):
             document.write(f, depth=1, indent=indent, add_header=False)
         f.write("</sem>")
 
+
 str2docfilter = {
     "all documents": lambda x, y: True,
-    "only documents with annotations": lambda d, a: len(d.annotation(a) or []) > 0
+    "only documents with annotations": lambda d, a: len(d.annotation(a) or []) > 0,
 }

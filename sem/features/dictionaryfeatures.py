@@ -44,6 +44,7 @@ try:
 except ImportError:
     import pickle
 
+
 class DictionaryFeature(Feature):
     def __init__(self, path=None, value=None, entries=None, getter=DEFAULT_GETTER, *args, **kwargs):
         super(DictionaryFeature, self).__init__(*args, **kwargs)
@@ -53,6 +54,7 @@ class DictionaryFeature(Feature):
         self._value = value
         self._getter = getter
         self._entries = entries
+
 
 class TokenDictionaryFeature(DictionaryFeature):
     def __init__(self, getter=DEFAULT_GETTER, *args, **kwargs):
@@ -77,6 +79,7 @@ class TokenDictionaryFeature(DictionaryFeature):
     def __call__(self, *args, **kwargs):
         return self._getter(*args, **kwargs) in self._value
 
+
 class MultiwordDictionaryFeature(DictionaryFeature):
     def __init__(self, *args, **kwargs):
         super(MultiwordDictionaryFeature, self).__init__(*args, **kwargs)
@@ -100,11 +103,11 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             self._value = Trie()
 
     def __call__(self, list2dict, *args, **kwargs):
-        l = ["O"]*len(list2dict)
+        res = ["O"] * len(list2dict)
         tmp = self._value._data
         length = len(list2dict)
         fst = 0
-        lst = -1 # last match found
+        lst = -1  # last match found
         cur = 0
         ckey = None  # Current KEY
         entry = self._entry
@@ -113,7 +116,8 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             cont = True
             while cont and (cur < length):
                 ckey = list2dict[cur][entry]
-                if NUL in tmp: lst = cur
+                if NUL in tmp:
+                    lst = cur
                 tmp = tmp.get(ckey, {})
                 cont = len(tmp) != 0
                 cur += int(cont)
@@ -122,9 +126,9 @@ class MultiwordDictionaryFeature(DictionaryFeature):
                 lst = cur
 
             if lst != -1:
-                l[fst] = 'B{}'.format(appendice)
-                for i in range(fst+1, lst):
-                    l[i] = 'I{}'.format(appendice)
+                res[fst] = "B{}".format(appendice)
+                for i in range(fst + 1, lst):
+                    res[i] = "I{}".format(appendice)
                 fst = lst
                 cur = fst
             else:
@@ -135,15 +139,15 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             lst = -1
 
         if NUL in self._value._data.get(list2dict[-1][entry], []):
-            l[-1] = 'B{}'.format(appendice)
+            res[-1] = "B{}".format(appendice)
 
-        return l
+        return res
 
     def step(self, list2dict, i, *args, **kwargs):
         tmp = self._value._data
         length = len(list2dict)
         fst = i
-        lst = -1 # last match found
+        lst = -1  # last match found
         cur = fst
         ckey = None  # Current KEY
         entry = self._entry
@@ -169,6 +173,7 @@ class MultiwordDictionaryFeature(DictionaryFeature):
             return 1
 
         return 0
+
 
 class MapperFeature(DictionaryFeature):
     def __init__(self, getter=DEFAULT_GETTER, default="O", *args, **kwargs):

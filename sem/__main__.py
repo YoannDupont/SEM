@@ -43,24 +43,26 @@ from sem.misc import find_suggestions
 
 sem_logger = logging.getLogger("sem")
 
+
 def valid_module(m):
     return not (m.startswith("_") or m in ["sem_module.py", "pipeline.py"])
+
 
 def main(args=None):
     def banter():
         def username():
             import os
-            return os.environ.get(
-                "USERNAME",
-                os.environ.get("USER", pathlib.Path.home().name)
-            )
+
+            return os.environ.get("USERNAME", os.environ.get("USER", pathlib.Path.home().name))
+
         import random
+
         banters = [
             "Do thou mockest me?",
             "Try again?",
             "I'm sorry {0}, I'm afraid I can't do that.".format(username()),
-            'The greatest trick this module ever pulled what convincing the users it did not exist.',
-            "It's just a typo."
+            "The greatest trick this module ever pulled what convincing the users it did not exist.",
+            "It's just a typo.",
         ]
         random.shuffle(banters)
         return banters[0]
@@ -74,7 +76,7 @@ def main(args=None):
             except Exception as exc:
                 print("cannot load module {}: {}".format(m, exc.args[0]))
     name = pathlib.Path(sys.argv[0]).name
-    operation = (sys.argv[1] if len(sys.argv) > 1 else "-h")
+    operation = sys.argv[1] if len(sys.argv) > 1 else "-h"
 
     if operation in modules:
         module = modules[operation]
@@ -102,6 +104,7 @@ def main(args=None):
                 print("\t{0}".format(suggestion))
         else:
             print("No suggestions found...", banter())
+
 
 if __name__ == "__main__":
     main()

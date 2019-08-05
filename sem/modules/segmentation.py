@@ -49,12 +49,13 @@ from sem.logger import default_handler, file_handler
 segmentation_logger = logging.getLogger("sem.segmentation")
 segmentation_logger.addHandler(default_handler)
 
+
 def token_spans_buffered(tokeniser, content):
     """Return the token spans of content.
     This does the same as tokeniser.word_spans, but this method buffers
     the input to allow a quicker processing of large content.
     """
-    rem = ''  # remainder of unsegmented tokens
+    rem = ""  # remainder of unsegmented tokens
     shift = 0
     token_spans = []
     for chunk in read_chunks(content):
@@ -64,20 +65,20 @@ def token_spans_buffered(tokeniser, content):
             rem = chnk
             continue
         elif spans[-1].ub < len(chnk):
-            rem = chnk[spans[-1].ub : ]
+            rem = chnk[spans[-1].ub:]
         elif spans[-1].ub == len(chnk):
-            rem = chnk[spans[-1].lb : ]
+            rem = chnk[spans[-1].lb:]
             del spans[-1]
         else:
-            rem = ''
-        token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
+            rem = ""
+        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
         shift += len(chnk) - len(rem)
         del spans[:]
 
     if rem:
         spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
-        token_spans.extend([Span(shift+s.lb, shift+s.ub) for s in spans])
-    if not content[token_spans[-1].lb : token_spans[-1].ub].strip():
+        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
+    if not content[token_spans[-1].lb: token_spans[-1].ub].strip():
         del token_spans[-1]
 
     return token_spans
@@ -131,32 +132,28 @@ class SEMModule(RootModule):
         if do_segmentation:
             token_spans = token_spans_buffered(current_tokeniser, document.content)
             sentence_spans = bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
-            paragraph_spans = bounds2spans(current_tokeniser.paragraph_bounds(
-                content,
-                sentence_spans,
-                token_spans
-            ))
+            paragraph_spans = bounds2spans(
+                current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
+            )
         else:
-            segmentation_logger.info('{0} already has segmenation, not computing'.format(
-                document.name
-            ))
+            segmentation_logger.info(
+                "{0} already has segmenation, not computing".format(document.name)
+            )
             token_spans = document.segmentation("tokens").spans
             sentence_spans = document.segmentation("sentences").spans
             paragraph_spans = document.segmentation("paragraphs").spans
-        segmentation_logger.info('"{0}" segmented in {1} sentences, {2} tokens'.format(
-            document.name,
-            len(sentence_spans),
-            len(token_spans)
-        ))
+        segmentation_logger.info(
+            '"{0}" segmented in {1} sentences, {2} tokens'.format(
+                document.name, len(sentence_spans), len(token_spans)
+            )
+        )
 
         if document.segmentation("tokens") is None:
             document.add_segmentation(Segmentation("tokens", spans=token_spans))
         if document.segmentation("sentences") is None:
             document.add_segmentation(
                 Segmentation(
-                    "sentences",
-                    reference=document.segmentation("tokens"),
-                    spans=sentence_spans
+                    "sentences", reference=document.segmentation("tokens"), spans=sentence_spans
                 )
             )
         if document.segmentation("paragraphs") is None:
@@ -164,18 +161,18 @@ class SEMModule(RootModule):
                 Segmentation(
                     "paragraphs",
                     reference=document.segmentation("sentences"),
-                    spans=paragraph_spans
+                    spans=paragraph_spans,
                 )
             )
         if len(document.corpus) == 0:
             document.corpus.from_segmentation(
                 document.content,
                 document.segmentation("tokens"),
-                document.segmentation("sentences")
+                document.segmentation("sentences"),
             )
 
         laps = time.time() - start
-        segmentation_logger.info('in {0}'.format(timedelta(seconds=laps)))
+        segmentation_logger.info("in {0}".format(timedelta(seconds=laps)))
 
 
 def main(args):
@@ -188,17 +185,17 @@ def main(args):
     segmenter = SEMModule(args.tokeniser_name, log_level=args.log_level)
     document = Document(
         pathlib.Path(args.infile).name,
-        content=open(args.infile, "rU", encoding=ienc).read().replace("\r", "")
+        content=open(args.infile, "rU", encoding=ienc).read().replace("\r", ""),
     )
     segmenter.process_document(document, log_level=args.log_level)
     tokens_spans = document.segmentation("tokens")
     sentence_spans = document.segmentation("sentences")
-    joiner = ("\n" if args.output_format == "vector" else " ")
+    joiner = "\n" if args.output_format == "vector" else " "
     content = document.content
     with open(args.outfile, "w", encoding=oenc) as output_stream:
         for sentence in sentence_spans:
-            sentence_token_spans = tokens_spans[sentence.lb : sentence.ub]
-            sentence_tokens = [content[s.lb : s.ub] for s in sentence_token_spans]
+            sentence_token_spans = tokens_spans[sentence.lb: sentence.ub]
+            sentence_tokens = [content[s.lb: s.ub] for s in sentence_token_spans]
             output_stream.write(joiner.join(sentence_tokens))
             if args.output_format == "vector":
                 output_stream.write("\n")
@@ -212,26 +209,33 @@ _subparsers = sem.argument_subparsers
 parser = _subparsers.add_parser(
     pathlib.Path(__file__).stem,
     description="Segments the textual content of a sentence into tokens."
-                " They can either be outputted line per line or in a vectorised format."
+    " They can either be outputted line per line or in a vectorised format.",
 )
 
-parser.add_argument("infile",
-                    help="The input file (raw text)")
-parser.add_argument("tokeniser_name",
-                    help="The name of the tokeniser to import")
-parser.add_argument("outfile",
-                    help="The output file")
-parser.add_argument("--output-format", dest="output_format",
-                    choices=("line", "vector"), default="vector",
-                    help="The output format (default: %(default)s)")
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: %(default)s)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file (raw text)")
+parser.add_argument("tokeniser_name", help="The name of the tokeniser to import")
+parser.add_argument("outfile", help="The output file")
+parser.add_argument(
+    "--output-format",
+    dest="output_format",
+    choices=("line", "vector"),
+    default="vector",
+    help="The output format (default: %(default)s)",
+)
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: %(default)s)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

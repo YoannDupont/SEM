@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 file: enrich.py
@@ -49,8 +49,10 @@ from sem.importers import conll_file
 from sem.storage import Entry
 
 import pathlib
+
 enrich_logger = logging.getLogger("sem.enrich")
 enrich_logger.addHandler(default_handler)
+
 
 class SEMModule(RootModule):
     def __init__(
@@ -62,20 +64,20 @@ class SEMModule(RootModule):
         mode="label",
         log_level="WARNING",
         log_file=None,
-        **kwargs
+        **kwargs,
     ):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
 
         self._mode = mode
         self._source = path
-        self._bentries = [] # informations that are before newly added information
-        self._aentries = [] # informations that are after ...
-        self._features = [] # informations that are added
+        self._bentries = []  # informations that are before newly added information
+        self._aentries = []  # informations that are after ...
+        self._features = []  # informations that are added
         self._names = set()
-        self._x2f = None # the feature parser, initialised in parse
+        self._x2f = None  # the feature parser, initialised in parse
 
         if self._source is not None:
-            enrich_logger.info('loading %s', self._source)
+            enrich_logger.info("loading %s", self._source)
             self._parse(self._source)
         else:
             self._bentries = (
@@ -106,7 +108,7 @@ class SEMModule(RootModule):
                 "cannot change mode for Enrich module: source for informations is not a file."
             )
         self._mode = mode
-        enrich_logger.info('loading %s', self._source)
+        enrich_logger.info("loading %s", self._source)
         self._parse(self._source)
 
     @property
@@ -144,9 +146,9 @@ class SEMModule(RootModule):
             enrich_logger.addHandler(file_handler(self._log_file))
         enrich_logger.setLevel(self._log_level)
 
-        missing_fields = \
-            set([I.name for I in self.bentries + self.aentries]) \
-            - set(document.corpus.fields)
+        missing_fields = set([I.name for I in self.bentries + self.aentries]) - set(
+            document.corpus.fields
+        )
 
         if len(missing_fields) > 0:
             raise ValueError(
@@ -171,9 +173,9 @@ class SEMModule(RootModule):
                         elif p[i][feature.name] is None:
                             p[i][feature.name] = feature.default()
             nth += 1
-            if (0 == nth % 1000):
-                enrich_logger.debug('%i sentences enriched', nth)
-        enrich_logger.debug('%i sentences enriched', nth)
+            if 0 == nth % 1000:
+                enrich_logger.debug("%i sentences enriched", nth)
+        enrich_logger.debug("%i sentences enriched", nth)
 
         laps = time.time() - start
         enrich_logger.info("done in %s", timedelta(seconds=laps))
@@ -211,7 +213,7 @@ class SEMModule(RootModule):
             )
         else:
             entry1 = entries[0].tag.lower()
-            entry2 = (entries[1].tag.lower() if len(entries) == 2 else None)
+            entry2 = entries[1].tag.lower() if len(entries) == 2 else None
             if entry1 not in ("before", "after"):
                 raise RuntimeError(
                     'For entry position, expected "before" or "after", got "{0}".'.format(entry1)
@@ -221,7 +223,7 @@ class SEMModule(RootModule):
                     'For entry position, expected "before" or "after", got "{0}".'.format(entry2)
                 )
             if entry1 == entry2:
-                raise RuntimeError('Both entry positions are the same, they should be different')
+                raise RuntimeError("Both entry positions are the same, they should be different")
 
         for entry in entries:
             for c in entry.getchildren():
@@ -286,17 +288,13 @@ def main(args):
     aentries = [entry.name for entry in processor.aentries]
     features = [feature.name for feature in processor.features if feature.display]
     document = conll_file(
-        args.infile,
-        bentries + aentries,
-        (bentries + aentries)[0],
-        encoding=args.ienc or args.enc
+        args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc
     )
 
     processor.process_document(document)
-    str_format = "\t".join([
-        "{{{}}}".format(field)
-        for field in bentries + features + aentries
-    ]) + "\n"
+    str_format = (
+        "\t".join(["{{{}}}".format(field) for field in bentries + features + aentries]) + "\n"
+    )
     with open(args.outfile, "w", encoding=args.oenc or args.enc) as output_stream:
         for sentence in document.corpus:
             for token in sentence:
@@ -313,26 +311,34 @@ _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
     pathlib.Path(__file__).stem,
-    description="Adds information to a file using and XML-styled configuration file."
+    description="Adds information to a file using and XML-styled configuration file.",
 )
 
-parser.add_argument("infile",
-                    help="The input file (CoNLL format)")
-parser.add_argument("infofile",
-                    help="The information file (XML format)")
-parser.add_argument("outfile",
-                    help="The output file (CoNLL format)")
-parser.add_argument("-m", "--mode", dest="mode", default="train",
-                    choices=("train", "label", "annotate", "annotation"),
-                    help="The mode for enrichment. May make entries vary (default: %(default)s)")
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: critical)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file (CoNLL format)")
+parser.add_argument("infofile", help="The information file (XML format)")
+parser.add_argument("outfile", help="The output file (CoNLL format)")
+parser.add_argument(
+    "-m",
+    "--mode",
+    dest="mode",
+    default="train",
+    choices=("train", "label", "annotate", "annotation"),
+    help="The mode for enrichment. May make entries vary (default: %(default)s)",
+)
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: critical)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

@@ -33,6 +33,7 @@ SOFTWARE.
 
 from sem.features.feature import Feature
 
+
 class TriggeredFeature(Feature):
     def __init__(self, trigger, operation, default="_untriggered_", *args, **kwargs):
         super(TriggeredFeature, self).__init__(self, *args, **kwargs)

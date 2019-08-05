@@ -37,6 +37,7 @@ UNICODE_PUNCTS = "-֊־᠆‒–—―⸗〜〰゠︱﹣－_︳︴﹍﹎﹏＿\\
 UNICODE_ALPHAS = UNICODE_LOWERS + UNICODE_UPPERS
 UNICODE_ALPHANUMS = UNICODE_ALPHAS + UNICODE_DIGITS
 
+
 class Pattern(object):
     def __init__(self, case_insensitive=False, *args):
         self._case_insensitive = case_insensitive
@@ -44,6 +45,7 @@ class Pattern(object):
 
     def instanciate(self, matrix, index):
         raise RuntimeError("undefined")
+
 
 class ConstantPattern(Pattern):
     def __init__(self, value, case_insensitive=False, *args):
@@ -59,6 +61,7 @@ class ConstantPattern(Pattern):
     def value(self):
         return self._value
 
+
 class IdentityPattern(Pattern):
     __pattern = re.compile("%x\\[(-?[0-9]+),([0-9]+)\\]")
 
@@ -68,7 +71,7 @@ class IdentityPattern(Pattern):
         self._column = column
 
     def __str__(self):
-        return '%x[{p.x},{p.y}]'.format(p=self)
+        return "%x[{p.x},{p.y}]".format(p=self)
 
     def instanciate(self, matrix, index):
         x = index + self.x
@@ -103,26 +106,25 @@ class IdentityPattern(Pattern):
         match = cls.__pattern.search(string)
         groups = match.groups()
         return IdentityPattern(
-            int(groups[0]),
-            int(groups[1]),
-            case_insensitive=case_insensitive,
-            column=column
+            int(groups[0]), int(groups[1]), case_insensitive=case_insensitive, column=column
         )
 
+
 class RegexPattern(IdentityPattern):
-    __sub = {"\\l": "[{0}]".format(UNICODE_LOWERS),
-             "\\L": "[^{0}]".format(UNICODE_LOWERS),
-             "\\u": "[{0}]".format(UNICODE_UPPERS),
-             "\\U": "[^{0}]".format(UNICODE_UPPERS),
-             "\\d": "[{0}]".format(UNICODE_DIGITS),
-             "\\D": "[^{0}]".format(UNICODE_DIGITS),
-             "\\p": "[{0}]".format(UNICODE_PUNCTS),
-             "\\P": "[^{0}]".format(UNICODE_PUNCTS),
-             "\\a": "[{0}]".format(UNICODE_ALPHAS),
-             "\\A": "[^{0}]".format(UNICODE_ALPHAS),
-             "\\w": "[{0}]".format(UNICODE_ALPHANUMS),
-             "\\W": "[^{0}]".format(UNICODE_ALPHANUMS)
-             }
+    __sub = {
+        "\\l": "[{0}]".format(UNICODE_LOWERS),
+        "\\L": "[^{0}]".format(UNICODE_LOWERS),
+        "\\u": "[{0}]".format(UNICODE_UPPERS),
+        "\\U": "[^{0}]".format(UNICODE_UPPERS),
+        "\\d": "[{0}]".format(UNICODE_DIGITS),
+        "\\D": "[^{0}]".format(UNICODE_DIGITS),
+        "\\p": "[{0}]".format(UNICODE_PUNCTS),
+        "\\P": "[^{0}]".format(UNICODE_PUNCTS),
+        "\\a": "[{0}]".format(UNICODE_ALPHAS),
+        "\\A": "[^{0}]".format(UNICODE_ALPHAS),
+        "\\w": "[{0}]".format(UNICODE_ALPHANUMS),
+        "\\W": "[^{0}]".format(UNICODE_ALPHANUMS),
+    }
 
     def __init__(self, x, y, pattern, case_insensitive=False, *args):
         super(RegexPattern, self).__init__(x, y, *args)
@@ -139,6 +141,7 @@ class RegexPattern(IdentityPattern):
         cell = super(RegexPattern, self).instanciate(matrix, index)
 
         return self._pattern.search(cell)"""
+
 
 class TestPattern(RegexPattern):
     __pattern = re.compile(r'%t\[\s*(-?[0-9]+),([0-9]+),"(.+)"\]', re.I)
@@ -159,11 +162,9 @@ class TestPattern(RegexPattern):
         match = cls.__pattern.search(string)
         groups = match.groups()
         return TestPattern(
-            int(groups[0]),
-            int(groups[1]),
-            groups[2],
-            case_insensitive=case_insensitive
+            int(groups[0]), int(groups[1]), groups[2], case_insensitive=case_insensitive
         )
+
 
 class MatchPattern(RegexPattern):
     __pattern = re.compile(r'%m\[\s*(-?[0-9]+),([0-9]+),"([^"]+?)"\]', re.I)
@@ -188,11 +189,9 @@ class MatchPattern(RegexPattern):
         match = cls.__pattern.search(string)
         groups = match.groups()
         return MatchPattern(
-            int(groups[0]),
-            int(groups[1]),
-            groups[2],
-            case_insensitive=case_insensitive
+            int(groups[0]), int(groups[1]), groups[2], case_insensitive=case_insensitive
         )
+
 
 class ListPattern(Pattern):
     __pattern = re.compile(r'%[xtm]\[\s*-?[0-9]+,-?[0-9]+(,".+?")?\]', re.I)
@@ -202,7 +201,7 @@ class ListPattern(Pattern):
         self._instanciators = [pattern.instanciate for pattern in self._patterns]
 
     def __str__(self):
-        return ''.join([str(p) for p in self._patterns])
+        return "".join([str(p) for p in self._patterns])
 
     @property
     def patterns(self):
@@ -217,18 +216,21 @@ class ListPattern(Pattern):
         prev = 0
         finding = None
         for finding in cls.__pattern.finditer(string):
-            patterns.append(pattern_factory(string[prev : finding.start()]))
-            patterns.append(pattern_factory(string[finding.start() : finding.end()]))
+            patterns.append(pattern_factory(string[prev: finding.start()]))
+            patterns.append(pattern_factory(string[finding.start(): finding.end()]))
             prev = finding.end()
         if finding is None:
             patterns.append(ConstantPattern(string))
         elif string[prev:]:
-            patterns.append(ConstantPattern(string[prev : ]))
+            patterns.append(ConstantPattern(string[prev:]))
         return ListPattern(patterns)
+
 
 def pattern_factory(string):
     if string.startswith("%x"):
-        return IdentityPattern.from_string(string, case_insensitive=string[1].isupper(), column=None)
+        return IdentityPattern.from_string(
+            string, case_insensitive=string[1].isupper(), column=None
+        )
     elif string.startswith("%t"):
         return TestPattern.from_string(string, case_insensitive=string[1].isupper(), column=None)
     elif string.startswith("%m"):

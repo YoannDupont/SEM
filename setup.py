@@ -39,7 +39,7 @@ import platform
 import sem
 
 SYSTEM = platform.system().lower()
-ON_WINDOWS = (SYSTEM == "windows")
+ON_WINDOWS = SYSTEM == "windows"
 
 
 def diff_files(dcmp):
@@ -52,6 +52,7 @@ def diff_files(dcmp):
             differents.append(pathlib.Path(dcmp.right) / df)
         for sub_dcmp in dcmp.subdirs.values():
             diff_files_rec(sub_dcmp, missing, differents)
+
     missing = []
     differents = []
     diff_files_rec(dcmp, missing, differents)
@@ -99,11 +100,11 @@ if override or not already_exists:
 else:
     # even if sem_data already exists, there may be some new files
     # the user would like to have.
-    missing, differents = diff_files(dircmp(usr_sem_data / "resources", 'resources'))
+    missing, differents = diff_files(dircmp(usr_sem_data / "resources", "resources"))
     if missing:
         print()
         print("The following files are missing:")
-        print(u"\t"+u" ".join(missing))
+        print("\t" + " ".join(missing))
         answer = input("add missing files? [Y/n] ").lower()
         add_missing = validity.get(answer, True)
         if add_missing:
@@ -116,7 +117,7 @@ else:
     if differents:
         print()
         print("The following files are differents:")
-        print(u"\t"+u" ".join(differents))
+        print("\t" + " ".join(differents))
         answer = input("overwritte different files? [Y/n] ").lower()
         overwritte = validity.get(answer, True)
         if overwritte:
@@ -135,21 +136,23 @@ setup(
     name="SEM",
     description="SEM tool for text annotation",
     long_description="SEM is a free NLP tool relying on Machine Learning technologies,"
-                     " especially CRFs."
-                     " SEM provides powerful and configurable preprocessing and postprocessing.",
+    " especially CRFs."
+    " SEM provides powerful and configurable preprocessing and postprocessing.",
     license="MIT",
     author="Yoann Dupont",
     author_email="yoa.dupont@gmail.com",
     maintainer="Yoann Dupont",
     maintainer_email="yoa.dupont@gmail.com",
     version=sem.version(),
-    keywords=['natural language processing', 'machine learning', 'tagging',
-                'part-of-speech tagging', 'chunking', 'named entity recognition'],
+    keywords=[
+        "natural language processing",
+        "machine learning",
+        "tagging",
+        "part-of-speech tagging",
+        "chunking",
+        "named entity recognition",
+    ],
     packages=find_packages(),
     include_package_data=True,
-    entry_points={
-        'console_scripts': [
-            'sem = sem.__main__:main'
-        ]
-    },
+    entry_points={"console_scripts": ["sem = sem.__main__:main"]},
 )

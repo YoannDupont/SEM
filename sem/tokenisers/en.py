@@ -1,4 +1,4 @@
-#-*- encoding:utf-8 -*-
+# -*- encoding:utf-8 -*-
 
 """
 file: en.py
@@ -35,51 +35,55 @@ import re
 from sem.storage import Span, SpannedBounds
 import sem.tokenisers.default
 
+
 def word_bounds(s):
     bounds = SpannedBounds()
     bounds.append(Span(0, 0))
 
-    atomic = set(";:«»()[]{}=+*$£€/\\\"?!%€$£")
+    atomic = set(';:«»()[]{}=+*$£€/\\"?!%€$£')
     apostrophe = set("'ʼ’")
 
     for index, c in enumerate(s):
         is_first = index == 0
-        is_last = index == len(s)-1
+        is_last = index == len(s) - 1
         if c.isspace():
-            bounds.add_last(Span(index, index+1))
+            bounds.add_last(Span(index, index + 1))
         elif c in atomic:
             bounds.add_last(Span(index, index))
-            bounds.append(Span(index+1, index+1))
+            bounds.append(Span(index + 1, index + 1))
         elif c in apostrophe:
             if is_first or is_last:
                 bounds.add_last(Span(index, index))
-                bounds.append(Span(index+1, index+1))
-            elif s[index+1] == s[index]:
-                bounds.append(Span(index, index+1))
+                bounds.append(Span(index + 1, index + 1))
+            elif s[index + 1] == s[index]:
+                bounds.append(Span(index, index + 1))
             else:
-                if s[index-1] == "n" and s[index+1] == "t":
-                    bounds.append(Span(index-1, index-1))
-                    bounds.append(Span(index+2, index+2))
-                elif s[index+1] == "s":
+                if s[index - 1] == "n" and s[index + 1] == "t":
+                    bounds.append(Span(index - 1, index - 1))
+                    bounds.append(Span(index + 2, index + 2))
+                elif s[index + 1] == "s":
                     bounds.append(Span(index, index))
-                    bounds.append(Span(index+2, index+2))
+                    bounds.append(Span(index + 2, index + 2))
                 else:
                     bounds.add_last(Span(index, index))
-        elif c in '.,':
+        elif c in ".,":
             if is_first or is_last:
                 bounds.add_last(Span(index, index))
-                bounds.append(Span(index+1, index+1))
-            elif (is_first or not s[index-1].isdigit()) and (is_last or not s[index-1].isdigit()):
+                bounds.append(Span(index + 1, index + 1))
+            elif (is_first or not s[index - 1].isdigit()) and (
+                is_last or not s[index - 1].isdigit()
+            ):
                 bounds.add_last(Span(index, index))
-                bounds.append(Span(index+1, index+1))
+                bounds.append(Span(index + 1, index + 1))
 
     bounds.append(Span(len(s), len(s)))
 
     return bounds
 
+
 def sentence_bounds(content, token_spans):
     sent_bounds = SpannedBounds()
-    tokens = [content[t.lb : t.ub] for t in token_spans]
+    tokens = [content[t.lb: t.ub] for t in token_spans]
     openings = set(["«", "(", "[", "``"])
     closings = set(["»", ")", "]", "''"])
     opening_counts = [0 for i in tokens]
@@ -94,12 +98,13 @@ def sentence_bounds(content, token_spans):
     sent_bounds.append(Span(0, 0))
     for index, token in enumerate(tokens):
         if re.match("^[?!]+$", token) or token == "…" or re.match(r"\.\.+", token):
-            sent_bounds.append(Span(index+1, index+1))
+            sent_bounds.append(Span(index + 1, index + 1))
         elif token == ".":
             if opening_counts[index] == 0:
-                sent_bounds.append(Span(index+1, index+1))
+                sent_bounds.append(Span(index + 1, index + 1))
     sent_bounds.append(Span(len(tokens), len(tokens)))
 
     return sent_bounds
+
 
 paragraph_bounds = sem.tokenisers.default.paragraph_bounds

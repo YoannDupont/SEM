@@ -38,12 +38,14 @@ except ImportError:
 from .exporter import Exporter as DefaultExporter
 from sem.storage import Span
 
+
 def add_text(node, text):
     parts = text.split("\n")
     node.text = parts[0]
     for i in range(1, len(parts)):
         br = ET.SubElement(node, "lb")
         br.tail = "\n{}".format(parts[1])
+
 
 def add_tail(node, tail):
     parts = tail.split("\n")
@@ -52,6 +54,7 @@ def add_tail(node, tail):
         br = ET.SubElement(node, "lb")
         br.tail = "\n{}".format(parts[1])
 
+
 class Exporter(DefaultExporter):
     __ext = "analec.tei.xml"
 
@@ -59,11 +62,9 @@ class Exporter(DefaultExporter):
         pass
 
     def document_to_unicode(self, document, couples, **kwargs):
-        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' \
-               + ET.tostring(
-                   self.document_to_data(document, couples),
-                   encoding="utf-8"
-                ).decode("utf-8")
+        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + ET.tostring(
+            self.document_to_data(document, couples), encoding="utf-8"
+        ).decode("utf-8")
 
     def document_to_data(self, document, couples, **kwargs):
         teiCorpus = ET.Element("teiCorpus")
@@ -111,10 +112,11 @@ class Exporter(DefaultExporter):
         if len(couples) == 1:
             field = lower[sorted(lower.keys())[0]]
         else:
-            field = (lower.get("ner", None) if lower.get("ner", None) in annotations else None)
+            field = lower.get("ner", None) if lower.get("ner", None) in annotations else None
             if field is None:
                 field = (
-                    lower.get("chunking", None) if lower.get("chunking", None) in annotations
+                    lower.get("chunking", None)
+                    if lower.get("chunking", None) in annotations
                     else None
                 )
         if field is None:
@@ -132,15 +134,13 @@ class Exporter(DefaultExporter):
         nth = dict([(value, 0) for value in values])
         for paragraph in paragraphs:
             entities = [
-                entity
-                for entity in NEs
-                if entity.lb >= paragraph.lb and entity.ub <= paragraph.ub
+                entity for entity in NEs if entity.lb >= paragraph.lb and entity.ub <= paragraph.ub
             ]
             p = ET.SubElement(body, "p")
             if len(entities) == 0:
-                p.text = content[paragraph.lb : paragraph.ub]
+                p.text = content[paragraph.lb: paragraph.ub]
             else:
-                p.text = content[paragraph.lb : entities[0].lb]
+                p.text = content[paragraph.lb: entities[0].lb]
                 for i, entity in enumerate(entities):
                     nth[entity.value] += 1
                     entity_start = ET.SubElement(
@@ -149,23 +149,23 @@ class Exporter(DefaultExporter):
                         {
                             "xml:id": "u-{0}-{1}-start".format(entity.value, nth[entity.value]),
                             "type": "AnalecDelimiter",
-                            "subtype": "UnitStart"
-                        }
+                            "subtype": "UnitStart",
+                        },
                     )
-                    entity_start.tail = content[entity.lb : entity.ub]
+                    entity_start.tail = content[entity.lb: entity.ub]
                     entity_end = ET.SubElement(
                         p,
                         "anchor",
                         {
                             "xml:id": "u-{0}-{1}-end".format(entity.value, nth[entity.value]),
                             "type": "AnalecDelimiter",
-                            "subtype": "UnitEnd"
-                        }
+                            "subtype": "UnitEnd",
+                        },
                     )
-                    if i < len(entities)-1:
-                        entity_end.tail = content[entity.ub : entities[i+1].lb]
+                    if i < len(entities) - 1:
+                        entity_end.tail = content[entity.ub: entities[i + 1].lb]
                     else:
-                        entity_end.tail = content[entity.ub : paragraph.ub]
+                        entity_end.tail = content[entity.ub: paragraph.ub]
 
         back = ET.SubElement(root, "back")
         for value in sorted(values):
@@ -182,8 +182,8 @@ class Exporter(DefaultExporter):
                         "xml:id": "u-{0}-{1}".format(value, i),
                         "from": "#u-{0}-{1}-start".format(value, i),
                         "to": "#u-{0}-{1}-end".format(value, i),
-                        "ana": "#u-{0}-{1}-fs".format(value, i)
-                    }
+                        "ana": "#u-{0}-{1}-fs".format(value, i),
+                    },
                 )
 
         fvLib = ET.SubElement(back, "fvLib")
@@ -191,10 +191,8 @@ class Exporter(DefaultExporter):
         nth = dict([(value, 0) for value in values])
         for i, entity in enumerate(NEs):
             nth[entity.value] += 1
-            fs = ET.SubElement(
-                fvLib,
-                "fs",
-                {"xml:id": "u-{0}-{1}-fs".format(entity.value, nth[entity.value])}
+            ET.SubElement(
+                fvLib, "fs", {"xml:id": "u-{0}-{1}-fs".format(entity.value, nth[entity.value])}
             )
 
         return teiCorpus

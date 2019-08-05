@@ -54,6 +54,7 @@ from sem.storage import Segmentation
 from sem.storage import Span
 from sem.storage.annotation import tag_annotation_from_corpus, chunk_annotation_from_corpus
 
+
 def load(
     filename,
     encoding="utf-8",
@@ -64,7 +65,7 @@ def load(
     strip_html=False,
     tagset_name=None,
     *args,
-    **kwargs
+    **kwargs,
 ):
     """
     The swiss-knife loader. Guess the input format and load the file using the
@@ -116,6 +117,7 @@ def load(
     # if everything else fails, just load as text document
     return text_file(filename, encoding=encoding)
 
+
 def text_file(filename, encoding="utf-8"):
     """
     Read a text file.
@@ -123,8 +125,9 @@ def text_file(filename, encoding="utf-8"):
     return Document(
         pathlib.Path(filename).name,
         content=open(filename, "r", encoding=encoding, newline="").read().replace("\r", ""),
-        encoding=encoding
+        encoding=encoding,
     )
+
 
 def read_conll(name, encoding, fields=None, cleaner=str.strip, splitter=str.split):
     """
@@ -151,6 +154,7 @@ def read_conll(name, encoding, fields=None, cleaner=str.strip, splitter=str.spli
         if paragraph != []:
             yield paragraph
 
+
 def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, chunkings=None):
     """
     Read CoNLL-formatted text from a file.
@@ -158,13 +162,9 @@ def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, ch
     name = pathlib.Path(filename).name
     sents = [sent[:] for sent in read_conll(filename, encoding, fields)]
     return conll_data(
-        name,
-        Corpus(fields, sents),
-        word_field,
-        encoding="utf-8",
-        taggings=None,
-        chunkings=None
+        name, Corpus(fields, sents), word_field, encoding="utf-8", taggings=None, chunkings=None
     )
+
 
 def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunkings=None):
     """
@@ -180,35 +180,40 @@ def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunki
         for token in sentence:
             word = token[word_field]
             contents[-1].append(word[:])
-            word_spans.append(Span(character_index, character_index+len(word)))
+            word_spans.append(Span(character_index, character_index + len(word)))
             character_index += len(word) + 1
-        sentence_spans.append(Span(sentence_index, sentence_index+len(sentence)))
+        sentence_spans.append(Span(sentence_index, sentence_index + len(sentence)))
         sentence_index += len(sentence)
     document = Document(name, "\n".join([" ".join(content) for content in contents]), encoding)
-    document._corpus = corpus # TODO: should not access field with _
+    document._corpus = corpus  # TODO: should not access field with _
     document.add_segmentation(Segmentation("tokens", spans=word_spans))
-    document.add_segmentation(Segmentation(
-        "sentences",
-        reference=document.segmentation("tokens"),
-        spans=sentence_spans[:]
-    ))
-    for tagging in (taggings or []):
-        document.add_annotation(tag_annotation_from_corpus(
-            document._corpus,
-            tagging,
-            tagging,
-            reference=document.segmentation("tokens"),
-            strict=True
-        ))
-    for chunking in (chunkings or []):
-        document.add_annotation(chunk_annotation_from_corpus(
-            document._corpus,
-            chunking,
-            chunking,
-            reference=document.segmentation("tokens"),
-            strict=True
-        ))
+    document.add_segmentation(
+        Segmentation(
+            "sentences", reference=document.segmentation("tokens"), spans=sentence_spans[:]
+        )
+    )
+    for tagging in taggings or []:
+        document.add_annotation(
+            tag_annotation_from_corpus(
+                document._corpus,
+                tagging,
+                tagging,
+                reference=document.segmentation("tokens"),
+                strict=True,
+            )
+        )
+    for chunking in chunkings or []:
+        document.add_annotation(
+            chunk_annotation_from_corpus(
+                document._corpus,
+                chunking,
+                chunking,
+                reference=document.segmentation("tokens"),
+                strict=True,
+            )
+        )
     return document
+
 
 def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     """
@@ -230,12 +235,12 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     if not url:
         return None
 
-    strip_html |= wikinews_format # wikinews format is always stripped
+    strip_html |= wikinews_format  # wikinews format is always stripped
 
     charset = re.compile('charset="(.+?)"')
     escaped_url = "".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
     escaped_url = escaped_url.replace("%2525", "%25")
-    escaped_url = escaped_url.replace('"', '&quot;')
+    escaped_url = escaped_url.replace('"', "&quot;")
 
     content = ""
     f = urllib.urlopen(escaped_url)
@@ -248,16 +253,16 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
         encoding = "utf-8"
     content = content.decode(encoding)
 
-    regex = re.compile('^.+?[^/]/(?=[^/])', re.M)
+    regex = re.compile("^.+?[^/]/(?=[^/])", re.M)
     parts = regex.findall(escaped_url)
-    base_url = (escaped_url[:]+"/" if parts == [] else parts[0]).decode("iso-8859-1")
+    base_url = (escaped_url[:] + "/" if parts == [] else parts[0]).decode("iso-8859-1")
 
     content = content.replace('="//', '="http://')
     content = content.replace('="/', '="{0}'.format(base_url))
     content = content.replace('=\\"//', '=\\"http://')
     content = content.replace('=\\"/', '=\\"{0}'.format(base_url))
-    content = content.replace('\r', '')
-    content = content.replace('</p>', '</p>\n\n')
+    content = content.replace("\r", "")
+    content = content.replace("</p>", "</p>\n\n")
 
     if strip_html:
         new_content = sem.misc.strip_html(content, keep_offsets=True)
@@ -265,7 +270,7 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
         new_content = content
 
     if wikinews_format:
-        cleaned_content = new_content[ : content.index("<h2>")].strip()
+        cleaned_content = new_content[: content.index("<h2>")].strip()
     else:
         cleaned_content = new_content
 
@@ -284,13 +289,11 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     cleaned_content = spaces_begin.sub("", cleaned_content)
     cleaned_content = spaces_end.sub("", cleaned_content)
 
-    mime_type = ("text/plain" if strip_html else "text/html")
+    mime_type = "text/plain" if strip_html else "text/html"
     return Document(
-        name=url,
-        content=cleaned_content,
-        original_content=content,
-        mime_type=mime_type
+        name=url, content=cleaned_content, original_content=content, mime_type=mime_type
     )
+
 
 def brat_file(filename, encoding="utf-8", tagset_name=None):
     """
@@ -319,7 +322,7 @@ def brat_file(filename, encoding="utf-8", tagset_name=None):
     annotations = Annotation(tagset_name)
     for line in open(ann_file, "r", encoding=encoding, newline=""):
         line = line.strip()
-        if line != "" and line.startswith('T'):
+        if line != "" and line.startswith("T"):
             parts = line.split("\t")
             value, bounds = parts[1].split(" ", 1)
             for bound in bounds.split(";"):
@@ -332,6 +335,7 @@ def brat_file(filename, encoding="utf-8", tagset_name=None):
 
     return document
 
+
 def gate_file(filename):
     """
     Load a GATE-formatted file.
@@ -343,6 +347,7 @@ def gate_file(filename):
     """
     data = ET.parse(filename)
     return gate_data(data, name=pathlib.Path(filename).name)
+
 
 def gate_data(data, name=None):
     """
@@ -380,6 +385,7 @@ def gate_data(data, name=None):
 
     return document
 
+
 def json_data(data):
     """
     Load Document from json data. The json is just a dict containing the right
@@ -398,9 +404,7 @@ def json_data(data):
         d = data["segmentations"][segmentation_name]
         spans = [Span(lb=span["s"], ub=0, length=span["l"]) for span in d["spans"]]
         segmentation = Segmentation(
-            segmentation_name,
-            spans=spans,
-            reference=d.get("reference", None)
+            segmentation_name, spans=spans, reference=d.get("reference", None)
         )
         document.add_segmentation(segmentation)
     for segmentation in document.segmentations:
@@ -416,7 +420,7 @@ def json_data(data):
         annotation = Annotation(
             annotation_name,
             reference=document.segmentation(d["reference"]),
-            annotations=annotations
+            annotations=annotations,
         )
         document.add_annotation(annotation)
 
@@ -437,7 +441,7 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
         options for reading documents.
     """
     documents = []
-    names = set() # document names that were already seen
+    names = set()  # document names that were already seen
     for name in name_list:
         if isinstance(name, sem.storage.Document):
             if logger:
@@ -449,15 +453,16 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
                 logger.info("document %s already found, not adding to the list.", name.name)
         else:
             name = str(name)
-            for infile in (glob.glob(name) or [name]):
+            for infile in glob.glob(name) or [name]:
                 if logger:
                     logger.info("Reading %s", infile)
                 if file_format == "text":
                     document = Document(
                         pathlib.Path(infile).name,
                         content=open(infile, "r", encoding="utf-8", newline="")
-                        .read().replace("\r", ""),
-                        **opts
+                        .read()
+                        .replace("\r", ""),
+                        **opts,
                     )
                 elif file_format == "conll":
                     document = conll_file(infile, **opts)

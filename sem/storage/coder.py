@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 file: coder.py
@@ -28,6 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 class Coder(object):
     def __init__(self):
         self._encoder = {}
@@ -56,7 +57,7 @@ class Coder(object):
         if element not in self._encoder:
             self._decoder.insert(index, element)
             self._encoder[element] = index
-            for nth in range(index+1, len(self._encoder)):
+            for nth in range(index + 1, len(self._encoder)):
                 self._encoder[self._decoder[nth]] = nth
 
     def encode(self, element):

@@ -26,16 +26,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .feature import Feature
-from .getterfeatures import DEFAULT_GETTER, IdentityFeature, DictGetterFeature, FindForwardFeature, FindBackwardFeature
-from .arityfeatures import ArityFeature, UnaryFeature, BinaryFeature, BOSFeature, EOSFeature, LowerFeature, SubstringFeature, IsUpperFeature, SubstitutionFeature, SequencerFeature
-from .booleanfeatures import NotFeature, AndFeature, OrFeature
-from .dictionaryfeatures import TokenDictionaryFeature, MultiwordDictionaryFeature, MapperFeature, NUL
-from .listfeatures import ListFeature, SomeFeature, AllFeature, NoneFeature
-from .matcherfeatures import MatchFeature, CheckFeature, SubsequenceFeature, TokenFeature
-from .rulefeatures import RuleFeature, OrRuleFeature
-from .stringfeatures import EqualFeature, EqualCaselessFeature
-from .triggeredfeatures import TriggeredFeature
-from .directoryfeatures import DirectoryFeature, FillerFeature
+from sem.features.feature import Feature
+from sem.features.getterfeatures import (
+    DEFAULT_GETTER,
+    IdentityFeature,
+    DictGetterFeature,
+    FindForwardFeature,
+    FindBackwardFeature,
+)
+from sem.features.arityfeatures import (
+    ArityFeature,
+    UnaryFeature,
+    BinaryFeature,
+    BOSFeature,
+    EOSFeature,
+    LowerFeature,
+    SubstringFeature,
+    IsUpperFeature,
+    SubstitutionFeature,
+    SequencerFeature,
+)
+from sem.features.booleanfeatures import NotFeature, AndFeature, OrFeature
+from sem.features.dictionaryfeatures import (
+    TokenDictionaryFeature,
+    MultiwordDictionaryFeature,
+    MapperFeature,
+    NUL,
+)
+from sem.features.listfeatures import ListFeature, SomeFeature, AllFeature, NoneFeature
+from sem.features.matcherfeatures import MatchFeature, CheckFeature, SubsequenceFeature, TokenFeature
+from sem.features.rulefeatures import RuleFeature, OrRuleFeature
+from sem.features.stringfeatures import EqualFeature, EqualCaselessFeature
+from sem.features.triggeredfeatures import TriggeredFeature
+from sem.features.directoryfeatures import DirectoryFeature, FillerFeature
 
-from .xml2feature import XML2Feature
+from sem.features.xml2feature import XML2Feature

@@ -45,15 +45,10 @@ wapiti_label_logger = logging.getLogger("sem.wapiti_label")
 wapiti_label_logger.addHandler(default_handler)
 wapiti_label_logger.setLevel("INFO")
 
+
 class SEMModule(RootModule):
     def __init__(
-        self,
-        model,
-        field,
-        annotation_fields=None,
-        log_level="WARNING",
-        log_file=None,
-        **kwargs
+        self, model, field, annotation_fields=None, log_level="WARNING", log_file=None, **kwargs
     ):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
         expected_mode = kwargs.get("expected_mode", self.pipeline_mode)
@@ -104,8 +99,7 @@ class SEMModule(RootModule):
 
         if self._field in document.corpus.fields:
             wapiti_label_logger.warn(
-                "field %s already exists in document, not annotating",
-                self._field
+                "field %s already exists in document, not annotating", self._field
             )
 
             tags = [[s[self._field] for s in sentence] for sentence in document.corpus]
@@ -116,7 +110,7 @@ class SEMModule(RootModule):
             self._label_document(document, encoding)
 
         laps = time.time() - start
-        wapiti_label_logger.info('in %s', timedelta(seconds=laps))
+        wapiti_label_logger.info("in %s", timedelta(seconds=laps))
 
     def _label_document(self, document, encoding="utf-8"):
         if self._annotation_fields:
@@ -136,6 +130,7 @@ class SEMModule(RootModule):
         ).encode(encoding)
         s = self._wapiti_model.label_sequence(seq_str).decode(encoding)
         return s.strip().split("\n")
+
 
 def main(args):
     for sentence in sem.importers.read_conll():
@@ -157,13 +152,9 @@ import sem
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description='Wrapper for "wapiti label" command.'
+    pathlib.Path(__file__).stem, description='Wrapper for "wapiti label" command.'
 )
 
-parser.add_argument("infile",
-                    help="The input file (CoNLL format)")
-parser.add_argument("model",
-                    help="The name of the model to label data with")
-parser.add_argument("outfile",
-                    help="The output file")
+parser.add_argument("infile", help="The input file (CoNLL format)")
+parser.add_argument("model", help="The name of the model to label data with")
+parser.add_argument("outfile", help="The output file")

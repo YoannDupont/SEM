@@ -34,6 +34,7 @@ SOFTWARE.
 
 from sem.features.feature import Feature
 
+
 class ListFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(ListFeature, self).__init__(*args, **kwargs)
@@ -42,7 +43,10 @@ class ListFeature(Feature):
 
         for element in self._elements:
             if not element.is_boolean:
-                raise TypeError("Non boolean element in list node: {0}".format(element.__class__.__name__))
+                raise TypeError(
+                    "Non boolean element in list node: {0}".format(element.__class__.__name__)
+                )
+
 
 class SomeFeature(ListFeature):
     def __init__(self, *args, **kwargs):
@@ -54,6 +58,7 @@ class SomeFeature(ListFeature):
                 return True
         return False
 
+
 class AllFeature(ListFeature):
     def __init__(self, *args, **kwargs):
         super(AllFeature, self).__init__(*args, **kwargs)
@@ -63,6 +68,7 @@ class AllFeature(ListFeature):
             if not element(*args, **kwargs):
                 return False
         return True
+
 
 class NoneFeature(ListFeature):
     def __init__(self, *args, **kwargs):

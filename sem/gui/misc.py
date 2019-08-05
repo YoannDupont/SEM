@@ -34,13 +34,16 @@ from sem.constants import NUL
 
 import tkinter
 
+
 def fill_with(t, value):
     def fill_rec(t1):
         keys = [key for key in t1 if key != NUL]
         for key in keys:
             fill_rec(t1[key])
         t1[NUL] = value[:]
+
     fill_rec(t.data)
+
 
 def find_potential_separator(target):
     regex = re.compile(r"(\W+)", re.U)
@@ -49,18 +52,21 @@ def find_potential_separator(target):
         return found[0]
     return None
 
+
 def find_occurrences(target, content, whole_word=True):
     target = target.strip()
     if whole_word:
-        pattern = \
-            (r"\b" if target[0].isalnum() else r"((?<=\s)|(?<=^))") \
-            + re.escape(target) \
+        pattern = (
+            (r"\b" if target[0].isalnum() else r"((?<=\s)|(?<=^))")
+            + re.escape(target)
             + (r"\b" if target[-1].isalnum() else r"(?=\s|$)")
+        )
     else:
         pattern = re.escape(target)
     regex = re.compile(pattern, re.U + re.M)
     for match in regex.finditer(content):
         yield match
+
 
 def random_color():
     import random
@@ -75,17 +81,20 @@ def random_color():
         if len(hx) == 1:
             hx = "0{}".format(hx)
         return hx
+
     def to_color(r, g, b):
         cs = [to_hex(c) for c in [r, g, b]]
         return "#{cs[0]}{cs[1]}{cs[2]}".format(cs=cs)
+
     def darker(r, g, b):
-        h, l, s = colorsys.rgb_to_hls(r/256.0, g/256.0, b/256.0)
-        cs = [to_hex(256.0*c) for c in colorsys.hls_to_rgb(h, l/2.5, s)]
+        h, l, s = colorsys.rgb_to_hls(r / 256.0, g / 256.0, b / 256.0)
+        cs = [to_hex(256.0 * c) for c in colorsys.hls_to_rgb(h, l / 2.5, s)]
         return "#{cs[0]}{cs[1]}{cs[2]}".format(cs=cs)
 
     return {"background": to_color(red, green, blue), "foreground": darker(red, green, blue)}
 
-class Adder():
+
+class Adder:
     l2t = {}
     t2l = {}
 
@@ -161,10 +170,11 @@ class Adder():
             start, end = ("sel.first", "sel.last")
         try:
             target = re.escape(self.frame.text.get(start, end).strip())
-            pattern = \
-                (r"\b" if target[0].isalnum() else r"((?<=\s)|(?<=^))") \
-                + target \
+            pattern = (
+                (r"\b" if target[0].isalnum() else r"((?<=\s)|(?<=^))")
+                + target
                 + (r"\b" if target[-1].isalnum() else r"(?=\s|$)")
+            )
             regex = re.compile(pattern, re.U + re.M)
             for match in regex.finditer(self.frame.doc.content):
                 cur_start = self.frame.charindex2position(match.start())
@@ -179,7 +189,7 @@ class Adder():
         self.frame.current_selection = None
         self.frame.current_type_hierarchy_level = 0
         self.frame.update_level()
-        self.frame.text.tag_remove("BOLD",  "1.0", 'end')
+        self.frame.text.tag_remove("BOLD", "1.0", "end")
 
 
 class Adder2(object):
@@ -207,7 +217,7 @@ class Adder2(object):
         else:
             self.current_hierarchy_level -= 1
             if self.current_hierarchy_level < 0:
-                self.current_hierarchy_level = self.max_depth()-1
+                self.current_hierarchy_level = self.max_depth() - 1
 
     def type_from_letter(self, letter):
         if (
@@ -216,7 +226,7 @@ class Adder2(object):
         ):
             return None
         path = (
-            self.current_annotation.levels[ : self.current_hierarchy_level]
+            self.current_annotation.levels[: self.current_hierarchy_level]
             if self.current_annotation
             else []
         )
@@ -225,10 +235,24 @@ class Adder2(object):
             if key != NUL and val[NUL] == letter:
                 return key
 
+
 def from_tagset(tagset):
     levels = [tag.split(".") for tag in tagset]
-    chars = list("abcdefghijklmnopqrstuvwxyz") \
-        + ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', '*']
+    chars = list("abcdefghijklmnopqrstuvwxyz") + [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11",
+        "F12",
+        "*",
+    ]
     trie = Trie()
     for level in levels:
         trie.add(level)

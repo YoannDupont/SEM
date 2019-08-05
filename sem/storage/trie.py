@@ -34,6 +34,7 @@ SOFTWARE.
 
 from sem.constants import NUL
 
+
 class Trie(object):
     """
     The Trie object.
@@ -57,8 +58,9 @@ class Trie(object):
 
     def __iter__(self):
         seq = []
-        # Depth First Search
+
         def dfs(dic):
+            """Depth First Search"""
             keys = set(dic.keys())
             found = NUL in keys
 

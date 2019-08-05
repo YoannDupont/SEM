@@ -37,6 +37,7 @@ except ImportError:
 
 from sem.exporters.exporter import Exporter as DefaultExporter
 
+
 class Exporter(DefaultExporter):
     __ext = "gate.xml"
 
@@ -94,14 +95,14 @@ class Exporter(DefaultExporter):
             boundaries = []
 
         if boundaries != []:
-            textWithNodes.text = content[ : boundaries[0]]
+            textWithNodes.text = content[: boundaries[0]]
             for nth, boundary in enumerate(boundaries[:-1]):
                 node = ET.SubElement(textWithNodes, "Node")
                 node.set("id", str(boundary))
-                node.tail = content[boundary : boundaries[nth+1]]
+                node.tail = content[boundary: boundaries[nth+1]]
             node = ET.SubElement(textWithNodes, "Node")
             node.set("id", str(boundaries[-1]))
-            node.tail = content[boundaries[-1] : len(content)]
+            node.tail = content[boundaries[-1]: len(content)]
         else:
             textWithNodes.text = content
 

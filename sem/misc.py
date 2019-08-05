@@ -38,15 +38,17 @@ import tarfile
 from contextlib import contextmanager
 from io import open, StringIO
 
+
 def find_suggestions(target, candidates, case_sensitive=True):
-    trgt = (target if case_sensitive else target.lower())
+    trgt = target if case_sensitive else target.lower()
     suggestions = []
-    for candidate in (candidates if case_sensitive else [cand.lower() for cand in candidates]):
-        shortest = (candidate if len(candidate) < len(trgt) else trgt)
-        longest = (trgt if shortest == candidate else candidate)
+    for candidate in candidates if case_sensitive else [cand.lower() for cand in candidates]:
+        shortest = candidate if len(candidate) < len(trgt) else trgt
+        longest = trgt if shortest == candidate else candidate
         if shortest in longest:
             suggestions.append(candidate)
     return suggestions
+
 
 def ranges_to_set(ranges, length, include_zero=False):
     """
@@ -65,14 +67,14 @@ def ranges_to_set(ranges, length, include_zero=False):
     """
     result = set()
 
-    for current_range in ranges.split(','):
-        if ':' in current_range:
+    for current_range in ranges.split(","):
+        if ":" in current_range:
             lo, hi = [int(i) for i in current_range.split(":")]
         else:
             lo = int(current_range)
             hi = lo
 
-        if (hi < lo):
+        if hi < lo:
             continue
 
         if lo < 0:
@@ -80,13 +82,14 @@ def ranges_to_set(ranges, length, include_zero=False):
         if hi < 0:
             hi = length + hi
 
-        for i in range(lo, hi+1):
+        for i in range(lo, hi + 1):
             result.add(i)
 
     if include_zero:
         result.add(0)
 
     return result
+
 
 def correct_pos_tags(tags):
     """
@@ -96,7 +99,7 @@ def correct_pos_tags(tags):
     corrections = 0
     for i in range(len(corrected)):
         value = ""
-        j = len(corrected[i])-1
+        j = len(corrected[i]) - 1
         while j >= 0:
             if value != "":
                 if corrected[i][j][0] == "_":
@@ -113,19 +116,19 @@ def correct_pos_tags(tags):
             j -= 1
     return corrected
 
+
 def check_model_available(model, logger=None):
     path = pathlib.Path(model)
     if not path.exists():
         targz = pathlib.Path(str(path) + ".tar.gz")
         if targz.exists():
             if logger is not None:
-                logger.info("Model not extracted, extracting {0}".format(
-                    str(targz.resolve())
-                ))
+                logger.info("Model not extracted, extracting {0}".format(str(targz.resolve())))
             with tarfile.open(targz, "r:gz") as tar:
                 tar.extractall(targz.parent)
         else:
             raise FileNotFoundError("Cannot find model file: {0}".format(model))
+
 
 def strip_html(html, keep_offsets=False):
     """
@@ -138,6 +141,7 @@ def strip_html(html, keep_offsets=False):
     keep_offsets : bool [False]
         if True, markups are replaced by spaces, otherwise replace by single space.
     """
+
     def replace_same_size(m):
         return " " * (m.end() - m.start())
 
@@ -176,20 +180,21 @@ def strip_html(html, keep_offsets=False):
         non_space = re.compile("[^ \n\r]+")
     for i in range(len(s_e)):
         if i > 0:
-            parts.append(non_space.sub(" ", preprocessed_html[s_e[i-1][1] : s_e[i][0]]))
-        parts.append(preprocessed_html[s_e[i][0] : s_e[i][1]])
+            parts.append(non_space.sub(" ", preprocessed_html[s_e[i - 1][1]: s_e[i][0]]))
+        parts.append(preprocessed_html[s_e[i][0]: s_e[i][1]])
     stripped_html = "".join(parts)
 
     tag = re.compile("<.+?>", re.U + re.M + re.DOTALL)
-    repl = (replace_same_size if keep_offsets else "")
+    repl = replace_same_size if keep_offsets else ""
     if keep_offsets:
-        stripped_html = tag.sub(repl, stripped_html) \
-                .replace("&nbsp;", "      ").replace("&#160;", "      ")
+        stripped_html = (
+            tag.sub(repl, stripped_html).replace("&nbsp;", "      ").replace("&#160;", "      ")
+        )
     else:
-        stripped_html = tag.sub(repl, stripped_html) \
-                .replace("&nbsp;", " ").replace("&#160;", " ")
+        stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", " ").replace("&#160;", " ")
 
     return stripped_html
+
 
 def str2bool(s):
     """
@@ -202,11 +207,13 @@ def str2bool(s):
     """
 
     s = s.lower()
-    res = {"yes": True, "y": True, "true": True, "no": False, "n": False, "false": False} \
-        .get(s, None)
+    res = {"yes": True, "y": True, "true": True, "no": False, "n": False, "false": False}.get(
+        s, None
+    )
     if res is None:
         raise ValueError('Cannot convert to boolean: "{0}"'.format(s))
     return res
+
 
 def longest_common_substring(a, b, casesensitive=True, lastchance=False):
     """
@@ -231,28 +238,29 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
         # unicode characters which I do not recall.
         return longest_common_substring(a.lower(), b.lower(), casesensitive=True)
 
-    lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
+    lengths = [[0 for j in range(len(b) + 1)] for i in range(len(a) + 1)]
     for i, x in enumerate(a):
         for j, y in enumerate(b):
             if x == y:
-                lengths[i+1][j+1] = lengths[i][j] + 1
+                lengths[i + 1][j + 1] = lengths[i][j] + 1
             else:
-                lengths[i+1][j+1] = max(lengths[i+1][j], lengths[i][j+1])
+                lengths[i + 1][j + 1] = max(lengths[i + 1][j], lengths[i][j + 1])
 
     solutions = set()
+
     def bcktrck(x, y, current):
         """
         The recursive algorithm that finds solutions by backtracking
         """
         if x == 0 or y == 0:
-            if current == []: # empty solution
+            if current == []:  # empty solution
                 return
             if len(current) != lengths[-1][-1]:
                 return
 
             z, t = current[0]
             # we start in the middle of a word of the long form
-            if z > 0 and a[z-1].isalpha():
+            if z > 0 and a[z - 1].isalpha():
                 return
             # we do not take the first character of the short form
             if t != 0:
@@ -260,55 +268,56 @@ def longest_common_substring(a, b, casesensitive=True, lastchance=False):
 
             solutions.add(tuple(current))
             return
-        if a[x-1] == b[y-1]:
+        if a[x - 1] == b[y - 1]:
             try:
-                a_x2_ok = a[x-2].isalpha()
+                a_x2_ok = a[x - 2].isalpha()
             except Exception:
                 a_x2_ok = False
 
             if current != []:
-                if a[current[0][0]-1].isalpha():
-                    bcktrck(x-1, y, current)
+                if a[current[0][0] - 1].isalpha():
+                    bcktrck(x - 1, y, current)
                     return
                 # generated more than one token, and splitted one of them
-                if " " in a[x-1 : current[0][0]].strip() and a_x2_ok:
-                    bcktrck(x-1, y, current)
+                if " " in a[x - 1: current[0][0]].strip() and a_x2_ok:
+                    bcktrck(x - 1, y, current)
                     return
             else:
                 # we cut somewhere after a hyphen
-                if "-" in a[x-1 : ] and not a[x-1] == "-":
-                    if lengths[x-1][y] == lengths[x][y]:
-                        bcktrck(x-1, y, current)
+                if "-" in a[x - 1:] and not a[x - 1] == "-":
+                    if lengths[x - 1][y] == lengths[x][y]:
+                        bcktrck(x - 1, y, current)
                     return
                 # generated more than one token *and* splitted one of them
-                if " " in a[x-1:].strip() and (x > 1 and a_x2_ok):
-                    if lengths[x-1][y] == lengths[x][y]:
-                        bcktrck(x-1, y, current)
+                if " " in a[x - 1:].strip() and (x > 1 and a_x2_ok):
+                    if lengths[x - 1][y] == lengths[x][y]:
+                        bcktrck(x - 1, y, current)
                     return
 
-            bcktrck(x-1, y-1, [(x-1, y-1)] + current)
-            if lengths[x][y] == lengths[x-1][y]:
-                bcktrck(x-1, y, current)
-            if lengths[x][y] == lengths[x][y-1]:
-                bcktrck(x, y-1, current)
-        elif lengths[x][y] == lengths[x-1][y]:
-            bcktrck(x-1, y, current)
-        elif lengths[x][y] == lengths[x][y-1]:
-            bcktrck(x, y-1, current)
+            bcktrck(x - 1, y - 1, [(x - 1, y - 1)] + current)
+            if lengths[x][y] == lengths[x - 1][y]:
+                bcktrck(x - 1, y, current)
+            if lengths[x][y] == lengths[x][y - 1]:
+                bcktrck(x, y - 1, current)
+        elif lengths[x][y] == lengths[x - 1][y]:
+            bcktrck(x - 1, y, current)
+        elif lengths[x][y] == lengths[x][y - 1]:
+            bcktrck(x, y - 1, current)
 
     try:
         bcktrck(len(a), len(b), [])
         return list(solutions)
-    except RuntimeError: # maximum recursion depth
+    except RuntimeError:  # maximum recursion depth
         return []
 
+
 @contextmanager
-def r_open(source, encoding='utf-8'):
-    '''Open in read mode either a file from the filename or a string.'''
+def r_open(source, encoding="utf-8"):
+    """Open in read mode either a file from the filename or a string."""
 
     src = None
     try:
-        src = open(source, 'r', encoding=encoding, newline='')
+        src = open(source, "r", encoding=encoding, newline="")
     except Exception:
         try:
             s = source.decode(encoding)
@@ -326,8 +335,9 @@ def r_open(source, encoding='utf-8'):
         except Exception:
             pass
 
-def read_chunks(source, size=1024, encoding='utf-8'):
-    '''Read a source by chunks of a given size.'''
+
+def read_chunks(source, size=1024, encoding="utf-8"):
+    """Read a source by chunks of a given size."""
 
     with r_open(source, encoding) as input_stream:
         buff = input_stream.read(size)

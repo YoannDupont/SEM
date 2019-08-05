@@ -33,13 +33,16 @@ SOFTWARE.
 from sem.exporters.exporter import Exporter as DefaultExporter
 import sem.storage.document
 
+
 class Exporter(DefaultExporter):
     __ext = "sem.xml"
 
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_file(self, document: sem.storage.document.Document, couples, output, encoding="utf-8", **kwargs):
+    def document_to_file(
+        self, document: sem.storage.document.Document, couples, output, encoding="utf-8", **kwargs
+    ):
         document.write(open(output, "w", encoding=encoding), add_header=True)
 
     def document_to_data(self, document, couples, **kwargs):

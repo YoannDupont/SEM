@@ -32,6 +32,7 @@ SOFTWARE.
 
 from sem.exporters.exporter import Exporter as DefaultExporter
 
+
 class Exporter(DefaultExporter):
     __ext = "ann"
 
@@ -46,11 +47,14 @@ class Exporter(DefaultExporter):
             return ""
         content = document.content
         parts = []
-        for id, annotation in enumerate(document.annotation(lowers["ner"]).get_reference_annotations(), 1):
+        for id, annotation in enumerate(
+            document.annotation(lowers["ner"]).get_reference_annotations(), 1
+        ):
             parts.append(
                 "T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(
                     id=id,
                     annotation=annotation,
-                    txt=content[annotation.lb : annotation.ub].replace("\r", "").replace("\n", " "))
+                    txt=content[annotation.lb: annotation.ub].replace("\r", "").replace("\n", " "),
+                )
             )
         return "\n".join(parts)

@@ -36,7 +36,10 @@ _train = "train"
 _label_set = set(["label", "annotate", "annotation"])
 _label = "label"
 _modes = _train_set | _label_set
-_equivalence = dict([[mode, _train] for mode in _train_set] + [[mode, _label] for mode in _label_set])
+_equivalence = dict(
+    [[mode, _train] for mode in _train_set] + [[mode, _label] for mode in _label_set]
+)
+
 
 class Entry(object):
     """
@@ -44,6 +47,7 @@ class Entry(object):
     An Entry may be used only in certain circumstances: for example, the
     output tag may only appear in train mode.
     """
+
     def __init__(self, name, mode="label"):
         if mode not in _modes:
             raise ValueError("Unallowed mode for entry: {0}".format(mode))
@@ -79,6 +83,7 @@ class Entry(object):
 
     def has_mode(self, mode):
         return self.mode == _equivalence[mode]
+
 
 class Corpus(object):
     def __init__(self, fields=None, sentences=None):
@@ -146,10 +151,12 @@ class Corpus(object):
     def from_segmentation(self, content, tokens, sentences, field_name="word"):
         self.fields = [field_name]
         for sentence in sentences.spans:
-            self.append_sentence([
-                {field_name: content[token.lb : token.ub]}
-                for token in tokens.spans[sentence.lb : sentence.ub]
-            ])
+            self.append_sentence(
+                [
+                    {field_name: content[token.lb: token.ub]}
+                    for token in tokens.spans[sentence.lb: sentence.ub]
+                ]
+            )
 
     def write(self, fd, fields=None):
         fmt = "\t".join(["{{{0}}}".format(field) for field in (fields or self.fields)]) + "\n"

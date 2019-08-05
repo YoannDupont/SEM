@@ -1,4 +1,4 @@
-#-*- encoding:utf-8 -*-
+# -*- encoding:utf-8 -*-
 
 """
 file: default.py
@@ -37,18 +37,20 @@ from sem.storage import Span, SpannedBounds
 _forbidden = [sem.constants.url_re, sem.constants.email_re]
 _force = []
 
-spaces = re.compile("\\s+", re.U+re.M)
+spaces = re.compile("\\s+", re.U + re.M)
+
 
 def word_spans(content):
-    l = [match.span() for match in spaces.finditer(content)]
-    l1 = [(l[i][1], l[i+1][0]) for i in range(len(l)-1)]
+    l1 = [match.span() for match in spaces.finditer(content)]
+    l2 = [(l1[i][1], l1[i + 1][0]) for i in range(len(l1) - 1)]
 
-    if l[0][0] != 0:
-        l1.insert(0, (0, l[0][0]))
-    if l[-1][1] != len(content):
-        l1.append((l[-1][1], len(content)))
+    if l1[0][0] != 0:
+        l2.insert(0, (0, l1[0][0]))
+    if l1[-1][1] != len(content):
+        l2.append((l1[-1][1], len(content)))
 
-    return [Span(span[0], span[1]) for span in l1]
+    return [Span(span[0], span[1]) for span in l2]
+
 
 def sentence_bounds(content, token_spans):
     """
@@ -61,14 +63,15 @@ def sentence_bounds(content, token_spans):
     """
     sent_bounds = SpannedBounds()
 
-    sent_bounds.add(Span(0,0))
+    sent_bounds.add(Span(0, 0))
     for index, span in enumerate(token_spans):
-        token = content[span.lb : span.ub]
+        token = content[span.lb: span.ub]
         if token in "\r\n":
-            sent_bounds.add_last(Span(index, index+1))
+            sent_bounds.add_last(Span(index, index + 1))
     sent_bounds.add_last(Span(len(token_spans), len(token_spans)))
 
     return sent_bounds
+
 
 def paragraph_bounds(content, sentence_spans, token_spans):
     """
@@ -79,13 +82,13 @@ def paragraph_bounds(content, sentence_spans, token_spans):
     sentence_spans : list of Span
         the list of sentence spans
     """
-    s_spans = [Span(token_spans[e.lb].lb, token_spans[e.ub-1].ub) for e in sentence_spans]
+    s_spans = [Span(token_spans[e.lb].lb, token_spans[e.ub - 1].ub) for e in sentence_spans]
 
     paragraph_bounds = SpannedBounds()
 
     paragraph_bounds.add(Span(0, 0))
     for index, sentence in enumerate(sentence_spans[1:], 1):
-        substring = content[s_spans[index-1].ub : s_spans[index].lb]
+        substring = content[s_spans[index - 1].ub: s_spans[index].lb]
         if substring.count("\n") > 1:
             paragraph_bounds.append(Span(index, index))
     paragraph_bounds.append(Span(len(sentence_spans), len(sentence_spans)))

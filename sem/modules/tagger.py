@@ -67,6 +67,8 @@ if sem.ON_WINDOWS:
     )
 
 __pipeline = None
+
+
 def process(document, exporter, output_directory, couples, encoding, lang_style):
     """
     The function used to allow multiprocessing of documents.
@@ -80,20 +82,19 @@ def process(document, exporter, output_directory, couples, encoding, lang_style)
         if "html" in exporter.extension():
             shutil.copy(sem.SEM_RESOURCE_DIR / "css" / "tabs.css", output_directory)
             shutil.copy(
-                sem.SEM_RESOURCE_DIR / "css" / exporter._lang / lang_style,
-                output_directory
+                sem.SEM_RESOURCE_DIR / "css" / exporter._lang / lang_style, output_directory
             )
 
         shortname = pathlib.Path(name).stem
         out_path = output_directory / "{0}.{1}".format(shortname, exporter.extension())
         if exporter.extension() == "ann":
             filename = shortname + ".txt"
-            with open(output_directory / filename, "w", encoding=encoding) \
-                    as output_stream:
+            with open(output_directory / filename, "w", encoding=encoding) as output_stream:
                 output_stream.write(document.content)
         exporter.document_to_file(document, couples, out_path, encoding=encoding)
 
     return document
+
 
 def get_option(cfg, section, option, default=None):
     try:
@@ -101,11 +102,13 @@ def get_option(cfg, section, option, default=None):
     except Exception:
         return default
 
+
 def get_section(cfg, section):
     try:
         return dict(cfg.items(section))
     except configparser.NoSectionError:
         return {}
+
 
 def load_master(master, force_format="default", pipeline_mode="all"):
     """
@@ -181,12 +184,13 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 if key not in arguments:
                     arguments[key] = value
                 else:
-                    sem_tagger_logger.warn('Not adding already existing option: {0}'.format(key))
+                    sem_tagger_logger.warn("Not adding already existing option: {0}".format(key))
         sem_tagger_logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
 
     return pipeline, options, exporter, couples
+
 
 def main(args):
     """
@@ -248,9 +252,7 @@ def main(args):
         opts["fields"] = opts["fields"].split(",")
         opts["taggings"] = [tagging for tagging in opts.get("taggings", "").split(",") if tagging]
         opts["chunkings"] = [
-            chunking
-            for chunking in opts.get("chunkings", "").split(",")
-            if chunking
+            chunking for chunking in opts.get("chunkings", "").split(",") if chunking
         ]
 
     documents = sem.importers.documents_from_list(args.infiles, file_format, **opts)
@@ -270,26 +272,25 @@ def main(args):
         output_directory=output_directory,
         couples=couples,
         encoding=oenc,
-        lang_style=get_option(options, "export", "lang_style", "default.css")
+        lang_style=get_option(options, "export", "lang_style", "default.css"),
     )
     if sem.ON_WINDOWS or n_procs == 1:
         for document in documents:
             do_process(document)
     else:
         pool = multiprocessing.Pool(processes=n_procs)
-        dpp = (1 if n_procs < len(documents)*2 else 2) # documents per processor
+        dpp = 1 if n_procs < len(documents) * 2 else 2  # documents per processor
         beg = 0
         batch_size = dpp * n_procs
         while beg <= len(documents):
-            documents[beg : beg + batch_size] = pool.map(
-                do_process,
-                documents[beg : beg + batch_size]
+            documents[beg: beg + batch_size] = pool.map(
+                do_process, documents[beg: beg + batch_size]
             )
             beg += batch_size
         pool.terminate()
 
     laps = time.time() - start
-    sem_tagger_logger.info('done in %s', timedelta(seconds=laps))
+    sem_tagger_logger.info("done in %s", timedelta(seconds=laps))
 
     return documents
 
@@ -301,17 +302,34 @@ _subparsers = sem.argument_subparsers
 parser = _subparsers.add_parser(
     pathlib.Path(__file__).stem,
     description="Performs various operations given in a master configuration file"
-                " that defines a pipeline."
+    " that defines a pipeline.",
 )
 
-parser.add_argument("master",
-                    help="The master configuration file."
-                         " Defines at least the pipeline and may provide some options.")
-parser.add_argument("infiles", nargs="+",
-                    help="The input file(s) for the tagger.")
-parser.add_argument("-o", "--output-directory", dest="output_directory", default=".",
-                    help='The output directory (default: "%(default)s").')
-parser.add_argument("-f", "--force-format", dest="force_format", default="default",
-                    help='Force the output format given in "master" (default: "%(default)s").')
-parser.add_argument("-p", "--processors", dest="n_procs", type=int, default=1,
-                    help='The number of processors to use (default: "%(default)s").')
+parser.add_argument(
+    "master",
+    help="The master configuration file."
+    " Defines at least the pipeline and may provide some options.",
+)
+parser.add_argument("infiles", nargs="+", help="The input file(s) for the tagger.")
+parser.add_argument(
+    "-o",
+    "--output-directory",
+    dest="output_directory",
+    default=".",
+    help='The output directory (default: "%(default)s").',
+)
+parser.add_argument(
+    "-f",
+    "--force-format",
+    dest="force_format",
+    default="default",
+    help='Force the output format given in "master" (default: "%(default)s").',
+)
+parser.add_argument(
+    "-p",
+    "--processors",
+    dest="n_procs",
+    type=int,
+    default=1,
+    help='The number of processors to use (default: "%(default)s").',
+)

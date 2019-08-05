@@ -42,10 +42,9 @@ from sem.importers import read_conll
 from sem.importers import conll_file
 from sem.exporters import CoNLLExporter
 
-tagging_logger = logging.getLogger("sem.{}".format(
-    pathlib.Path(__file__).stem
-))
+tagging_logger = logging.getLogger("sem.{}".format(pathlib.Path(__file__).stem))
 tagging_logger.addHandler(default_handler)
+
 
 class SEMModule(RootModule):
     def __init__(self, annotator, field, log_level="WARNING", log_file=None, *args, **kwargs):
@@ -61,7 +60,8 @@ class SEMModule(RootModule):
         start = time.time()
         self._annotator.process_document(document)
         laps = time.time() - start
-        tagging_logger.info('done in {}'.format(timedelta(seconds=laps)))
+        tagging_logger.info("done in {}".format(timedelta(seconds=laps)))
+
 
 def main(args):
     """
@@ -104,9 +104,7 @@ def main(args):
         if length != len(sentence[0]):
             raise ValueError(
                 "{} has inconsistent number of columns, found {} and {}".format(
-                    infile,
-                    length,
-                    len(sentence[0])
+                    infile, length, len(sentence[0])
                 )
             )
 
@@ -127,31 +125,32 @@ import sem
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Annotate file with specified annotator."
+    pathlib.Path(__file__).stem, description="Annotate file with specified annotator."
 )
 
-parser.add_argument("infile",
-                    help="The input file (CoNLL format)")
-parser.add_argument("outfile",
-                    help="The output file (CoNLL format)")
-parser.add_argument("annotator",
-                    help="The name of the annotator")
-parser.add_argument("location",
-                    help="The location of the data used for annotator"
-                         " (model, folder with lexica, etc.).")
-parser.add_argument("token_field",
-                    help="The token field (not always useful).")
-parser.add_argument("field",
-                    help="The output field.")
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: critical)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file (CoNLL format)")
+parser.add_argument("outfile", help="The output file (CoNLL format)")
+parser.add_argument("annotator", help="The name of the annotator")
+parser.add_argument(
+    "location",
+    help="The location of the data used for annotator" " (model, folder with lexica, etc.).",
+)
+parser.add_argument("token_field", help="The token field (not always useful).")
+parser.add_argument("field", help="The output field.")
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: critical)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

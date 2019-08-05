@@ -33,11 +33,13 @@ SOFTWARE.
 from sem.features.feature import Feature
 from sem.features.getterfeatures import DEFAULT_GETTER
 
+
 class StringFeature(Feature):
     def __init__(self, reference, getter=DEFAULT_GETTER, *args, **kwargs):
         super(StringFeature, self).__init__(self, reference, *args, **kwargs)
         self._reference = reference
         self._getter = getter
+
 
 class EqualFeature(StringFeature):
     def __init__(self, reference, *args, **kwargs):
@@ -46,6 +48,7 @@ class EqualFeature(StringFeature):
 
     def __call__(self, *args, **kwargs):
         return self._reference == self._getter(*args, **kwargs)
+
 
 class EqualCaselessFeature(StringFeature):
     def __init__(self, reference, *args, **kwargs):

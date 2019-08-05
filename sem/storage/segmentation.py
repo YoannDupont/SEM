@@ -38,6 +38,7 @@ SOFTWARE.
 
 from sem.storage.span import Span
 
+
 class Segmentation(object):
     """
     Segmentation is just a holder for bounds. Those bounds can be word
@@ -45,6 +46,7 @@ class Segmentation(object):
     By itself, it is not very useful, it become good in the context of
     a document for which it hold minimum useful information
     """
+
     def __init__(self, name, reference=None, spans=None):
         """
         parameters
@@ -100,6 +102,6 @@ class Segmentation(object):
         else:
             reference_spans = self.reference.get_reference_spans()
             return [
-                Span(reference_spans[element.lb].lb, reference_spans[element.ub-1].ub)
+                Span(reference_spans[element.lb].lb, reference_spans[element.ub - 1].ub)
                 for element in self.spans
             ]

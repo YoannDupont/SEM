@@ -42,13 +42,12 @@ from sem.features import BOSFeature, EOSFeature
 class TestModules(unittest.TestCase):
     def test_enrich(self):
         document = Document("document", "Ceci est un test.")
-        corpus = Corpus(["word"], sentences=[[
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]])
+        corpus = Corpus(
+            ["word"],
+            sentences=[
+                [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
+            ],
+        )
         document._corpus = corpus
 
         features = []
@@ -66,13 +65,18 @@ class TestModules(unittest.TestCase):
 
     def test_clean(self):
         document = Document("document", "Ceci est un test.")
-        corpus = Corpus(["word", "remove"], sentences=[[
-            {"word": "Ceci", "remove": "Ceci"},
-            {"word": "est", "remove": "est"},
-            {"word": "un", "remove": "un"},
-            {"word": "test", "remove": "test"},
-            {"word": ".", "remove": "."}
-        ]])
+        corpus = Corpus(
+            ["word", "remove"],
+            sentences=[
+                [
+                    {"word": "Ceci", "remove": "Ceci"},
+                    {"word": "est", "remove": "est"},
+                    {"word": "un", "remove": "un"},
+                    {"word": "test", "remove": "test"},
+                    {"word": ".", "remove": "."},
+                ]
+            ],
+        )
         document._corpus = corpus
 
         self.assertEquals(document._corpus.fields, ["word", "remove"])
@@ -84,20 +88,18 @@ class TestModules(unittest.TestCase):
 
     def test_wapiti_label(self):
         document = Document("document", "Ceci est un test.")
-        corpus = Corpus(["word"], sentences=[[
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]])
+        corpus = Corpus(
+            ["word"],
+            sentences=[
+                [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
+            ],
+        )
         document._corpus = corpus
 
         self.assertEquals(document._corpus.fields, ["word"])
 
         wapiti_label = WapitiLabelModule(
-            SEM_DATA_DIR / "non-regression" / "models" / "model",
-            "the_new_field"
+            SEM_DATA_DIR / "non-regression" / "models" / "model", "the_new_field"
         )
         wapiti_label.process_document(document)
 
@@ -111,29 +113,32 @@ class TestModules(unittest.TestCase):
         self.assertEquals(sentence[4]["the_new_field"], "O")
 
     def test_label_consistency(self):
-        corpus = Corpus(["word", "tag"], sentences=[
-            [
-                {"word": "Ceci", "tag": "B-tag"},
-                {"word": "est", "tag": "O"},
-                {"word": "un", "tag": "O"},
-                {"word": "test", "tag": "O"},
-                {"word": ".", "tag": "O"}
+        corpus = Corpus(
+            ["word", "tag"],
+            sentences=[
+                [
+                    {"word": "Ceci", "tag": "B-tag"},
+                    {"word": "est", "tag": "O"},
+                    {"word": "un", "tag": "O"},
+                    {"word": "test", "tag": "O"},
+                    {"word": ".", "tag": "O"},
+                ],
+                [
+                    {"word": "Ceci", "tag": "O"},
+                    {"word": "est", "tag": "O"},
+                    {"word": "un", "tag": "O"},
+                    {"word": "test", "tag": "O"},
+                    {"word": ".", "tag": "O"},
+                ],
+                [
+                    {"word": "ceci", "tag": "O"},
+                    {"word": "est", "tag": "O"},
+                    {"word": "un", "tag": "O"},
+                    {"word": "test", "tag": "O"},
+                    {"word": ".", "tag": "O"},
+                ],
             ],
-            [
-                {"word": "Ceci", "tag": "O"},
-                {"word": "est", "tag": "O"},
-                {"word": "un", "tag": "O"},
-                {"word": "test", "tag": "O"},
-                {"word": ".", "tag": "O"}
-            ],
-            [
-                {"word": "ceci", "tag": "O"},
-                {"word": "est", "tag": "O"},
-                {"word": "un", "tag": "O"},
-                {"word": "test", "tag": "O"},
-                {"word": ".", "tag": "O"}
-            ],
-        ])
+        )
         document = sem.importers.conll_data("document", corpus, "word")
         tags = []
         for sentence in document._corpus.sentences:
@@ -157,5 +162,5 @@ class TestModules(unittest.TestCase):
         self.assertEquals(tags.count("B-tag"), 2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

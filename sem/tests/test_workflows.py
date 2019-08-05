@@ -39,24 +39,14 @@ def launch(path_to_master):
     document = Document("document", "Ceci est un test.")
     corpus = Corpus(
         ["word"],
-        sentences=[[
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]]
+        sentences=[
+            [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
+        ],
     )
     document._corpus = corpus
-    pipeline, options, exporter, couples = sem.modules.tagger.load_master(
-        path_to_master
-    )
+    pipeline, options, exporter, couples = sem.modules.tagger.load_master(path_to_master)
     args = Holder(
-        pipeline=pipeline,
-        options=options,
-        exporter=None,
-        couples=couples,
-        infiles=[document]
+        pipeline=pipeline, options=options, exporter=None, couples=couples, infiles=[document]
     )
     sem.modules.tagger.main(args)
 
@@ -78,5 +68,5 @@ class TestWorkflows(unittest.TestCase):
         launch(SEM_RESOURCE_DIR / "master" / "fr" / "NER.xml")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

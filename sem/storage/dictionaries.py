@@ -34,6 +34,7 @@ SOFTWARE.
 
 from sem.storage.trie import Trie
 
+
 def compile_token(infile, encoding):
     tokens = set()
     for line in open(infile, "rU", encoding=encoding):
@@ -42,12 +43,14 @@ def compile_token(infile, encoding):
             tokens.add(line)
     return tokens
 
+
 def compile_multiword(infile, encoding):
     trie = Trie()
     for line in open(infile, "rU", encoding=encoding):
         seq = line.strip().split()
         trie.add(seq)
     return trie
+
 
 def compile_map(infile, encoding):
     out_map = {}

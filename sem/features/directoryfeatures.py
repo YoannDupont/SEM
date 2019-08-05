@@ -44,6 +44,7 @@ from sem.features.triggeredfeatures import TriggeredFeature
 from sem.features.matcherfeatures import SubsequenceFeature
 from sem.storage.annotation import Tag, Annotation, get_top_level, chunk_annotation_from_sentence
 
+
 class DirectoryFeature(Feature):
     def __init__(self, path, x2f, order=".order", ambiguous=False, *args, **kwargs):
         super(DirectoryFeature, self).__init__(self, *args, **kwargs)
@@ -61,7 +62,7 @@ class DirectoryFeature(Feature):
             for line in open(self.path / order, "rU"):
                 line = line.strip()
                 if "#" in line:
-                    line = line[ : line.index("#")].strip()
+                    line = line[: line.index("#")].strip()
                 if line:
                     self.order.append(line)
         else:
@@ -72,27 +73,24 @@ class DirectoryFeature(Feature):
         for name in self.order:
             self.features.append(x2f.parse(ET.parse(self.path / name).getroot()))
             self.features[-1]._name = name
-            if (
-                not (
-                    self.features[-1].is_boolean
-                    or self.features[-1].is_sequence
-                    or isinstance(self.features[-1], MapperFeature)
-                    or (
-                        isinstance(self.features[-1], TriggeredFeature)
-                        and isinstance(self.features[-1].operation, MapperFeature)
-                    )
-                    or (isinstance(self.features[-1], SubsequenceFeature))
+            if not (
+                self.features[-1].is_boolean
+                or self.features[-1].is_sequence
+                or isinstance(self.features[-1], MapperFeature)
+                or (
+                    isinstance(self.features[-1], TriggeredFeature)
+                    and isinstance(self.features[-1].operation, MapperFeature)
                 )
+                or (isinstance(self.features[-1], SubsequenceFeature))
             ):
-                raise ValueError("In {0} feature: {1} is neither boolean nor sequence".format(
-                    self.name,
-                    name
-                ))
+                raise ValueError(
+                    "In {0} feature: {1} is neither boolean nor sequence".format(self.name, name)
+                )
             if isinstance(self.features[-1], MultiwordDictionaryFeature):
                 self.features[-1]._appendice = self.features[-1]._appendice or "-{0}".format(name)
 
     def __call__(self, list2dict, *args, **kwargs):
-        data = ["O"]*len(list2dict)
+        data = ["O"] * len(list2dict)
         annotation = Annotation("")
 
         for feature in self.features:
@@ -100,11 +98,10 @@ class DirectoryFeature(Feature):
             if feature.is_boolean:
                 for x in range(len(list2dict)):
                     if feature(list2dict, x):
-                        annotation.add(Tag(name, x, x+1))
+                        annotation.add(Tag(name, x, x + 1))
             elif feature.is_sequence:
                 for tag in chunk_annotation_from_sentence(
-                    [{"tag": tag} for tag in feature(list2dict)],
-                    "tag"
+                    [{"tag": tag} for tag in feature(list2dict)], "tag"
                 ):
                     annotation.add(tag)
 
@@ -112,10 +109,11 @@ class DirectoryFeature(Feature):
             tags = get_top_level(annotation)
             for tag in tags:
                 data[tag.lb] = "B-{}".format(tag.value)
-                for index in range(tag.lb+1, tag.ub):
+                for index in range(tag.lb + 1, tag.ub):
                     data[index] = "I-{}".format(tag.value)
 
         return data
+
 
 class FillerFeature(Feature):
     def __init__(self, entry, filler_entry, condition, *args, **kwargs):

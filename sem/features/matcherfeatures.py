@@ -37,6 +37,7 @@ import re
 from sem.features.feature import Feature
 from sem.features.getterfeatures import DEFAULT_GETTER
 
+
 class MatchFeature(Feature):
     def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, default="#", *args, **kwargs):
         super(MatchFeature, self).__init__(pattern, *args, flags=flags, getter=getter, **kwargs)
@@ -47,6 +48,7 @@ class MatchFeature(Feature):
     def __call__(self, *args, **kwargs):
         return self._regexp.search(self._getter(*args, **kwargs))
 
+
 class CheckFeature(MatchFeature):
     def __init__(self, pattern, flags=0, getter=DEFAULT_GETTER, *args, **kwargs):
         super(CheckFeature, self).__init__(pattern, flags=flags, getter=getter, *args, **kwargs)
@@ -54,6 +56,7 @@ class CheckFeature(MatchFeature):
 
     def __call__(self, *args, **kwargs):
         return super(CheckFeature, self).__call__(*args, **kwargs) is not None
+
 
 class SubsequenceFeature(MatchFeature):
     def __call__(self, *args, **kwargs):
@@ -65,6 +68,7 @@ class SubsequenceFeature(MatchFeature):
                 return self._getter(*args, **kwargs)
         else:
             return matcher.group()
+
 
 class TokenFeature(MatchFeature):
     def __call__(self, *args, **kwargs):

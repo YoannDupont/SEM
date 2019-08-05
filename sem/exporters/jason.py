@@ -35,6 +35,7 @@ import json
 from sem.exporters.exporter import Exporter as DefaultExporter
 from sem.storage.segmentation import Segmentation
 
+
 class Exporter(DefaultExporter):
     __ext = "json"
 
@@ -43,9 +44,7 @@ class Exporter(DefaultExporter):
 
     def document_to_unicode(self, document, couples, **kwargs):
         return json.dumps(
-            self.document_to_data(document, couples, **kwargs),
-            indent=2,
-            ensure_ascii=False
+            self.document_to_data(document, couples, **kwargs), indent=2, ensure_ascii=False
         )
 
     def document_to_data(self, document, couples, **kwargs):
@@ -62,29 +61,29 @@ class Exporter(DefaultExporter):
         json_dict["segmentations"] = {}
         for seg in document.segmentations.values():
             json_dict["segmentations"][seg.name] = {}
-            ref = (seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference)
+            ref = seg.reference.name if isinstance(seg.reference, Segmentation) else seg.reference
             if ref:
                 json_dict["segmentations"][seg.name]["reference"] = ref
             json_dict["segmentations"][seg.name]["spans"] = [
-                {"s": span.lb, "l": len(span)}
-                for span in seg.spans
+                {"s": span.lb, "l": len(span)} for span in seg.spans
             ]
 
         json_dict["annotations"] = {}
         for annotation in document.annotations.values():
             json_dict["annotations"][annotation.name] = {}
             reference = (
-                "" if not annotation.reference
+                ""
+                if not annotation.reference
                 else (
-                    annotation.reference if isinstance(annotation.reference, str)
+                    annotation.reference
+                    if isinstance(annotation.reference, str)
                     else annotation.reference.name
                 )
             )
             if reference:
                 json_dict["annotations"][annotation.name]["reference"] = reference
             json_dict["annotations"][annotation.name]["annotations"] = [
-                {"v": tag.value, "s": tag.lb, "l": len(tag)}
-                for tag in annotation
+                {"v": tag.value, "s": tag.lb, "l": len(tag)} for tag in annotation
             ]
 
         return json_dict

@@ -43,13 +43,17 @@ import sem
 from sem.modules.tagger import load_master, main as tagger
 from sem.storage import Holder, SEMCorpus
 from sem.gui.components import (
-    SemTkMasterSelector, SemTkLangSelector, SemTkFileSelector, SemTkExportSelector,
-    SEMTkTrainInterface
+    SemTkMasterSelector,
+    SemTkLangSelector,
+    SemTkFileSelector,
+    SemTkExportSelector,
+    SEMTkTrainInterface,
 )
 from sem.logger import default_handler
 
 gui_logger = logging.getLogger("sem.gui")
 gui_logger.addHandler(default_handler)
+
 
 class SemTkMainWindow(ttk.Frame):
     def __init__(self, root, resource_dir, log_level="INFO"):
@@ -86,9 +90,7 @@ class SemTkMainWindow(ttk.Frame):
         self.master.pack()
 
         self.file_selector = SemTkFileSelector(
-            self.file_select_zone,
-            self,
-            button_opt={'fill': "both", 'padx': 5, 'pady': 5}
+            self.file_select_zone, self, button_opt={"fill": "both", "padx": 5, "pady": 5}
         )
         self.file_selector.pack()
         root.bind("<Control-o>", self.file_selector.filenames)
@@ -97,18 +99,14 @@ class SemTkMainWindow(ttk.Frame):
         self.export_format_selector.pack()
 
         self.launch_button = ttk.Button(
-            self.launch_zone,
-            text="launch SEM",
-            command=self.launch_tagger
+            self.launch_zone, text="launch SEM", command=self.launch_tagger
         )
         self.launch_button.pack(expand=True)
         self.haw = tkinter.PhotoImage(file=str(self.resource_dir / "images" / "haw_24_24.gif"))
         self.launch_button.config(image=self.haw, compound=tkinter.LEFT)
 
         self.train_button = ttk.Button(
-            self.launch_zone,
-            text="train SEM",
-            command=self.train_tagger
+            self.launch_zone, text="train SEM", command=self.train_tagger
         )
         self.train_button.pack(expand=True)
         self.university = tkinter.PhotoImage(
@@ -135,18 +133,19 @@ class SemTkMainWindow(ttk.Frame):
         try:
             export_format = self.export_format_selector.export_format()
             pipeline, workflow_options, exporter, couples = load_master(
-                masterfile,
-                force_format=export_format
+                masterfile, force_format=export_format
             )
-            args = Holder(**{
-                "infiles": [],
-                "output_directory": output_dir,
-                "pipeline": pipeline,
-                "options": workflow_options,
-                "exporter": exporter,
-                "couples": couples,
-                "n_procs": 0
-            })
+            args = Holder(
+                **{
+                    "infiles": [],
+                    "output_directory": output_dir,
+                    "pipeline": pipeline,
+                    "options": workflow_options,
+                    "exporter": exporter,
+                    "couples": couples,
+                    "n_procs": 0,
+                }
+            )
             for current_file in current_files:
                 corpus = None
                 try:
@@ -165,8 +164,7 @@ class SemTkMainWindow(ttk.Frame):
             return
         gui_logger.info("files are located in: {}".format(output_dir))
         tkinter.messagebox.showinfo(
-            "launching SEM",
-            "Everything went ok! files are located in: {}".format(output_dir)
+            "launching SEM", "Everything went ok! files are located in: {}".format(output_dir)
         )
         return
 
@@ -188,15 +186,25 @@ _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
     pathlib.Path(__file__).stem,
-    description="Launched GUI for SEM for tagging documents and training new models."
+    description="Launched GUI for SEM for tagging documents and training new models.",
 )
 
-parser.add_argument("resources", nargs="?", default=sem.SEM_RESOURCE_DIR,
-                    help="The directory where resources are. If not provided,"
-                         " will use current installation's resources.")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="INFO",
-                    help="Increase log level (default: critical)")
+parser.add_argument(
+    "resources",
+    nargs="?",
+    default=sem.SEM_RESOURCE_DIR,
+    help="The directory where resources are. If not provided,"
+    " will use current installation's resources.",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="INFO",
+    help="Increase log level (default: critical)",
+)
+
 
 def main(args):
     root = tkinter.Tk()

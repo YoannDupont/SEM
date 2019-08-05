@@ -40,8 +40,12 @@ from sem.storage.annotation import chunk_annotation_from_sentence
 
 from sem.storage import Trie
 
+
 def compile_chunks(sentence, column=-1):
-    return [[a.value, a.lb, a.ub] for a in chunk_annotation_from_sentence(sentence, column).annotations]
+    return [
+        [a.value, a.lb, a.ub] for a in chunk_annotation_from_sentence(sentence, column).annotations
+    ]
+
 
 class LexicaFeature(MultiwordDictionaryFeature):
     def __init__(self, path, entry, field, order=".order", input_encoding="utf-8", *args, **kwargs):
@@ -60,7 +64,7 @@ class LexicaFeature(MultiwordDictionaryFeature):
                 for line in input_stream:
                     line = line.strip()
                     if "#" in line:
-                        line = line[ : line.index("#")].strip()
+                        line = line[: line.index("#")].strip()
                     if line:
                         self.order.append(line)
         else:
@@ -70,15 +74,12 @@ class LexicaFeature(MultiwordDictionaryFeature):
 
         for name in self.order:
             with open(
-                pathlib.Path(self._path) / name,
-                "r",
-                encoding=input_encoding,
-                newline=""
+                pathlib.Path(self._path) / name, "r", encoding=input_encoding, newline=""
             ) as input_stream:
                 entries = input_stream.read().strip().replace("\r", "").split("\n")
             for entry in entries:
                 try:
-                    entry = entry[ : entry.index("#")]
+                    entry = entry[: entry.index("#")]
                 except Exception:
                     pass
                 entry = entry.strip()
@@ -86,11 +87,11 @@ class LexicaFeature(MultiwordDictionaryFeature):
                     self._value.add_with_value(entry.split(), name)
 
     def __call__(self, list2dict, *args, **kwargs):
-        l = ["O" for _ in range(len(list2dict))]
+        res = ["O" for _ in range(len(list2dict))]
         tmp = self._value._data
         length = len(list2dict)
         fst = 0
-        lst = -1 # last match found
+        lst = -1  # last match found
         cur = 0
         entry = self._entry
         ckey = None  # Current KEY
@@ -100,7 +101,7 @@ class LexicaFeature(MultiwordDictionaryFeature):
             cont = True
             while cont and (cur < length):
                 ckey = list2dict[cur][entry]
-                if l[cur] == "O":
+                if res[cur] == "O":
                     if NUL in tmp:
                         lst = cur
                         value = tmp[NUL]
@@ -127,7 +128,9 @@ class LexicaFeature(MultiwordDictionaryFeature):
             lst = -1
 
         if NUL in self._value._data.get(list2dict[-1][entry], []):
-            entities.append([self._value._data[list2dict[-1][entry]][NUL], len(list2dict)-1, len(list2dict)])
+            entities.append(
+                [self._value._data[list2dict[-1][entry]][NUL], len(list2dict) - 1, len(list2dict)]
+            )
 
         if self._field in list2dict[0]:
             gold = compile_chunks(list2dict, self._field)
@@ -145,7 +148,7 @@ class LexicaFeature(MultiwordDictionaryFeature):
             for i in reversed(range(len(gold))):
                 r = gold[i]
                 for e in entities:
-                    if (r[1] >= e[1] and r[2] <= e[2]):
+                    if r[1] >= e[1] and r[2] <= e[2]:
                         del gold[i]
                         break
         else:
@@ -153,23 +156,25 @@ class LexicaFeature(MultiwordDictionaryFeature):
 
         for r in gold + entities:
             appendice = "-{}".format(r[0])
-            l[r[1]] = "B{}".format(appendice)
-            for i in range(r[1]+1, r[2]):
-                l[i] = "I".format(appendice)
+            res[r[1]] = "B{}".format(appendice)
+            for i in range(r[1] + 1, r[2]):
+                res[i] = "I".format(appendice)
 
-        return l
+        return res
+
 
 class Annotator(RootAnnotator):
-    def __init__(self, field, location, token_field="word", input_encoding="utf-8", *args, **kwargs):
-        super(Annotator, self).__init__(field, location, input_encoding=input_encoding, *args, **kwargs)
+    def __init__(
+        self, field, location, token_field="word", input_encoding="utf-8", *args, **kwargs
+    ):
+        super(Annotator, self).__init__(
+            field, location, input_encoding=input_encoding, *args, **kwargs
+        )
 
         self._token_field = token_field
 
         self._feature = LexicaFeature(
-            self._location,
-            self._token_field,
-            self._field,
-            input_encoding=input_encoding
+            self._location, self._token_field, self._field, input_encoding=input_encoding
         )
 
     def process_document(self, document, annotation_fields=None, *args, **kwargs):

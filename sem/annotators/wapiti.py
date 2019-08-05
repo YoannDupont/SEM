@@ -42,15 +42,20 @@ wapiti_logger = logging.getLogger("sem.annotators.wapiti")
 wapiti_logger.addHandler(default_handler)
 wapiti_logger.setLevel("INFO")
 
+
 class Annotator(RootAnnotator):
     def __init__(self, field, location, input_encoding=None, *args, **kwargs):
-        super(Annotator, self).__init__(field, location, input_encoding=input_encoding, *args, **kwargs)
+        super(Annotator, self).__init__(
+            field, location, input_encoding=input_encoding, *args, **kwargs
+        )
 
         check_model_available(self._location, logger=wapiti_logger)
 
         self._model = WapitiModel.from_wapiti_model(self._location, encoding=input_encoding)
 
-    def process_document(self, document, annotation_name=None, annotation_fields=None, *args, **kwargs):
+    def process_document(
+        self, document, annotation_name=None, annotation_fields=None, *args, **kwargs
+    ):
         if annotation_name is None:
             annotation_name = str(self._field)
 

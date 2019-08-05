@@ -35,7 +35,9 @@ import logging
 # the SEM logging format(s)
 logging_format = "%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s\t%(message)s"
 logging_formatter = logging.Formatter(fmt=logging_format)
-extended_logging_format = "%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s:%(lineno)d\t%(message)s"
+extended_logging_format = (
+    "%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s:%(lineno)d\t%(message)s"
+)
 extended_logging_formatter = logging.Formatter(fmt=extended_logging_format)
 
 # the default handler used by SEM to log on command-line
@@ -43,6 +45,7 @@ default_handler = logging.StreamHandler()
 default_handler.setFormatter(logging_formatter)
 extended_handler = logging.StreamHandler()
 extended_handler.setFormatter(extended_logging_formatter)
+
 
 def file_handler(filename, mode="a", encoding=None, delay=False):
     """A wrapper of logging.FileHandler that returns a logging.FileHandler with the SEM format"""

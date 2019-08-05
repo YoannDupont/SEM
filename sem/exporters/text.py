@@ -33,8 +33,9 @@ SOFTWARE.
 from sem.exporters.exporter import Exporter as DefaultExporter
 from sem.storage.annotation import (
     tag_annotation_from_sentence as get_pos,
-    chunk_annotation_from_sentence as get_chunks
+    chunk_annotation_from_sentence as get_chunks,
 )
+
 
 class Exporter(DefaultExporter):
     __ext = "txt"
@@ -66,21 +67,25 @@ class Exporter(DefaultExporter):
 
             if "pos" in lower and lower["pos"] in corpus:
                 for annotation in get_pos(sentence, lower["pos"]):
-                    tokens[annotation.ub-1] += "/{}".format(annotation.value)
+                    tokens[annotation.ub - 1] += "/{}".format(annotation.value)
                     # regrouping tokens for tags spanning over >2 tokens
-                    for i in range(annotation.lb, annotation.ub-1):
-                        tokens[i+1] = "{}{}{}".format(tokens[i], "_", tokens[i+1])
+                    for i in range(annotation.lb, annotation.ub - 1):
+                        tokens[i + 1] = "{}{}{}".format(tokens[i], "_", tokens[i + 1])
                         tokens[i] = ""
 
             if "chunking" in lower and lower["chunking"] in corpus:
                 for annotation in get_chunks(sentence, lower["chunking"]):
-                    tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
-                    tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
+                    tokens[annotation.lb] = "({0} {1}".format(
+                        annotation.value, tokens[annotation.lb]
+                    )
+                    tokens[annotation.ub - 1] = "{0} )".format(tokens[annotation.ub - 1])
 
             if "ner" in lower and lower["ner"] in corpus:
                 for annotation in get_chunks(sentence, lower["ner"]):
-                    tokens[annotation.lb] = "({0} {1}".format(annotation.value, tokens[annotation.lb])
-                    tokens[annotation.ub-1] = "{0} )".format(tokens[annotation.ub-1])
+                    tokens[annotation.lb] = "({0} {1}".format(
+                        annotation.value, tokens[annotation.lb]
+                    )
+                    tokens[annotation.ub - 1] = "{0} )".format(tokens[annotation.ub - 1])
 
             # if regrouping tokens, some are empty and would generate superfluous spaces
             tokens = [token for token in tokens if token != ""]

@@ -39,6 +39,7 @@ except ImportError:
 
 from sem.exporters.exporter import Exporter as DefaultExporter
 
+
 class Exporter(DefaultExporter):
     __ext = "html"
 
@@ -61,13 +62,12 @@ class Exporter(DefaultExporter):
     def make_escaped_content(self, document):
         content = document.content
         tokens = document.segmentation("tokens")
-        escaped_tokens = [cgi.escape(content[token.lb : token.ub]) for token in tokens]
+        escaped_tokens = [cgi.escape(content[token.lb: token.ub]) for token in tokens]
         escaped_nontokens = [
-            cgi.escape(content[tokens[i].ub : tokens[i+1].lb])
-            for i in range(len(tokens)-1)
+            cgi.escape(content[tokens[i].ub: tokens[i + 1].lb]) for i in range(len(tokens) - 1)
         ]
-        escaped_nontokens.insert(0, cgi.escape(content[0 : tokens[0].lb]))
-        escaped_nontokens.append(cgi.escape(content[tokens[-1].ub : len(content)]))
+        escaped_nontokens.insert(0, cgi.escape(content[0: tokens[0].lb]))
+        escaped_nontokens.append(cgi.escape(content[tokens[-1].ub: len(content)]))
 
         return escaped_tokens, escaped_nontokens
 
@@ -86,8 +86,7 @@ class Exporter(DefaultExporter):
         current_key = entry_names.get("chunking", None)
         if current_key and current_key in document.annotations:
             chunk_html = self.add_annotation_document(
-                document,
-                entry_names.get("chunk", entry_names["chunking"])
+                document, entry_names.get("chunk", entry_names["chunking"])
             )
         current_key = entry_names.get("ner", None)
         if current_key and current_key in document.annotations:
@@ -103,13 +102,15 @@ class Exporter(DefaultExporter):
         last = len(content)
         for annotation in annotations:
             parts.append(
-                cgi.escape(content[annotation.ub : last])
-                .replace("\n", "<br />\n").replace("\r<br />", "<br />\r")
+                cgi.escape(content[annotation.ub: last])
+                .replace("\n", "<br />\n")
+                .replace("\r<br />", "<br />\r")
             )
-            parts.append('</span>')
+            parts.append("</span>")
             parts.append(
-                cgi.escape(content[annotation.lb : annotation.ub])
-                .replace("\n", "<br />\n").replace("\r<br />", "<br />\r")
+                cgi.escape(content[annotation.lb: annotation.ub])
+                .replace("\n", "<br />\n")
+                .replace("\r<br />", "<br />\r")
             )
             parts.append('<span id="{0}" title="{0}">'.format(annotation.value))
             last = annotation.lb
@@ -157,33 +158,57 @@ class Exporter(DefaultExporter):
         #
 
         if pos != []:
-            html_page.append("""
+            html_page.append(
+                """
                 <input id="tab{0}" type="radio" name="tabs"{1} />
-                <label for="tab{0}">Part-Of-Speech</label>""".format(nth, checked(nth)))
-            annots.append("""
+                <label for="tab{0}">Part-Of-Speech</label>""".format(
+                    nth, checked(nth)
+                )
+            )
+            annots.append(
+                """
                 <section id="content{0}" class="tab-content">
 {1}
-                </section>""".format(nth, pos))
+                </section>""".format(
+                    nth, pos
+                )
+            )
             nth += 1
 
         if chunk != []:
-            html_page.append("""
+            html_page.append(
+                """
                 <input id="tab{0}" type="radio" name="tabs"{1} />
-                <label for="tab{0}">Chunking</label>""".format(nth, checked(nth)))
-            annots.append("""
+                <label for="tab{0}">Chunking</label>""".format(
+                    nth, checked(nth)
+                )
+            )
+            annots.append(
+                """
                 <section id="content{0}" class="tab-content">
 {1}
-                </section>""".format(nth, chunk))
+                </section>""".format(
+                    nth, chunk
+                )
+            )
             nth += 1
 
         if ner != []:
-            html_page.append("""
+            html_page.append(
+                """
                 <input id="tab{0}" type="radio" name="tabs"{1} />
-                <label for="tab{0}">Named Entity</label>""".format(nth, checked(nth)))
-            annots.append("""
+                <label for="tab{0}">Named Entity</label>""".format(
+                    nth, checked(nth)
+                )
+            )
+            annots.append(
+                """
                 <section id="content{0}" class="tab-content">
 {1}
-                </section>""".format(nth, ner))
+                </section>""".format(
+                    nth, ner
+                )
+            )
             nth += 1
 
         # annotations are put after the tab declarations
@@ -191,12 +216,14 @@ class Exporter(DefaultExporter):
             html_page.append(annot)
 
         # closing everything that remains to be closed
-        html_page.append("""
+        html_page.append(
+            """
             </div>
         </div>
     </body>
 </html>
-""")
+"""
+        )
 
         return "".join(html_page)
 
@@ -204,9 +231,10 @@ class Exporter(DefaultExporter):
         """
         returns an ElementTree object (ATM) of the HTML page.
         """
-        return ET.ElementTree(ET.fromstring(self.document_to_unicode(
-            document,
-            couples,
-            encoding=kwargs.pop("encoding", "utf-8"),
-            **kwargs
-        )))
+        return ET.ElementTree(
+            ET.fromstring(
+                self.document_to_unicode(
+                    document, couples, encoding=kwargs.pop("encoding", "utf-8"), **kwargs
+                )
+            )
+        )

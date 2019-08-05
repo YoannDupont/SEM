@@ -31,11 +31,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .feature import Feature
+from sem.features.feature import Feature
+
 
 class GetterFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(GetterFeature, self).__init__(*args, **kwargs)
+
 
 class IdentityFeature(GetterFeature):
     """
@@ -44,12 +46,16 @@ class IdentityFeature(GetterFeature):
     in a sentence. This may cause performance issue, but it is the only
     way currently known to have an "feature package" that is consistent.
     """
+
     def __init__(self, *args, **kwargs):
         super(IdentityFeature, self).__init__(*args, **kwargs)
 
     def __call__(self, element, *args, **kwargs):
         return element
+
+
 DEFAULT_GETTER = IdentityFeature()
+
 
 class DictGetterFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
@@ -60,10 +66,11 @@ class DictGetterFeature(GetterFeature):
     def __call__(self, list2dict, position, *args, **kwargs):
         current_position = position + self.shift
 
-        if not(0 <= current_position < len(list2dict)):
+        if not (0 <= current_position < len(list2dict)):
             return None
 
         return list2dict[current_position].get(self.entry, None)
+
 
 class SentenceGetterFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
@@ -74,29 +81,32 @@ class SentenceGetterFeature(GetterFeature):
     def __call__(self, list2dict, position, *args, **kwargs):
         current_position = position + self.shift
 
-        if not(0 <= current_position < len(list2dict)):
+        if not (0 <= current_position < len(list2dict)):
             return None
 
         return list2dict.get(current_position, self.entry)
+
 
 class FindFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
         super(FindFeature, self).__init__(*args, **kwargs)
         self._matcher = args[0]
         self._return_entry = kwargs.get("return_entry", "word")
-        assert \
-            self._matcher is not None and self._matcher.is_boolean, \
-            "Matcher field in FindFeature does not return a boolean."
+        assert (
+            self._matcher is not None and self._matcher.is_boolean
+        ), "Matcher field in FindFeature does not return a boolean."
+
 
 class FindForwardFeature(FindFeature):
     def __init__(self, *args, **kwargs):
         super(FindForwardFeature, self).__init__(*args, **kwargs)
 
     def __call__(self, list2dict, position, *args, **kwargs):
-        for X in range(position+1, len(list2dict)):
+        for X in range(position + 1, len(list2dict)):
             if self._matcher(list2dict, X):
                 return list2dict[X][self._return_entry]
         return None
+
 
 class FindBackwardFeature(FindFeature):
     def __init__(self, *args, **kwargs):
@@ -108,6 +118,7 @@ class FindBackwardFeature(FindFeature):
                 return list2dict[X][self._return_entry]
         return None
 
+
 class ListGetterFeature(GetterFeature):
     def __init__(self, *args, **kwargs):
         super(ListGetterFeature, self).__init__(*args, **kwargs)
@@ -117,7 +128,7 @@ class ListGetterFeature(GetterFeature):
     def __call__(self, list2dict, position, *args, **kwargs):
         current_position = position + self.shift
 
-        if not(0 <= current_position < len(list2dict)):
+        if not (0 <= current_position < len(list2dict)):
             return None
 
         return list2dict[current_position][self.index]

@@ -30,7 +30,8 @@ from sem.storage import Span
 
 try:
     from importlib import import_module
-except ImportError: # backward compatibility for python < 2.7
+except ImportError:  # backward compatibility for python < 2.7
+
     def import_module(module_name):
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
 
@@ -43,6 +44,6 @@ def bounds2spans(bounds):
     """
     creates spans from bounds
     """
-    spans = [Span(bounds[i].ub, bounds[i+1].lb) for i in range(0, len(bounds)-1)]
+    spans = [Span(bounds[i].ub, bounds[i + 1].lb) for i in range(0, len(bounds) - 1)]
     spans = [span for span in spans if span.lb != span.ub]
     return spans

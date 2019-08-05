@@ -47,23 +47,24 @@ from sem.logger import default_handler
 decompile_dictionary_logger = logging.getLogger("sem.decompile_dictionary")
 decompile_dictionary_logger.addHandler(default_handler)
 
-# in token dictionaries, one entry = one token
+
 def _entry_token(token):
+    """in token dictionaries, one entry = one token"""
     return token
 
-# in multiword dictionaries, one entry = multiple tokens
+
 def _entry_multiword(tokens):
+    """in multiword dictionaries, one entry = multiple tokens"""
     return " ".join(tokens)
 
-_entry = {
-    "token": _entry_token,
-    "multiword": _entry_multiword
-}
+
+_entry = {"token": _entry_token, "multiword": _entry_multiword}
 _choices = set(_entry.keys())
 
-def decompile_dictionary(infile, outfile, kind="token",
-                         oenc="UTF-8",
-                         log_level=logging.CRITICAL, log_file=None):
+
+def decompile_dictionary(
+    infile, outfile, kind="token", oenc="UTF-8", log_level=logging.CRITICAL, log_file=None
+):
     if log_file is not None:
         decompile_dictionary_logger.addHandler(file_handler(log_file))
     decompile_dictionary_logger.setLevel(log_level)
@@ -71,11 +72,9 @@ def decompile_dictionary(infile, outfile, kind="token",
     if kind not in _choices:
         raise RuntimeError("Invalid kind: {0}".format(kind))
 
-    decompile_dictionary_logger.info('compiling {0} dictionary from "{1}" to "{2}"'.format(
-        kind,
-        infile,
-        outfile
-    ))
+    decompile_dictionary_logger.info(
+        'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile)
+    )
 
     resource = pickle.load(open(infile))
     entry = _entry[kind]
@@ -95,33 +94,49 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Takes a dictionary and compiles it in a readable format for the enrich module."
-                    " A dictionary is a text file containing one entry per line."
-                    " There are two kinds of dictionaries:"
-                    " those that only contain entries which apply to a single token (token), and"
-                    " those with entries which may be applied to sequences of tokens (multiword)."
+        " A dictionary is a text file containing one entry per line."
+        " There are two kinds of dictionaries:"
+        " those that only contain entries which apply to a single token (token), and"
+        " those with entries which may be applied to sequences of tokens (multiword)."
     )
 
-    parser.add_argument("infile",
-                        help="The input file (one term per line)")
-    parser.add_argument("outfile",
-                        help="The output file (pickled file)")
-    parser.add_argument("-k", "--kind", choices=_choices, dest="kind", default="token",
-                        help="The kind of entries that the dictionary contains"
-                             " (default: %(default)s)")
-    parser.add_argument("-o", "--output-encoding", dest="oenc", default="utf-8",
-                        help="Encoding of the output (default: %(default)s)")
-    parser.add_argument("-l", "--log", dest="log_level", action="count",
-                        help="Increase log level (default: critical)")
-    parser.add_argument("--log-file", dest="log_file",
-                        help="The name of the log file")
+    parser.add_argument("infile", help="The input file (one term per line)")
+    parser.add_argument("outfile", help="The output file (pickled file)")
+    parser.add_argument(
+        "-k",
+        "--kind",
+        choices=_choices,
+        dest="kind",
+        default="token",
+        help="The kind of entries that the dictionary contains" " (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-encoding",
+        dest="oenc",
+        default="utf-8",
+        help="Encoding of the output (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log",
+        dest="log_level",
+        action="count",
+        help="Increase log level (default: critical)",
+    )
+    parser.add_argument("--log-file", dest="log_file", help="The name of the log file")
 
     if __package__:
         args = parser.parse_args(sys.argv[2:])
     else:
         args = parser.parse_args()
 
-    decompile_dictionary(args.infile, args.outfile,
-                         kind=args.kind,
-                         oenc=args.oenc,
-                         log_level=args.log_level, log_file=args.log_file)
+    decompile_dictionary(
+        args.infile,
+        args.outfile,
+        kind=args.kind,
+        oenc=args.oenc,
+        log_level=args.log_level,
+        log_file=args.log_file,
+    )
     sys.exit(0)

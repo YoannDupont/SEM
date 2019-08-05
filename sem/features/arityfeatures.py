@@ -36,16 +36,17 @@ import re
 from sem.features.feature import Feature
 from sem.features.getterfeatures import DEFAULT_GETTER
 
+
 class ArityFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(ArityFeature, self).__init__(*args, **kwargs)
         self._getter = kwargs.pop("getter", DEFAULT_GETTER)
 
 
-
 class NullaryFeature(ArityFeature):
     def __init__(self, *args, **kwargs):
         super(NullaryFeature, self).__init__(*args, **kwargs)
+
 
 class BOSFeature(NullaryFeature):
     def __init__(self, *args, **kwargs):
@@ -55,13 +56,15 @@ class BOSFeature(NullaryFeature):
     def __call__(self, list2dict, position, *args, **kwargs):
         return position == 0
 
+
 class EOSFeature(NullaryFeature):
     def __init__(self, *args, **kwargs):
         super(EOSFeature, self).__init__(*args, **kwargs)
         self._is_boolean = True
 
     def __call__(self, list2dict, position, *args, **kwargs):
-        return position == len(list2dict)-1
+        return position == len(list2dict) - 1
+
 
 class LowerFeature(NullaryFeature):
     def __init__(self, *args, **kwargs):
@@ -70,20 +73,20 @@ class LowerFeature(NullaryFeature):
     def __call__(self, *args, **kwargs):
         return self._getter(*args, **kwargs).lower()
 
+
 class SubstringFeature(NullaryFeature):
-    def __init__(self, from_index=0, to_index=2**31, *args, **kwargs):
+    def __init__(self, from_index=0, to_index=2 ** 31, *args, **kwargs):
         super(SubstringFeature, self).__init__(from_index, to_index, *args, **kwargs)
         self._default = kwargs.pop("default", '""')
         self._from_index = int(from_index)
         self._to_index = int(to_index)
 
     def __call__(self, *args, **kwargs):
-        s = self._getter(*args, **kwargs)[self._from_index : self._to_index]
+        s = self._getter(*args, **kwargs)[self._from_index: self._to_index]
         if s:
             return s
         else:
             return self._default
-
 
 
 class UnaryFeature(ArityFeature):
@@ -91,6 +94,7 @@ class UnaryFeature(ArityFeature):
         super(UnaryFeature, self).__init__(*args, **kwargs)
         self._is_boolean = False
         self._element = element
+
 
 class IsUpperFeature(UnaryFeature):
     def __init__(self, index, *args, **kwargs):
@@ -102,12 +106,12 @@ class IsUpperFeature(UnaryFeature):
         return self._getter(*args, **kwargs)[self._index].isupper()
 
 
-
 class BinaryFeature(ArityFeature):
     def __init__(self, element1, element2, *args, **kwargs):
         super(BinaryFeature, self).__init__(*args, **kwargs)
         self._element1 = element1
         self._element2 = element2
+
 
 class SubstitutionFeature(BinaryFeature):
     def __init__(self, pattern, replacement, *args, **kwargs):
@@ -120,10 +124,10 @@ class SubstitutionFeature(BinaryFeature):
         return self._replacer.sub(self._replacement, self._getter(*args, **kwargs))
 
 
-
 class NaryFeature(ArityFeature):
     def __init__(self, *args, **kwargs):
         super(NaryFeature, self).__init__(self, *args, **kwargs)
+
 
 class SequencerFeature(NaryFeature):
     def __init__(self, *args, **kwargs):

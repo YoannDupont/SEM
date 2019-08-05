@@ -33,6 +33,7 @@ SOFTWARE.
 
 from sem.misc import str2bool
 
+
 class Feature(object):
     def __init__(self, *args, **kwargs):
         self._is_boolean = False
@@ -43,7 +44,7 @@ class Feature(object):
         self._display = str2bool(self._display)
 
     def __call__(self, *args, **kwargs):
-        raise TypeError('Cannot call {0} object'.format(self.__class__.__name__))
+        raise TypeError("Cannot call {0} object".format(self.__class__.__name__))
 
     @property
     def is_boolean(self):

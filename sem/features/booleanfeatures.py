@@ -32,15 +32,18 @@ SOFTWARE.
 
 from sem.features.feature import Feature
 
+
 class BooleanFeature(Feature):
     def __init__(self, *args, **kwargs):
         super(BooleanFeature, self).__init__(*args, **kwargs)
         self._is_boolean = True
 
+
 class UnaryFeature(BooleanFeature):
     def __init__(self, element, *args, **kwargs):
         super(UnaryFeature, self).__init__(element, *args, **kwargs)
         self.element = element
+
 
 class NotFeature(UnaryFeature):
     def __init__(self, element, *args, **kwargs):
@@ -49,11 +52,13 @@ class NotFeature(UnaryFeature):
     def __call__(self, *args, **kwargs):
         return not self.element(*args, **kwargs)
 
+
 class BinaryFeature(BooleanFeature):
     def __init__(self, left, right, *args, **kwargs):
         super(BinaryFeature, self).__init__(left, right, *args, **kwargs)
         self.left = left
         self.right = right
+
 
 class AndFeature(BinaryFeature):
     def __init__(self, left, right, *args, **kwargs):
@@ -61,6 +66,7 @@ class AndFeature(BinaryFeature):
 
     def __call__(self, *args, **kwargs):
         return self.left(*args, **kwargs) and self.right(*args, **kwargs)
+
 
 class OrFeature(BinaryFeature):
     def __init__(self, left, right, *args, **kwargs):

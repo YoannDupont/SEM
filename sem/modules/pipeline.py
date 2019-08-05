@@ -36,6 +36,7 @@ from sem.logger import default_handler
 pipeline_logger = logging.getLogger("sem.pipeline")
 pipeline_logger.addHandler(default_handler)
 
+
 class Pipeline(SEMModule):
     def __init__(self, pipes, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
         super(Pipeline, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
@@ -76,4 +77,4 @@ class Pipeline(SEMModule):
                 pipe.process_document(document, **kwargs)
             else:
                 pipeline_logger.warn("pipe %s not executed", pipe)
-        return document # allows multiprocessing
+        return document  # allows multiprocessing

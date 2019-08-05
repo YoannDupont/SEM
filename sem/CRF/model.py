@@ -1,4 +1,4 @@
-#-*- coding:utf-8-*-
+# -*- coding:utf-8-*-
 
 """
 file: model.py
@@ -33,6 +33,7 @@ import itertools
 from sem.storage import Coder
 from sem.CRF.template import ListPattern
 
+
 class Model(object):
     def __init__(self, constraints={}):
         self._tagset = Coder()
@@ -40,7 +41,7 @@ class Model(object):
         self._observations = Coder()
         self._uoff = []
         self._boff = []
-        self._weights = [] # list
+        self._weights = []  # list
         self._max_col = 0
 
     def __call__(self, x):
@@ -70,7 +71,7 @@ class Model(object):
         model._max_col = max_col
         line_index += 1
 
-        for line in lines[line_index : line_index+n_patterns]:
+        for line in lines[line_index: line_index + n_patterns]:
             line = line.split(":", 1)[1][:-1]
             model._templates.append(ListPattern.from_string(line))
         assert len(model.templates) == n_patterns
@@ -79,34 +80,34 @@ class Model(object):
         # labels
         n_labels = int(lines[line_index].strip().split("#")[-1])
         line_index += 1
-        for line in lines[line_index : line_index+n_labels]:
+        for line in lines[line_index: line_index + n_labels]:
             line = line.strip()
-            model.tagset.add(line[line.index(":") + 1 : -1])
+            model.tagset.add(line[line.index(":") + 1: -1])
         line_index += n_labels
         assert len(model.tagset) == n_labels
 
         # observations
         n_observations = int(lines[line_index].split("#")[-1])
         line_index += 1
-        model._uoff = [-1]*n_observations
-        model._boff = [-1]*n_observations
-        for line in lines[line_index : line_index+n_observations]:
-            obs = line[line.index(":") + 1 : -1]
-            n_feats = (n_labels if obs[0] in "u*" else 0)
-            n_feats += (n_labels**2 if obs[0] in "b*" else 0)
+        model._uoff = [-1] * n_observations
+        model._boff = [-1] * n_observations
+        for line in lines[line_index: line_index + n_observations]:
+            obs = line[line.index(":") + 1: -1]
+            n_feats = n_labels if obs[0] in "u*" else 0
+            n_feats += n_labels ** 2 if obs[0] in "b*" else 0
 
             model.observations.add(obs)
             if obs[0] in "u*":
-                model.uoff[len(model.observations)-1] = current_feature
+                model.uoff[len(model.observations) - 1] = current_feature
             if obs[0] in "b*":
-                model.boff[len(model.observations)-1] = current_feature
-                + (n_labels if obs[0] == "*" else 0)
+                model.boff[len(model.observations) - 1] = current_feature
+                +(n_labels if obs[0] == "*" else 0)
             current_feature += n_feats
         line_index += n_observations
-        model._weights = [0.0]*current_feature
+        model._weights = [0.0] * current_feature
 
         # features
-        for line in lines[-n_weights : ]:
+        for line in lines[-n_weights:]:
             index, weight = line.split("=")
             model.weights[int(index)] = float.fromhex(weight)
 
@@ -143,12 +144,12 @@ class Model(object):
         T = len(sentence)
         range_Y = range(Y)
         range_T = range(T)
-        psi = [[[0.0]*Y for _y1 in range_Y] for _t in range_T]
-        back = [[0]*Y for _t in range_T]
-        cur = [0.0]*Y
-        old = [0.0]*Y
-        psc = [0.0]*T
-        sc = -2**30
+        psi = [[[0.0] * Y for _y1 in range_Y] for _t in range_T]
+        back = [[0] * Y for _t in range_T]
+        cur = [0.0] * Y
+        old = [0.0] * Y
+        psc = [0.0] * T
+        sc = -2 ** 30
         tag = ["" for _t in range_T]
         # avoiding dots
         weights_ = self._weights
@@ -168,10 +169,10 @@ class Model(object):
                 obs = template.instanciate(sentence, t)
                 o = obs_encode(obs)
                 if o != -1:
-                    if obs[0] == 'u' and uoff_[o] != -1:
-                        u_append(weights_[uoff_[o] : uoff_[o]+Y])
-                    if obs[0] == 'b' and boff_[o] != -1:
-                        b_append(weights_[boff_[o] : boff_[o]+Y*Y])
+                    if obs[0] == "u" and uoff_[o] != -1:
+                        u_append(weights_[uoff_[o]: uoff_[o] + Y])
+                    if obs[0] == "b" and boff_[o] != -1:
+                        b_append(weights_[boff_[o]: boff_[o] + Y * Y])
 
         # compute scores in psi
         for t in range_T:
@@ -196,7 +197,7 @@ class Model(object):
             for y in range_Y:
                 old[y] = cur[y]
             for y in range_Y:
-                bst = -2**30
+                bst = -2 ** 30
                 idx = 0
                 for yp in range_Y:
                     val = old[yp] + psi[t][yp][y]
@@ -212,7 +213,7 @@ class Model(object):
                 bst = y
         sc = cur[bst]
         for t in reversed(range_T):
-            yp = (back[t][bst] if t != 0 else 0)
+            yp = back[t][bst] if t != 0 else 0
             y = bst
             tag[t] = self._tagset.decode(y)
             psc[t] = psi[t][yp][y]
@@ -247,28 +248,24 @@ class Model(object):
                 if o[0] == "u":
                     off = self.uoff[i]
                     for y in range(ntags):
-                        w = self.weights[off+y]
+                        w = self.weights[off + y]
                         if w != 0:
-                            output_stream.write("{0}\t{1}\t{2}\t{3:.5f}\n".format(
-                                o,
-                                '#',
-                                self.tagset.decode(y),
-                                w
-                            ))
+                            output_stream.write(
+                                "{0}\t{1}\t{2}\t{3:.5f}\n".format(o, "#", self.tagset.decode(y), w)
+                            )
                             written = True
                 else:
                     off = self.boff[i]
                     d = 0
                     for yp in range(ntags):
                         for y in range(ntags):
-                            w = self.weights[off+d]
+                            w = self.weights[off + d]
                             if w != 0:
-                                output_stream.write("{0}\t{1}\t{2}\t{3:.5f}\n".format(
-                                    o,
-                                    self.tagset.decode(yp),
-                                    self.tagset.decode(y),
-                                    w
-                                ))
+                                output_stream.write(
+                                    "{0}\t{1}\t{2}\t{3:.5f}\n".format(
+                                        o, self.tagset.decode(yp), self.tagset.decode(y), w
+                                    )
+                                )
                                 written = True
                             d += 1
                 if written:

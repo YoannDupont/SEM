@@ -53,6 +53,7 @@ import sem.modules.tagger
 annotation_gui_logger = logging.getLogger("sem.annotation_gui")
 annotation_gui_logger.addHandler(extended_handler)
 
+
 def update_annotations(document, annotation_name, annotations):
     annots = Annotation(annotation_name)
     annots.annotations = annotations
@@ -64,6 +65,7 @@ def update_annotations(document, annotation_name, annotations):
     if reference:
         document.set_reference(annotation_name, reference.name)
 
+
 def check_in_tagset(tag, tagset):
     ok = tag in tagset
     if not ok:
@@ -72,6 +74,7 @@ def check_in_tagset(tag, tagset):
             if ok:
                 break
     return ok
+
 
 class AnnotationTool(tkinter.Frame):
     def __init__(self, parent, log_level, documents=None, tagset=None, *args, **kwargs):
@@ -94,7 +97,7 @@ class AnnotationTool(tkinter.Frame):
             ["Ctrl+Shift+o", ["open url", self.openurl], [[self, True]]],
             ["Ctrl+s", ["save", self.save], [[self, True]]],
             ["Ctrl+t", ["train", self.train], [[self, True]]],
-            ["Ctrl+f", ["find", self.find_in_text], [[self, True]]]
+            ["Ctrl+f", ["find", self.find_in_text], [[self, True]]],
         ]
 
         self.lines_lengths = []
@@ -148,32 +151,34 @@ class AnnotationTool(tkinter.Frame):
         self.SPARE_COLORS_DEFAULT = []
         self.SPARE_COLORS_DEFAULT = [
             {"background": "#CCCCCC", "foreground": "#000000"},
-            {'foreground': '#374251', 'background': '#9ca9bc'},
-            {'foreground': '#4b3054', 'background': '#b28fbf'},
-            {'foreground': '#625e2d', 'background': '#d0cb99'},
-            {'foreground': '#454331', 'background': '#a7a383'},
-            {'foreground': '#79a602', 'background': '#e7fea8'},
-            {'background': '#C8A9DC', 'foreground': '#542D6E'},
-            {'background': '#C9B297', 'foreground': '#5C4830'},
-            {'foreground': '#426722', 'background': '#aad684'},
-            {'foreground': '#886c11', 'background': '#f1da91'},
-            {'foreground': '#275a5f', 'background': '#85c6cc'},
-            {'foreground': '#0a9b47', 'background': '#a3fac8'},
-            {'foreground': '#729413', 'background': '#e3f5af'},
-            {'foreground': '#a22800', 'background': '#ffb299'},
-            {'foreground': '#254084', 'background': '#bccaed'},
-            {'foreground': '#601194', 'background': '#d7a8f6'},
-            {'foreground': '#6c4c45', 'background': '#e6dad7'},
-            {'foreground': '#1461a1', 'background': '#cce5f9'},
-            {'foreground': '#8a570d', 'background': '#f4c888'},
-            {'foreground': '#813058', 'background': '#eecfde'}
+            {"foreground": "#374251", "background": "#9ca9bc"},
+            {"foreground": "#4b3054", "background": "#b28fbf"},
+            {"foreground": "#625e2d", "background": "#d0cb99"},
+            {"foreground": "#454331", "background": "#a7a383"},
+            {"foreground": "#79a602", "background": "#e7fea8"},
+            {"background": "#C8A9DC", "foreground": "#542D6E"},
+            {"background": "#C9B297", "foreground": "#5C4830"},
+            {"foreground": "#426722", "background": "#aad684"},
+            {"foreground": "#886c11", "background": "#f1da91"},
+            {"foreground": "#275a5f", "background": "#85c6cc"},
+            {"foreground": "#0a9b47", "background": "#a3fac8"},
+            {"foreground": "#729413", "background": "#e3f5af"},
+            {"foreground": "#a22800", "background": "#ffb299"},
+            {"foreground": "#254084", "background": "#bccaed"},
+            {"foreground": "#601194", "background": "#d7a8f6"},
+            {"foreground": "#6c4c45", "background": "#e6dad7"},
+            {"foreground": "#1461a1", "background": "#cce5f9"},
+            {"foreground": "#8a570d", "background": "#f4c888"},
+            {"foreground": "#813058", "background": "#eecfde"},
         ]
-        self.SPARE_COLORS_DEFAULT.extend([
-            {"background": "#DDFFDD", "foreground": "#008800"},
-            {"background": "#CCCCFF", "foreground": "#0000FF"},
-            {"background": "#CCEEEE", "foreground": "#008888"},
-            {"background": "#FFCCCC", "foreground": "#FF0000"}
-        ])
+        self.SPARE_COLORS_DEFAULT.extend(
+            [
+                {"background": "#DDFFDD", "foreground": "#008800"},
+                {"background": "#CCCCFF", "foreground": "#0000FF"},
+                {"background": "#CCEEEE", "foreground": "#008888"},
+                {"background": "#FFCCCC", "foreground": "#FF0000"},
+            ]
+        )
         self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
 
         self.bind_all("<Control-o>", self.openfile_gui)
@@ -186,8 +191,9 @@ class AnnotationTool(tkinter.Frame):
         self.bind_all("<Tab>", self.tab)
         self.bind_all("<Shift-Tab>", self.shift_tab)
 
-        self.available_chars_set = list("abcdefghijklmnopqrstuvwxyz") \
-            + ['F{}'.format(i) for i in range(1, 13)]
+        self.available_chars_set = list("abcdefghijklmnopqrstuvwxyz") + [
+            "F{}".format(i) for i in range(1, 13)
+        ]
         self.SELECT_TYPE = "-- select type --"
         self.wish_to_add = []
 
@@ -202,9 +208,7 @@ class AnnotationTool(tkinter.Frame):
         self.train_btn.configure(state=tkinter.DISABLED)
 
         self.tag_document_btn = tkinter.ttk.Button(
-            self.toolbar,
-            text="tag document",
-            command=self.tag_document
+            self.toolbar, text="tag document", command=self.tag_document
         )
         self.tag_document_btn.pack(side="left")
         self.tag_document_btn.configure(state=tkinter.DISABLED)
@@ -215,8 +219,7 @@ class AnnotationTool(tkinter.Frame):
 
         self.corpus_tree = tkinter.ttk.Treeview(self.annotation_row)
         self.corpus_tree_scrollbar = tkinter.ttk.Scrollbar(
-            self.annotation_row,
-            command=self.corpus_tree.yview
+            self.annotation_row, command=self.corpus_tree.yview
         )
         self.corpus_tree.configure(yscroll=self.corpus_tree_scrollbar.set)
         self.corpus_tree.heading("#0", text="corpus", anchor=tkinter.W)
@@ -226,9 +229,7 @@ class AnnotationTool(tkinter.Frame):
         self.corpus_doc2id = {}
 
         self.text = tkinter.scrolledtext.ScrolledText(
-            self.annotation_row,
-            wrap=tkinter.WORD,
-            font="Helvetica"
+            self.annotation_row, wrap=tkinter.WORD, font="Helvetica"
         )
         self.text.configure(state="disabled")
         self.text.bind("<Shift-Tab>", self.shift_tab)
@@ -266,7 +267,7 @@ class AnnotationTool(tkinter.Frame):
         self.tree.bind("<Delete>", self.delete)
         self.tree.bind("<Shift-Delete>", self.delete_all)
 
-        ## configuring a tag called BOLD
+        # configuring a tag called BOLD
         bold_font = tkinter.font.Font(self.text)
         bold_font.configure(weight="bold")
         self.text.tag_configure("BOLD", font=bold_font)
@@ -298,7 +299,7 @@ class AnnotationTool(tkinter.Frame):
             self.corpus_tree.focus(ident)
             self.corpus_tree.see(ident)
             self.load_document()
-        #skip_auth=> self.auth()
+        # skip_auth=> self.auth()
 
     @property
     def whole_word(self):
@@ -317,11 +318,12 @@ class AnnotationTool(tkinter.Frame):
         def close():
             sys.exit(0)
 
-        authTop.protocol('WM_DELETE_WINDOW', close)
+        authTop.protocol("WM_DELETE_WINDOW", close)
 
         def check_auth():
             import time
             import hashlib
+
             pwd = auth_pw.get()
             if pwd == "":
                 print("Please enter non empty password")
@@ -329,8 +331,7 @@ class AnnotationTool(tkinter.Frame):
                 content = open(".users").read()
                 if (
                     "d033e22ae348aeb5660fc2140aec35850c4da997"
-                    "aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n"
-                    not in content
+                    "aee5aca44055f2cd2f2ce4266909b69a5d96dad2\n" not in content
                 ):
                     print(
                         "Something fishy about your .user file,"
@@ -353,15 +354,12 @@ class AnnotationTool(tkinter.Frame):
                 if checked:
                     self.user = auth_login.get()[:]
                     tkinter.messagebox.showinfo(
-                        "Login success",
-                        "Logged succesfuly as {0}".format(self.user)
+                        "Login success", "Logged succesfuly as {0}".format(self.user)
                     )
 
                     if self.user == "admin":
                         self.add_user_btn = tkinter.ttk.Button(
-                            self.toolbar,
-                            text="add user",
-                            command=self.add_user
+                            self.toolbar, text="add user", command=self.add_user
                         )
                         self.add_user_btn.pack(side="left")
 
@@ -377,17 +375,17 @@ class AnnotationTool(tkinter.Frame):
                 print("Could not find .user file, rewriting it with admin user only.")
 
         authLabel = tkinter.Label(authTop, text="Enter credentials:")
-        authLabel.grid(row=0, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
+        authLabel.grid(row=0, column=0, sticky=tkinter.W + tkinter.E, columnspan=2)
 
-        tkinter.Label(authTop, text='login').grid(row=1, column=0, sticky=tkinter.W)
+        tkinter.Label(authTop, text="login").grid(row=1, column=0, sticky=tkinter.W)
         auth_login_entry = tkinter.Entry(authTop, textvariable=auth_login)
         auth_login_entry.grid(row=1, column=1, sticky=tkinter.W)
-        tkinter.Label(authTop, text='password').grid(row=2, column=0, sticky=tkinter.W)
+        tkinter.Label(authTop, text="password").grid(row=2, column=0, sticky=tkinter.W)
         auth_pw_entry = tkinter.Entry(authTop, textvariable=auth_pw, show="*")
         auth_pw_entry.grid(row=2, column=1, sticky=tkinter.W)
 
         login_btn = tkinter.ttk.Button(authTop, text="login", command=check_auth)
-        login_btn.grid(row=3, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
+        login_btn.grid(row=3, column=0, sticky=tkinter.W + tkinter.E, columnspan=2)
 
     def add_user(self, event=None):
         authTop = tkinter.Toplevel()
@@ -397,6 +395,7 @@ class AnnotationTool(tkinter.Frame):
 
         def check_auth():
             import hashlib
+
             pwd = auth_pw.get()
             if pwd == "":
                 print("Please enter non empty password")
@@ -405,8 +404,7 @@ class AnnotationTool(tkinter.Frame):
                 lines = [line.strip() for line in open(".users").readlines()]
                 if (
                     "d033e22ae348aeb5660fc2140aec35850c4da997"
-                    "aee5aca44055f2cd2f2ce4266909b69a5d96dad2"
-                    not in lines
+                    "aee5aca44055f2cd2f2ce4266909b69a5d96dad2" not in lines
                 ):
                     print(
                         "Something fishy about your .user file,"
@@ -426,16 +424,14 @@ class AnnotationTool(tkinter.Frame):
                 for line in lines:
                     if line.startswith(login):
                         tkinter.messagebox.showerror(
-                            "Cannot add user",
-                            "User {0} already exists".format(auth_login.get())
+                            "Cannot add user", "User {0} already exists".format(auth_login.get())
                         )
                         return
 
                 with open(".users", "a") as output_stream:
                     output_stream.write("{0}{1}\n".format(login, pw))
                 tkinter.messagebox.showinfo(
-                    "New user",
-                    "Succesfuly added user {0}".format(auth_login.get())
+                    "New user", "Succesfuly added user {0}".format(auth_login.get())
                 )
                 authTop.destroy()
             except IOError:
@@ -447,24 +443,24 @@ class AnnotationTool(tkinter.Frame):
                 print("Could not find .user file, rewriting it with admin user only.")
 
         authLabel = tkinter.Label(authTop, text="Enter credentials:")
-        authLabel.grid(row=0, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
+        authLabel.grid(row=0, column=0, sticky=tkinter.W + tkinter.E, columnspan=2)
 
-        tkinter.Label(authTop, text='login').grid(row=1, column=0, sticky=tkinter.W)
+        tkinter.Label(authTop, text="login").grid(row=1, column=0, sticky=tkinter.W)
         auth_login_entry = tkinter.Entry(authTop, textvariable=auth_login)
         auth_login_entry.grid(row=1, column=1, sticky=tkinter.W)
-        tkinter.Label(authTop, text='password').grid(row=2, column=0, sticky=tkinter.W)
+        tkinter.Label(authTop, text="password").grid(row=2, column=0, sticky=tkinter.W)
         auth_pw_entry = tkinter.Entry(authTop, textvariable=auth_pw, show="*")
         auth_pw_entry.grid(row=2, column=1, sticky=tkinter.W)
 
         login_btn = tkinter.ttk.Button(authTop, text="login", command=check_auth)
-        login_btn.grid(row=3, column=0, sticky=tkinter.W+tkinter.E, columnspan=2)
+        login_btn.grid(row=3, column=0, sticky=tkinter.W + tkinter.E, columnspan=2)
 
     #
     # file menu methods
     #
 
     def openfile(self, filenames):
-        chunks_to_load = ([self.annotation_name] if self.annotation_name else None)
+        chunks_to_load = [self.annotation_name] if self.annotation_name else None
 
         documents = []
         names = set()
@@ -472,18 +468,17 @@ class AnnotationTool(tkinter.Frame):
             if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
                     docs = SEMCorpus.from_xml(
-                        filename,
-                        chunks_to_load=chunks_to_load,
-                        load_subtypes=True
+                        filename, chunks_to_load=chunks_to_load, load_subtypes=True
                     ).documents
-                    for doc in docs: # using reference annotations
+                    for doc in docs:  # using reference annotations
                         for annotation_name in doc.annotations.keys():
                             doc.add_annotation(
                                 Annotation(
                                     annotation_name,
                                     reference=None,
-                                    annotations=doc.annotation(annotation_name)
-                                    .get_reference_annotations()
+                                    annotations=doc.annotation(
+                                        annotation_name
+                                    ).get_reference_annotations(),
                                 )
                             )
                     for doc in [doc for doc in docs if doc.name not in names]:
@@ -491,25 +486,24 @@ class AnnotationTool(tkinter.Frame):
                         names.add(doc.name)
                 except Exception:
                     doc = Document.from_xml(
-                        filename,
-                        chunks_to_load=chunks_to_load,
-                        load_subtypes=True
+                        filename, chunks_to_load=chunks_to_load, load_subtypes=True
                     )
                     if doc.name not in names:
                         names.add(doc.name)
                         documents.append(doc)
                         for annotation_name in documents[-1].annotations.keys():
-                            documents[-1].add_annotation(Annotation(
-                                annotation_name,
-                                reference=None,
-                                annotations=documents[-1]
-                                .annotation(annotation_name).get_reference_annotations()
-                            ))
+                            documents[-1].add_annotation(
+                                Annotation(
+                                    annotation_name,
+                                    reference=None,
+                                    annotations=documents[-1]
+                                    .annotation(annotation_name)
+                                    .get_reference_annotations(),
+                                )
+                            )
             else:
                 doc = sem.importers.load(
-                    filename,
-                    encoding="utf-8",
-                    tagset_name=self.annotation_name
+                    filename, encoding="utf-8", tagset_name=self.annotation_name
                 )
                 if doc.name not in names:
                     documents.append(doc)
@@ -541,7 +535,7 @@ class AnnotationTool(tkinter.Frame):
                 ("text files", ".txt"),
                 ("BRAT files", (".txt", ".ann")),
                 ("SEM XML files", ("*.sem.xml", ".sem")),
-                ("All files", ".*")
+                ("All files", ".*"),
             ]
         )
         if filenames == []:
@@ -558,9 +552,7 @@ class AnnotationTool(tkinter.Frame):
 
         def ok(event=None):
             document = sem.importers.from_url(
-                self.url.get(),
-                wikinews_format=bool(self.wikinews_format.get()),
-                strip_html=True
+                self.url.get(), wikinews_format=bool(self.wikinews_format.get()), strip_html=True
             )
             if document is None:
                 return
@@ -583,7 +575,9 @@ class AnnotationTool(tkinter.Frame):
         text.pack()
         text.focus_set()
 
-        c = tkinter.ttk.Checkbutton(toplevel, text="Use Wikinews format", variable=self.wikinews_format)
+        c = tkinter.ttk.Checkbutton(
+            toplevel, text="Use Wikinews format", variable=self.wikinews_format
+        )
         c.pack()
 
         toolbar = tkinter.ttk.Frame(toplevel)
@@ -592,8 +586,8 @@ class AnnotationTool(tkinter.Frame):
         ok_btn.pack(side="left")
         cancel_btn = tkinter.ttk.Button(toolbar, text="cancel", command=cancel)
         cancel_btn.pack(side="left")
-        toplevel.bind('<Return>', ok)
-        toplevel.bind('<Escape>', cancel)
+        toplevel.bind("<Return>", ok)
+        toplevel.bind("<Escape>", cancel)
 
         toolbar.pack()
 
@@ -680,14 +674,12 @@ class AnnotationTool(tkinter.Frame):
         notebook = tkinter.ttk.Notebook(preferenceTop)
 
         frame1 = tkinter.ttk.Frame(notebook)
-        notebook.add(frame1, text='general')
+        notebook.add(frame1, text="general")
         frame2 = tkinter.ttk.Frame(notebook)
-        notebook.add(frame2, text='shortcuts')
+        notebook.add(frame2, text="shortcuts")
 
         c = tkinter.ttk.Checkbutton(
-            frame1,
-            text="Match whole word when broadcasting annotation",
-            variable=self._whole_word
+            frame1, text="Match whole word when broadcasting annotation", variable=self._whole_word
         )
         c.pack()
 
@@ -786,9 +778,7 @@ class AnnotationTool(tkinter.Frame):
                 start, end = ("sel.first", "sel.last")
             try:
                 for match in find_occurrences(
-                    self.text.get(start, end),
-                    self.doc.content,
-                    whole_word=self.whole_word
+                    self.text.get(start, end), self.doc.content, whole_word=self.whole_word
                 ):
                     cur_start = self.charindex2position(match.start())
                     cur_end = self.charindex2position(match.end())
@@ -816,7 +806,7 @@ class AnnotationTool(tkinter.Frame):
             if last == "sel.last":
                 last = self.text.index("sel.last")
 
-        except tkinter.TclError: # no selection
+        except tkinter.TclError:  # no selection
             return
 
         self.doc_is_modified = True
@@ -842,11 +832,8 @@ class AnnotationTool(tkinter.Frame):
                     self.tree_ids[self.annotation_name],
                     index,
                     text='{0} "{1}" [{2}:{3}]'.format(
-                        value,
-                        self.doc.content[pos[0] : pos[1]],
-                        pos[0],
-                        pos[1]
-                    )
+                        value, self.doc.content[pos[0]: pos[1]], pos[0], pos[1]
+                    ),
                 )
                 self.treeitem2annot[item] = tag
                 self.annot2treeitems[self.annotation_name][key] = item
@@ -855,18 +842,15 @@ class AnnotationTool(tkinter.Frame):
                     self.tree_ids["history"],
                     0,
                     text='{0} "{1}" [{2}:{3}]'.format(
-                        value,
-                        self.doc.content[pos[0] : pos[1]],
-                        pos[0],
-                        pos[1]
-                    )
+                        value, self.doc.content[pos[0]: pos[1]], pos[0], pos[1]
+                    ),
                 )
                 self.treeitem2annot[item2] = tag
                 self.annot2treeitems["history"][key] = item2
                 self.ner2history[item] = item2
                 self.adder.current_annotation = tag
 
-            self.text.tag_remove("BOLD",  "1.0", 'end')
+            self.text.tag_remove("BOLD", "1.0", "end")
             self.type_combos[0].current(0)
         else:
             lb = self.position2charindex(first)
@@ -884,10 +868,7 @@ class AnnotationTool(tkinter.Frame):
                         if check_in_tagset(annot.getValue(), self.tagset):
                             annot.setLevel(self.adder.current_hierarchy_level, self.wish_to_add[0])
                             new_text = '{0} "{1}" [{2}:{3}]'.format(
-                                annot.getValue(),
-                                self.doc.content[annot.lb : annot.ub],
-                                lb,
-                                ub
+                                annot.getValue(), self.doc.content[annot.lb: annot.ub], lb, ub
                             )
                             self.tree.item(tree_item_str, text=new_text)
                             prev_item = self.ner2history.get(tree_item_str)
@@ -911,7 +892,7 @@ class AnnotationTool(tkinter.Frame):
         if self.doc is None or self.adder is None:
             return
 
-        self.text.tag_remove("BOLD",  "1.0", 'end')
+        self.text.tag_remove("BOLD", "1.0", "end")
         prev_selection = self.adder.current_annotation
         self.adder.current_annotation = None
         self.wish_to_add = None
@@ -983,7 +964,7 @@ class AnnotationTool(tkinter.Frame):
         lb_str = self.charindex2position(annot.lb)
         ub_str = self.charindex2position(annot.ub)
 
-        self.text.tag_remove("BOLD", "1.0", 'end')
+        self.text.tag_remove("BOLD", "1.0", "end")
         self.text.tag_add("BOLD", lb_str, ub_str)
         self.adder.current_annotation = annot
         self.wish_to_add = None
@@ -992,7 +973,7 @@ class AnnotationTool(tkinter.Frame):
         self.text.see("insert")
 
     def unselect(self, event=None):
-        self.text.tag_remove("BOLD",  "1.0", 'end')
+        self.text.tag_remove("BOLD", "1.0", "end")
         self.wish_to_add = None
         if self.adder:
             self.adder.current_annotation = None
@@ -1000,7 +981,7 @@ class AnnotationTool(tkinter.Frame):
             self.update_level()
 
     def delete(self, event):
-        self.text.tag_remove("BOLD",  "1.0", 'end')
+        self.text.tag_remove("BOLD", "1.0", "end")
 
         if self.adder.current_annotation is None:
             return
@@ -1027,7 +1008,7 @@ class AnnotationTool(tkinter.Frame):
                 self.text.tag_remove(
                     self.adder.current_annotation.getLevel(0),
                     self.charindex2position(annotation.lb),
-                    self.charindex2position(annotation.ub)
+                    self.charindex2position(annotation.ub),
                 )
             tag = Tag(self.adder.current_annotation.getLevel(0), annotation.lb, annotation.ub)
             key = "{}".format(tag)
@@ -1052,16 +1033,14 @@ class AnnotationTool(tkinter.Frame):
             start = self.adder.current_annotation.lb
             end = self.adder.current_annotation.ub
             for occ in find_occurrences(
-                self.doc.content[start:end],
-                self.doc.content,
-                whole_word=False
+                self.doc.content[start:end], self.doc.content, whole_word=False
             ):
                 self.adder.current_annotation = Tag(value, occ.start(), occ.end())
                 self.delete(event)
         self.adder.current_annotation = None
         self.adder.current_hierarchy_level = 0
         self.update_level()
-        self.text.tag_remove("BOLD",  "1.0", 'end')
+        self.text.tag_remove("BOLD", "1.0", "end")
         self.doc_is_modified = True
 
     def position2charindex(self, position):
@@ -1072,7 +1051,7 @@ class AnnotationTool(tkinter.Frame):
         lengths = self.lines_lengths
         cur = 0
         line = 1
-        while cur+lengths[line] <= charindex:
+        while cur + lengths[line] <= charindex:
             cur += lengths[line]
             line += 1
         offset = charindex - cur
@@ -1105,8 +1084,9 @@ class AnnotationTool(tkinter.Frame):
                 self.type_combos[i].configure(state="readonly")
 
     def add_document(self, document):
-        found = self.doc is not None \
-            and any([document.name == doc.name for doc in self.corpus_documents])
+        found = self.doc is not None and any(
+            [document.name == doc.name for doc in self.corpus_documents]
+        )
         if found:
             id = self.corpus_id2doc[self.doc.name]
             self.corpus_tree.selection_set(id)
@@ -1114,9 +1094,7 @@ class AnnotationTool(tkinter.Frame):
             self.corpus_tree.see(id)
         else:
             id = self.corpus_tree.insert(
-                "",
-                len(self.corpus_tree.get_children()),
-                text=document.name
+                "", len(self.corpus_tree.get_children()), text=document.name
             )
             self.corpus_id2doc[id] = document
             self.corpus_doc2id[document.name] = id
@@ -1136,9 +1114,7 @@ class AnnotationTool(tkinter.Frame):
         if self.doc is None or (document.name != self.doc.name or same_doc):
             if self.doc is not None and self.doc_is_modified:
                 update_annotations(
-                    self.doc,
-                    self.annotation_name,
-                    self.current_annotations.annotations
+                    self.doc, self.annotation_name, self.current_annotations.annotations
                 )
 
             self.doc = document
@@ -1152,12 +1128,10 @@ class AnnotationTool(tkinter.Frame):
 
             if self.annotation_name is not None:
                 self.tree_ids[self.annotation_name] = self.tree.insert(
-                    "",
-                    len(self.tree_ids)+1,
-                    text=self.annotation_name
+                    "", len(self.tree_ids) + 1, text=self.annotation_name
                 )
                 self.tree_ids["history"] = self.tree.insert(
-                    "", len(self.tree_ids)+1, text="history"
+                    "", len(self.tree_ids) + 1, text="history"
                 )
                 self.annot2treeitems[self.annotation_name] = {}
             self.annot2treeitems["history"] = {}
@@ -1167,14 +1141,14 @@ class AnnotationTool(tkinter.Frame):
             if self.adder is not None:
                 self.adder.current_annotation = None
             self.wish_to_add = None
-            self.lines_lengths = [0] + [len(line)+1 for line in self.doc.content.split("\n")]
+            self.lines_lengths = [0] + [len(line) + 1 for line in self.doc.content.split("\n")]
 
             self.text.configure(state="normal")
             for tag_name in self.text.tag_names():
                 self.text.tag_remove(tag_name, "1.0", "end")
             self.text.delete("1.0", "end")
             self.text.insert("end", self.doc.content)
-            self.text.tag_remove("BOLD",  "1.0", 'end')
+            self.text.tag_remove("BOLD", "1.0", "end")
             self.text.configure(state="disabled")
 
             if self.doc.annotation(self.annotation_name):
@@ -1186,11 +1160,8 @@ class AnnotationTool(tkinter.Frame):
                         self.tree_ids[self.annotation_name],
                         len(self.annot2treeitems[self.annotation_name]) + 1,
                         text='{0} "{1}" [{2}:{3}]'.format(
-                            annot.value,
-                            self.doc.content[annot.lb : annot.ub],
-                            annot.lb,
-                            annot.ub
-                        )
+                            annot.value, self.doc.content[annot.lb: annot.ub], annot.lb, annot.ub
+                        ),
                     )
                     self.annot2treeitems[self.annotation_name]["{}".format(annot)] = item
                     annot.ids[self.annotation_name] = item
@@ -1202,13 +1173,11 @@ class AnnotationTool(tkinter.Frame):
                             splitted = annot.value.split(separator)
                             for depth, type_to_add in enumerate(splitted, 0):
                                 self.doc.annotation(self.annotation_name)[nth_annot].setLevel(
-                                    depth,
-                                    type_to_add
+                                    depth, type_to_add
                                 )
                         else:
                             self.doc.annotation(self.annotation_name)[nth_annot].setLevel(
-                                0,
-                                annot.value
+                                0, annot.value
                             )
         self.doc_is_modified = False
 
@@ -1239,11 +1208,9 @@ class AnnotationTool(tkinter.Frame):
         for child in self.tree.get_children():
             self.tree.delete(child)
         self.tree_ids[self.annotation_name] = self.tree.insert(
-            "",
-            len(self.tree_ids) + 1,
-            text=self.annotation_name
+            "", len(self.tree_ids) + 1, text=self.annotation_name
         )
-        self.tree_ids["history"] = self.tree.insert("", len(self.tree_ids)+1, text="history")
+        self.tree_ids["history"] = self.tree.insert("", len(self.tree_ids) + 1, text="history")
         self.annot2treeitems[self.annotation_name] = {}
 
         self.type_combos.append(tkinter.ttk.Combobox(self.toolbar))
@@ -1254,10 +1221,9 @@ class AnnotationTool(tkinter.Frame):
         self.adder = from_tagset(tagset)
         for depth in range(self.adder.max_depth()):
             # label
-            self.add_type_lbls.append(tkinter.ttk.Label(
-                self.toolbar,
-                text="add {0}type:".format("sub"*(depth))
-            ))
+            self.add_type_lbls.append(
+                tkinter.ttk.Label(self.toolbar, text="add {0}type:".format("sub" * (depth)))
+            )
             self.add_type_lbls[depth].pack(side="left")
             # combobox
             self.type_combos.append(tkinter.ttk.Combobox(self.toolbar))
@@ -1266,9 +1232,9 @@ class AnnotationTool(tkinter.Frame):
             self.type_combos[depth].pack(side="left")
             for tag in sorted(set([t[depth] for t in self.adder.levels if len(t) > depth])):
                 if len(self.type_combos) > 0:
-                    self.type_combos[depth]["values"] = \
-                        list(self.type_combos[depth]["values"]) \
-                        + [tag]
+                    self.type_combos[depth]["values"] = list(self.type_combos[depth]["values"]) + [
+                        tag
+                    ]
                 if depth == 0:
                     if len(self.spare_colors) > 0:
                         self.color = self.spare_colors.pop()
@@ -1282,7 +1248,7 @@ class AnnotationTool(tkinter.Frame):
     def load_tagset_gui(self, event=None):
         filename = tkinter.filedialog.askopenfilename(
             filetypes=[("text files", ".txt"), ("All files", ".*")],
-            initialdir=str(sem.SEM_DATA_DIR / "resources" / "tagsets")
+            initialdir=str(sem.SEM_DATA_DIR / "resources" / "tagsets"),
         )
 
         if len(filename) == 0:
@@ -1326,35 +1292,35 @@ class AnnotationTool(tkinter.Frame):
         self.doc_is_modified = True
         for key in self.doc.annotations:
             annotation = self.doc.annotation(key)
-            self.doc.add_annotation(Annotation(
-                annotation.name,
-                annotations=annotation.get_reference_annotations()
-            ))
+            self.doc.add_annotation(
+                Annotation(annotation.name, annotations=annotation.get_reference_annotations())
+            )
         self.current_annotations = self.doc.annotation(self.annotation_name)
         self.load_document(same_doc=True)
+
 
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="An annotation tool for SEM."
+    pathlib.Path(__file__).stem, description="An annotation tool for SEM."
 )
 
-parser.add_argument("-d", "--documents", nargs="*",
-                    help="Documents to load at startup.")
-parser.add_argument("-t", "--tagset",
-                    help="The tagser to load at startup.")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: %(default)s)")
+parser.add_argument("-d", "--documents", nargs="*", help="Documents to load at startup.")
+parser.add_argument("-t", "--tagset", help="The tagser to load at startup.")
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: %(default)s)",
+)
+
 
 def main(args):
     root = tkinter.Tk()
     root.title("SEM")
-    AnnotationTool(
-        root,
-        args.log_level,
-        documents=args.documents,
-        tagset=args.tagset
-    ).pack(expand=1, fill="both")
+    AnnotationTool(root, args.log_level, documents=args.documents, tagset=args.tagset).pack(
+        expand=1, fill="both"
+    )
     root.mainloop()

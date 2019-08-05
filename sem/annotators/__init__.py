@@ -34,13 +34,16 @@ from sem.annotators.lexicon import Annotator as LexiconAnnotator
 
 try:
     from importlib import import_module
-except ImportError: # backward compatibility for python < 2.7
+except ImportError:  # backward compatibility for python < 2.7
+
     def import_module(module_name):
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
+
 
 def get_package(name):
     module = import_module("sem.annotators.{0}".format(name))
     return module
+
 
 def get_annotator(name):
     module = import_module("sem.annotators.{0}".format(name))

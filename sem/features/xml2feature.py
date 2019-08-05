@@ -43,14 +43,20 @@ from sem.features import EqualFeature, EqualCaselessFeature
 from sem.features import CheckFeature, SubsequenceFeature, TokenFeature
 from sem.features import OrFeature, AndFeature, NotFeature
 from sem.features import (
-    BOSFeature, EOSFeature, LowerFeature, IsUpperFeature, SubstringFeature, SubstitutionFeature,
-    SequencerFeature
+    BOSFeature,
+    EOSFeature,
+    LowerFeature,
+    IsUpperFeature,
+    SubstringFeature,
+    SubstitutionFeature,
+    SequencerFeature,
 )
 from sem.features import SomeFeature, AllFeature, NoneFeature
 from sem.features import TokenDictionaryFeature, MultiwordDictionaryFeature, MapperFeature
 from sem.features import DirectoryFeature, FillerFeature
 from sem.features import RuleFeature, OrRuleFeature
 from sem.features import TriggeredFeature
+
 
 class XML2Feature(object):
     def __init__(self, entries, path=None):
@@ -76,14 +82,10 @@ class XML2Feature(object):
         if getter is None:
             getter = DictGetterFeature(
                 entry=attrib.get("entry", self._default_entry),
-                shift=attrib.get("shift", self._default_shift)
+                shift=attrib.get("shift", self._default_shift),
             )
         if isinstance(getter, DictGetterFeature):
             self.check_entry(getter.entry, attrib)
-        #1. if getter is None:
-        #1.     getter = SentenceGetterFeature(entry=attrib.get("entry", self._default_entry), shift=attrib.get("shift", self._default_shift))
-        #1. if isinstance(getter, SentenceGetterFeature):
-        #1.     self.check_entry(getter.entry, attrib)
 
         if attrib.get("name", None):
             self._features[attrib["name"]] = Entry(attrib["name"], mode="label")
@@ -131,14 +133,13 @@ class XML2Feature(object):
             children = list(xml)
             assert len(children) == 2
             if attrib["action"].lower() == "substitute":
-                assert children[0].tag == "pattern" and children[1].tag in ("replace", "replacement")
+                assert children[0].tag == "pattern" and children[1].tag in (
+                    "replace",
+                    "replacement",
+                )
                 flags = attrib.pop("flags", re.U + re.M)
                 return SubstitutionFeature(
-                    children[0].text,
-                    children[1].text,
-                    flags,
-                    getter=getter,
-                    **attrib
+                    children[0].text, children[1].text, flags, getter=getter, **attrib
                 )
             raise RuntimeError
 
@@ -148,7 +149,7 @@ class XML2Feature(object):
                     *[self.parse(list(xml)[0])]
                     + [self.parse(child, getter=DEFAULT_GETTER) for child in list(xml)[1:]],
                     getter=getter,
-                    **attrib
+                    **attrib,
                 )
             raise RuntimeError
 
@@ -216,11 +217,7 @@ class XML2Feature(object):
             path = (pathlib.Path(self._path).parent / attrib.pop("path")).resolve()
             ambiguous = sem.misc.str2bool(attrib.pop("ambiguous", "false"))
             return DirectoryFeature(
-                path,
-                self,
-                order=attrib.pop("order", ".order"),
-                ambiguous=ambiguous,
-                **attrib
+                path, self, order=attrib.pop("order", ".order"), ambiguous=ambiguous, **attrib
             )
 
         elif xml.tag == "fill":
@@ -238,7 +235,7 @@ class XML2Feature(object):
         elif xml.tag in ("rule", "orrule"):
             elements = list(xml)
             for e in elements:
-                e.attrib["x"] = 0 # forcing current element
+                e.attrib["x"] = 0  # forcing current element
 
             features = [self.parse(e, getter=None) for e in elements]
             for e, f in zip(elements, features):
@@ -250,10 +247,10 @@ class XML2Feature(object):
                     f.max_match = 1
                 elif card == "*":
                     f.min_match = 0
-                    f.max_match = 2**30 # should be long enough
+                    f.max_match = 2 ** 30  # should be long enough
                 elif card == "+":
                     f.min_match = 1
-                    f.max_match = 2**30 # should be long enough
+                    f.max_match = 2 ** 30  # should be long enough
                 elif "," in card:
                     mi, ma = card.split(",")
                     f.min_match = int(mi)
@@ -264,7 +261,9 @@ class XML2Feature(object):
                 except Exception:
                     pass
                 if f.min_match < 0 or f.max_match <= 0:
-                    raise ValueError('Invalid cardinality for {0} feature: "{1}"'.format(e.tag, card))
+                    raise ValueError(
+                        'Invalid cardinality for {0} feature: "{1}"'.format(e.tag, card)
+                    )
             if xml.tag == "rule":
                 return RuleFeature(features, **xml.attrib)
             elif xml.tag == "orrule":
@@ -278,12 +277,12 @@ class XML2Feature(object):
         if not used_entry:
             used_entry = self._features.get(entry, None)
         if not used_entry:
-            raise ValueError('Node "{0}", entry not found: "{0}"'.format(
-                attrib.get("name", "unnamed"),
-                entry
-            ))
+            raise ValueError(
+                'Node "{0}", entry not found: "{0}"'.format(attrib.get("name", "unnamed"), entry)
+            )
         elif used_entry.is_train:
-            raise ValueError('Node "{0}" uses train-only entry: "{0}"'.format(
-                attrib.get("name", "unnamed"),
-                used_entry.name
-            ))
+            raise ValueError(
+                'Node "{0}" uses train-only entry: "{0}"'.format(
+                    attrib.get("name", "unnamed"), used_entry.name
+                )
+            )

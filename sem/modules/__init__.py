@@ -26,23 +26,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .enrich import SEMModule as EnrichModule
-from .label_consistency import SEMModule as LabelConsistencyModule
-from .segmentation import SEMModule as SegmentationModule
-from .annotate import SEMModule as AnnotateModule
-from .wapiti_label import SEMModule as WapitiLabelModule
-from .clean import SEMModule as CleanModule
-from .map_annotations import SEMModule as MapAnnotationsModule
+from sem.modules.enrich import SEMModule as EnrichModule
+from sem.modules.label_consistency import SEMModule as LabelConsistencyModule
+from sem.modules.segmentation import SEMModule as SegmentationModule
+from sem.modules.annotate import SEMModule as AnnotateModule
+from sem.modules.wapiti_label import SEMModule as WapitiLabelModule
+from sem.modules.clean import SEMModule as CleanModule
+from sem.modules.map_annotations import SEMModule as MapAnnotationsModule
 
 try:
     from importlib import import_module
-except ImportError: # backward compatibility for python < 2.7
+except ImportError:  # backward compatibility for python < 2.7
+
     def import_module(module_name):
         return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
+
 
 def get_package(name):
     module = import_module("sem.modules.{0}".format(name))
     return module
+
 
 def get_module(name):
     module = import_module("sem.modules.{0}".format(name))

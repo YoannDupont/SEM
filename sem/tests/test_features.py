@@ -32,12 +32,18 @@ import unittest
 
 from sem.features import IdentityFeature, DictGetterFeature
 from sem.features import (
-    BOSFeature, EOSFeature, LowerFeature, SubstringFeature, IsUpperFeature, SubstitutionFeature,
-    SequencerFeature
-) # arity features
+    BOSFeature,
+    EOSFeature,
+    LowerFeature,
+    SubstringFeature,
+    IsUpperFeature,
+    SubstitutionFeature,
+    SequencerFeature,
+)  # arity features
 from sem.features import CheckFeature, SubsequenceFeature, TokenFeature
 from sem.features import SomeFeature, AllFeature, NoneFeature
 from sem.features import TokenDictionaryFeature, MultiwordDictionaryFeature, MapperFeature
+
 
 class TestFeatures(unittest.TestCase):
     def test_basic_getters(self):
@@ -46,7 +52,7 @@ class TestFeatures(unittest.TestCase):
             {"word": "est", "token": "_est"},
             {"word": "un", "token": "_un"},
             {"word": "test", "token": "_test"},
-            {"word": ".", "token": "_."}
+            {"word": ".", "token": "_."},
         ]
 
         identity = IdentityFeature()
@@ -65,22 +71,16 @@ class TestFeatures(unittest.TestCase):
 
         self.assertEquals(previous_token(data, 0), None)
         for i in range(1, len(data)):
-            self.assertEquals(previous_token(data, i), data[i-1]["token"])
+            self.assertEquals(previous_token(data, i), data[i - 1]["token"])
 
-        for i in range(len(data)-1):
-            self.assertEquals(next_token(data, i), data[i+1]["token"])
-        self.assertEquals(next_token(data, len(data)-1), None)
+        for i in range(len(data) - 1):
+            self.assertEquals(next_token(data, i), data[i + 1]["token"])
+        self.assertEquals(next_token(data, len(data) - 1), None)
 
     def test_arity_features(self):
-        data = [
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]
+        data = [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
 
-        cwg = DictGetterFeature(entry="word", x=0) # current word getter feature
+        cwg = DictGetterFeature(entry="word", x=0)  # current word getter feature
 
         bos = BOSFeature(entry="word", getter=cwg)
         self.assertEquals(bos(data, 0), True)
@@ -88,9 +88,9 @@ class TestFeatures(unittest.TestCase):
             self.assertEquals(bos(data, i), False)
 
         eos = EOSFeature(getter=cwg)
-        for i in range(len(data)-1):
+        for i in range(len(data) - 1):
             self.assertEquals(eos(data, i), False)
-        self.assertEquals(eos(data, len(data)-1), True)
+        self.assertEquals(eos(data, len(data) - 1), True)
 
         lower = LowerFeature(getter=cwg)
         for i in range(len(data)):
@@ -99,7 +99,7 @@ class TestFeatures(unittest.TestCase):
         prefix_3 = SubstringFeature(getter=cwg, from_index=0, to_index=3, default="#")
         for i in range(len(data)):
             self.assertEquals(
-                prefix_3(data, i), data[i]["word"][prefix_3._from_index : prefix_3._to_index]
+                prefix_3(data, i), data[i]["word"][prefix_3._from_index: prefix_3._to_index]
             )
 
         sw_upper = IsUpperFeature(getter=cwg, index=0)
@@ -118,7 +118,7 @@ class TestFeatures(unittest.TestCase):
             SubstitutionFeature("[A-Z]", "A", getter=cwg),
             SubstitutionFeature("[a-z]", "a"),
             SubstitutionFeature("[0-9]", "0"),
-            SubstitutionFeature("[^Aa0]", "x")
+            SubstitutionFeature("[^Aa0]", "x"),
         )
         self.assertEquals(char_class(data, 0), "Aaaa")
         self.assertEquals(char_class(data, 1), "aaa")
@@ -127,15 +127,9 @@ class TestFeatures(unittest.TestCase):
         self.assertEquals(char_class(data, 4), "x")
 
     def test_regexp_features(self):
-        data = [
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]
+        data = [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
 
-        cwg = DictGetterFeature(entry="word", x=0) # current word getter feature
+        cwg = DictGetterFeature(entry="word", x=0)  # current word getter feature
 
         check = CheckFeature("^...", getter=cwg)
         sub = SubsequenceFeature("^...", getter=cwg)
@@ -160,15 +154,9 @@ class TestFeatures(unittest.TestCase):
         self.assertEquals(token(data, 4), "#")
 
     def test_list_features(self):
-        data = [
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]
+        data = [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
 
-        cwg = DictGetterFeature(entry="word", x=0) # current word getter feature
+        cwg = DictGetterFeature(entry="word", x=0)  # current word getter feature
         sw_upper = IsUpperFeature(getter=cwg, index=0)
         has_punctuation = CheckFeature("^\\.", getter=cwg)
 
@@ -195,27 +183,15 @@ class TestFeatures(unittest.TestCase):
         self.assertEquals(none_f(data, 4), False)
 
     def test_dictionary_features(self):
-        data = [
-            {"word": "Ceci"},
-            {"word": "est"},
-            {"word": "un"},
-            {"word": "test"},
-            {"word": "."}
-        ]
+        data = [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
 
-        cwg = DictGetterFeature(entry="word", x=0) # current word getter feature
+        cwg = DictGetterFeature(entry="word", x=0)  # current word getter feature
         token = TokenDictionaryFeature(getter=cwg, path=None, entries=["Ceci", "test"])
         multiword1 = MultiwordDictionaryFeature(
-            entry="word",
-            path=None,
-            appendice="-test1",
-            entries=["Ceci est", "est un", "un", "."]
+            entry="word", path=None, appendice="-test1", entries=["Ceci est", "est un", "un", "."]
         )
         multiword2 = MultiwordDictionaryFeature(
-            entry="word",
-            path=None,
-            appendice="-test2",
-            entries=["test ."]
+            entry="word", path=None, appendice="-test2", entries=["test ."]
         )
         mapper = MapperFeature(getter=cwg, path=None, entries=["un\tune", "test\trévolution"])
 
@@ -235,5 +211,5 @@ class TestFeatures(unittest.TestCase):
         self.assertEquals(mapper(data, 4), "O")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

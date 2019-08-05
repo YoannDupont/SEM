@@ -30,6 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import pathlib
 import sys
 import logging
 
@@ -48,6 +49,7 @@ from sem.logger import default_handler, file_handler
 export_logger = logging.getLogger("sem.exportation")
 export_logger.addHandler(default_handler)
 
+
 class SEMModule(RootModule):
     def __init__(
         self,
@@ -59,7 +61,7 @@ class SEMModule(RootModule):
         pos_column=None,
         chunk_column=None,
         ner_column=None,
-        **kwargs
+        **kwargs,
     ):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
 
@@ -73,11 +75,11 @@ class SEMModule(RootModule):
         self._chunk_column = chunk_column
         self._ner_column = ner_column
         if isinstance(exporter, str):
-            export_logger.info('getting exporter {0}'.format(exporter))
+            export_logger.info("getting exporter {0}".format(exporter))
             Exporter = get_exporter(exporter)
             self._exporter = Exporter(lang=self._lang, lang_style=self._lang_style)
         else:
-            export_logger.info('using loaded exporter')
+            export_logger.info("using loaded exporter")
             self._exporter = exporter
 
     def process_document(self, document, outfile=sys.stdout, output_encoding="utf-8", **kwargs):
@@ -87,7 +89,7 @@ class SEMModule(RootModule):
             export_logger.addHandler(file_handler(self._log_file))
         export_logger.setLevel(self._log_level)
 
-        export_logger.debug('setting name/column couples for exportation')
+        export_logger.debug("setting name/column couples for exportation")
 
         pos_column = self._pos_column
         chunk_column = self._chunk_column
@@ -101,20 +103,21 @@ class SEMModule(RootModule):
 
         if pos_column:
             couples["pos"] = pos_column
-            export_logger.debug('POS column is {0}'.format(pos_column))
+            export_logger.debug("POS column is {0}".format(pos_column))
         if chunk_column:
             couples["chunking"] = chunk_column
-            export_logger.debug('chunking column is {0}'.format(chunk_column))
+            export_logger.debug("chunking column is {0}".format(chunk_column))
         if ner_column:
             couples["ner"] = ner_column
-            export_logger.debug('NER column is {0}'.format(ner_column))
+            export_logger.debug("NER column is {0}".format(ner_column))
 
-        export_logger.debug('exporting document to {0} format'.format(self._exporter.extension))
+        export_logger.debug("exporting document to {0} format".format(self._exporter.extension))
 
         self._exporter.document_to_file(document, couples, outfile, encoding=output_encoding)
 
         laps = time.time() - start
-        export_logger.info('done in %s', timedelta(seconds=laps))
+        export_logger.info("done in %s", timedelta(seconds=laps))
+
 
 def main(args):
     start = time.time()
@@ -140,10 +143,10 @@ def main(args):
         lang_style=lang_style,
         pos_column=pos_column,
         chunk_column=chunk_column,
-        ner_column=ner_column
+        ner_column=ner_column,
     )
 
-    if type(import_options) in (list,): # list from argparse
+    if type(import_options) in (list,):  # list from argparse
         options = {}
         for option in import_options:
             key, value = option.split("=", 1)
@@ -158,58 +161,72 @@ def main(args):
 
     infile_is_str = isinstance(infile, str)
     if infile_is_str:
-        export_logger.info('loading input file')
+        export_logger.info("loading input file")
         document = sem.importers.load(infile, logger=export_logger, **options)
         if isinstance(document, SEMCorpus):
-            export_logger.warn('input file is SEM corpus, only exporting the first document')
+            export_logger.warn("input file is SEM corpus, only exporting the first document")
             document = document[0]
     else:
-        export_logger.info('using input document')
+        export_logger.info("using input document")
         document = infile
 
-    export_logger.debug('exporting document {0}'.format(document.name))
+    export_logger.debug("exporting document {0}".format(document.name))
     exporter.process_document(document, outfile, encoding=oenc, logger=export_logger)
 
     laps = time.time() - start
-    export_logger.info('done in %s', timedelta(seconds=laps))
+    export_logger.info("done in %s", timedelta(seconds=laps))
 
 
-import pathlib
 import sem
 
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Export CoNLL-formatted data to specified format."
+    pathlib.Path(__file__).stem, description="Export CoNLL-formatted data to specified format."
 )
 
-parser.add_argument("infile",
-                    help="The input file")
-parser.add_argument("exporter_name",
-                    help="The name of the exporter to use")
-parser.add_argument("outfile",
-                    help="The output file")
-parser.add_argument("-p", "--pos-column", dest="pos_column", default=None,
-                    help="The column for POS.")
-parser.add_argument("-c", "--chunk-column", dest="chunk_column", default=None,
-                    help="The column for chunk.")
-parser.add_argument("-n", "--ner-column", dest="ner_column", default=None,
-                    help="The column for NER.")
-parser.add_argument("--lang", dest="lang", default="fr",
-                    help="The language of the text (default: %(default)s)")
-parser.add_argument("-s", "--lang-style", dest="lang_style", default="default.css",
-                    help="The style to use, if applicable (default: %(default)s)")
-parser.add_argument("--import-options", nargs="*", dest="import_options",
-                    help='Import-specific options. This is a list of "key=value" pairs.')
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: %(default)s)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file")
+parser.add_argument("exporter_name", help="The name of the exporter to use")
+parser.add_argument("outfile", help="The output file")
+parser.add_argument(
+    "-p", "--pos-column", dest="pos_column", default=None, help="The column for POS."
+)
+parser.add_argument(
+    "-c", "--chunk-column", dest="chunk_column", default=None, help="The column for chunk."
+)
+parser.add_argument(
+    "-n", "--ner-column", dest="ner_column", default=None, help="The column for NER."
+)
+parser.add_argument(
+    "--lang", dest="lang", default="fr", help="The language of the text (default: %(default)s)"
+)
+parser.add_argument(
+    "-s",
+    "--lang-style",
+    dest="lang_style",
+    default="default.css",
+    help="The style to use, if applicable (default: %(default)s)",
+)
+parser.add_argument(
+    "--import-options",
+    nargs="*",
+    dest="import_options",
+    help='Import-specific options. This is a list of "key=value" pairs.',
+)
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: %(default)s)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

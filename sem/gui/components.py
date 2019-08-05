@@ -57,24 +57,20 @@ class SemTkMasterSelector(tkinter.ttk.Frame):
 
         self.resource_dir = resource_dir
         self._lang = None
-        langs = [
-            path.name
-            for path in (self.resource_dir / "master").glob("*")
-        ]
+        langs = [path.name for path in (self.resource_dir / "master").glob("*")]
         if langs:
-            self._lang = (lang if lang in langs else langs[0])
+            self._lang = lang if lang in langs else langs[0]
 
         self.items = []
         if self._lang:
             self.items = [
-                item.name
-                for item in (self.resource_dir / "master" / self._lang).glob("*")
+                item.name for item in (self.resource_dir / "master" / self._lang).glob("*")
             ]
         self.items.sort(key=lambda x: x.lower())
         max_length = max([len(item) for item in self.items])
 
         self.select_workflow_label = tkinter.ttk.Label(root, text="select workflow:")
-        self.masters = tkinter.Listbox(root, width=max_length+1, height=len(self.items))
+        self.masters = tkinter.Listbox(root, width=max_length + 1, height=len(self.items))
 
         for item in self.items:
             self.masters.insert(tkinter.END, item)
@@ -101,10 +97,7 @@ class SemTkMasterSelector(tkinter.ttk.Frame):
 
     def set_lang(self, language):
         self._lang = language
-        self.items = [
-            path.name
-            for path in (self.resource_dir / "master" / self._lang).glob("*")
-        ]
+        self.items = [path.name for path in (self.resource_dir / "master" / self._lang).glob("*")]
         self.items.sort(key=lambda x: x.lower())
         self.masters["height"] = len(self.items)
 
@@ -119,10 +112,7 @@ class SemTkLangSelector(tkinter.ttk.Frame):
 
         self.master_selector = None
         self.resource_dir = resource_dir
-        self.items = [
-            master.name
-            for master in (self.resource_dir / "master").glob("*")
-        ]
+        self.items = [master.name for master in (self.resource_dir / "master").glob("*")]
 
         self.cur_lang = tkinter.StringVar()
         self.select_lang_label = tkinter.ttk.Label(root, text="select language:")
@@ -168,16 +158,14 @@ class SemTkFileSelector(tkinter.ttk.Frame):
 
         # define options for opening or saving a file
         self.file_opt = options = {}
-        options['defaultextension'] = '.txt'
-        options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-        options['initialdir'] = pathlib.Path("~").expanduser()
-        options['parent'] = root
-        options['title'] = 'Select files to annotate.'
+        options["defaultextension"] = ".txt"
+        options["filetypes"] = [("all files", ".*"), ("text files", ".txt")]
+        options["initialdir"] = pathlib.Path("~").expanduser()
+        options["parent"] = root
+        options["title"] = "Select files to annotate."
 
         self.file_selector_button = tkinter.ttk.Button(
-            self.root,
-            text="select file(s)",
-            command=self.filenames
+            self.root, text="select file(s)", command=self.filenames
         )
         self.label = tkinter.ttk.Label(self.root, text="selected file(s):")
         self.fa_search = tkinter.PhotoImage(
@@ -218,7 +206,7 @@ class SemTkFileSelector(tkinter.ttk.Frame):
         if self.current_files:
             for current_file in self.current_files:
                 self.selected_files.insert(tkinter.END, current_file.name)
-            self.file_opt['initialdir'] = self.current_files[0].parent
+            self.file_opt["initialdir"] = self.current_files[0].parent
 
     def files(self):
         return self.current_files or []
@@ -231,16 +219,15 @@ class SemTkExportSelector(tkinter.ttk.Frame):
         self.root = root
         self.label = tkinter.ttk.Label(self.root, text="select output format:")
 
-        self.export_formats = ["default"] \
-            + sorted(
-                exporter.stem
-                for exporter in (sem.SEM_HOME / "exporters").glob("*")
-                if (
-                    exporter.name.endswith(".py")
-                    and not exporter.name.startswith("_")
-                    and not exporter.name == "exporter.py"
-                )
+        self.export_formats = ["default"] + sorted(
+            exporter.stem
+            for exporter in (sem.SEM_HOME / "exporters").glob("*")
+            if (
+                exporter.name.endswith(".py")
+                and not exporter.name.startswith("_")
+                and not exporter.name == "exporter.py"
             )
+        )
         self.export_combobox = tkinter.ttk.Combobox(self.root)
         self.export_combobox["values"] = self.export_formats
         self.export_combobox.current(0)
@@ -273,7 +260,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         top=None,
         main_frame=None,
         text="Algorithm-specific variables",
-        log_level="INFO"
+        log_level="INFO",
     ):
         if top:
             self.trainTop = top
@@ -283,10 +270,12 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         self.file_selector = file_selector
         self.master = master
         self.annotation_name = annotation_name
-        self.annotation_level = \
-            annotation_level or tkinter.StringVar(self.trainTop, value="top level")
-        self.document_filter = \
-            document_filter or tkinter.StringVar(self.trainTop, value="all documents")
+        self.annotation_level = annotation_level or tkinter.StringVar(
+            self.trainTop, value="top level"
+        )
+        self.document_filter = document_filter or tkinter.StringVar(
+            self.trainTop, value="all documents"
+        )
         self.log_level = log_level
         self.wapiti_train_logger = logging.getLogger("sem.wapiti_train")
         self.wapiti_train_logger.addHandler(default_handler)
@@ -311,56 +300,42 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
 
         crf_cur_row = 0
 
-        tkinter.ttk.Button(
-            algsFrame,
-            text='pattern (optional)',
-            command=self.select_file
-        ).grid(
-            row=crf_cur_row,
-            column=0,
-            sticky=tkinter.W
+        tkinter.ttk.Button(algsFrame, text="pattern (optional)", command=self.select_file).grid(
+            row=crf_cur_row, column=0, sticky=tkinter.W
         )
         self.pattern_label = tkinter.Label(algsFrame, textvariable=self.pattern_label_var)
         self.pattern_label.grid(row=crf_cur_row, column=1, sticky=tkinter.W)
         crf_cur_row += 1
 
-        tkinter.Label(algsFrame, text='algorithm').grid(row=crf_cur_row, column=0, sticky=tkinter.W)
+        tkinter.Label(algsFrame, text="algorithm").grid(row=crf_cur_row, column=0, sticky=tkinter.W)
         CRF_algorithmValue = tkinter.ttk.Combobox(algsFrame, textvariable=self.CRF_algorithm_var)
         CRF_algorithmValue["values"] = ["rprop", "l-bfgs", "sgd-l1", "bcd", "rprop+", "rprop-"]
         CRF_algorithmValue.current(0)
         CRF_algorithmValue.grid(row=crf_cur_row, column=1)
         crf_cur_row += 1
 
-        tkinter.Label(algsFrame, text='l1').grid(row=crf_cur_row, column=0, sticky=tkinter.W)
+        tkinter.Label(algsFrame, text="l1").grid(row=crf_cur_row, column=0, sticky=tkinter.W)
         CRF_algorithmValue = tkinter.Entry(algsFrame, textvariable=self.CRF_l1_var)
         CRF_algorithmValue.grid(row=crf_cur_row, column=1)
         crf_cur_row += 1
 
-        tkinter.Label(algsFrame, text='l2').grid(row=crf_cur_row, column=0, sticky=tkinter.W)
+        tkinter.Label(algsFrame, text="l2").grid(row=crf_cur_row, column=0, sticky=tkinter.W)
         CRF_algorithmValue = tkinter.Entry(algsFrame, textvariable=self.CRF_l2_var)
         CRF_algorithmValue.grid(row=crf_cur_row, column=1)
         crf_cur_row += 1
 
-        tkinter.Label(algsFrame, text='number of processors').grid(
-            row=crf_cur_row,
-            column=0,
-            sticky=tkinter.W
+        tkinter.Label(algsFrame, text="number of processors").grid(
+            row=crf_cur_row, column=0, sticky=tkinter.W
         )
         CRF_nprocsValue = tkinter.ttk.Combobox(algsFrame, textvariable=self.CRF_nprocs_var)
-        CRF_nprocsValue["values"] = list(range(1, multiprocessing.cpu_count()+1))
+        CRF_nprocsValue["values"] = list(range(1, multiprocessing.cpu_count() + 1))
         CRF_nprocsValue.current(0)
         CRF_nprocsValue.grid(row=crf_cur_row, column=1)
         crf_cur_row += 1
 
         compact_btn = tkinter.ttk.Checkbutton(
-            algsFrame,
-            text="compact model",
-            variable=self.compact_var
-        ).grid(
-            row=crf_cur_row,
-            column=0,
-            sticky=tkinter.W
-        )
+            algsFrame, text="compact model", variable=self.compact_var
+        ).grid(row=crf_cur_row, column=0, sticky=tkinter.W)
         crf_cur_row += 1
 
         CRF_trainButton = tkinter.Button(algsFrame, text="train", command=self.trainCRF)
@@ -369,11 +344,11 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
 
     def select_file(self, event=None):
         options = {}
-        options['defaultextension'] = '.txt'
-        options['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
-        options['initialdir'] = sem.SEM_DATA_DIR / "resources" / "patterns"
-        options['parent'] = self.trainTop
-        options['title'] = 'Select pattern file.'
+        options["defaultextension"] = ".txt"
+        options["filetypes"] = [("all files", ".*"), ("text files", ".txt")]
+        options["initialdir"] = sem.SEM_DATA_DIR / "resources" / "patterns"
+        options["parent"] = self.trainTop
+        options["title"] = "Select pattern file."
         pattern = tkinter.filedialog.askopenfilename(**options)
         self.pattern_label_var.set(pattern)
 
@@ -406,9 +381,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         masterfile = self.master.workflow()
         export_format = "conll"
         pipeline, workflow_options, exporter, couples = load_master(
-            masterfile,
-            force_format=export_format,
-            pipeline_mode="train"
+            masterfile, force_format=export_format, pipeline_mode="train"
         )
         annotation_level = str2filter[self.annotation_level.get()]
         document_filter = str2docfilter[self.document_filter.get()]
@@ -432,7 +405,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             name = target_model.name
             try:
                 os.makedirs(out_dir)
-            except FileExistsError: # python3
+            except FileExistsError:  # python3
                 pass
 
         timestamp = time.strftime("%Y%m%d%H%M%S")
@@ -451,23 +424,22 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         with open(train_file, "w", encoding="utf-8") as output_stream:
             for filename in files:
                 document = sem.importers.load(
-                    filename,
-                    encoding="utf-8",
-                    tagset_name=self.annotation_name
+                    filename, encoding="utf-8", tagset_name=self.annotation_name
                 )
-                args = Holder(**{
-                    "infiles": [document],
-                    "pipeline": pipeline,
-                    "options": workflow_options,
-                    "exporter": None,
-                    "couples": None
-                })
+                args = Holder(
+                    **{
+                        "infiles": [document],
+                        "pipeline": pipeline,
+                        "options": workflow_options,
+                        "exporter": None,
+                        "couples": None,
+                    }
+                )
                 if isinstance(document, SEMCorpus):
                     for doc in document:
                         if doc.name in names:
                             self.wapiti_train_logger.warn(
-                                "document %s already found, skipping",
-                                doc.name
+                                "document %s already found, skipping", doc.name
                             )
                             continue
                         elif not document_filter(doc, self.annotation_name):
@@ -525,45 +497,36 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         with open(pattern_file, "r") as input_stream:
             patterns = input_stream.read()
         model = WapitiModel(
-            patterns=patterns,
-            algo=alg,
-            rho1=l1,
-            rho2=l2,
-            nthreads=nprocs,
-            compact=compact
+            patterns=patterns, algo=alg, rho1=l1, rho2=l2, nthreads=nprocs, compact=compact
         )
         sequences = []
         for sequence in sem.importers.read_conll(train_file, "utf-8"):
-            sequences.append(
-                bytes(
-                    "\n".join("\t".join(seq) for seq in sequence) + "\n",
-                    "utf-8"
-                )
-            )
+            sequences.append(bytes("\n".join("\t".join(seq) for seq in sequence) + "\n", "utf-8"))
         model.train(sequences)
         model.save(str(model_file))
         del model
 
-        model_update_message = "\n\nNo candidate location found," \
-                               " model update has to be done manually"
+        model_update_message = (
+            "\n\nNo candidate location found," " model update has to be done manually"
+        )
         if target_model:
             if target_model.exists():
                 bname = pathlib.Path(name).stem
                 ext = pathlib.Path(name).suffix
                 backup_name = "{}.backup-{}{}".format(bname, timestamp, ext)
                 dest = out_dir / backup_name
-                self.wapiti_train_logger.info('creating backup file before moving: %s', dest)
+                self.wapiti_train_logger.info("creating backup file before moving: %s", dest)
                 shutil.move(target_model, dest)
-            self.wapiti_train_logger.info('trained model moved to: %s', str(out_dir))
+            self.wapiti_train_logger.info("trained model moved to: %s", str(out_dir))
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
             shutil.copy(model_file, target_model)
 
         self.wapiti_train_logger.info("files are located in: %s", str(output_dir))
         tkinter.messagebox.showinfo(
-            "training SEM", "Everything went ok! files are located in: {0}{1}".format(
-                output_dir,
-                model_update_message
-            )
+            "training SEM",
+            "Everything went ok! files are located in: {0}{1}".format(
+                output_dir, model_update_message
+            ),
         )
 
         if self.main_frame:
@@ -611,8 +574,8 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
         notebook = tkinter.ttk.Notebook(algsFrame)
         frame1 = tkinter.ttk.Frame(notebook)
         frame2 = tkinter.ttk.Frame(notebook)
-        notebook.add(frame1, text='CRF')
-        notebook.add(frame2, text='NN')
+        notebook.add(frame1, text="CRF")
+        notebook.add(frame2, text="NN")
         frame1.resource_dir = sem.SEM_DATA_DIR / "resources"
 
         varsFrame.pack(fill="both", expand="yes")
@@ -647,7 +610,7 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
             document_filter=document_filter_var,
             top=frame1,
             main_frame=trainTop,
-            text="CRF-specific variables"
+            text="CRF-specific variables",
         )
 
     @property
@@ -670,7 +633,7 @@ class SearchFrame(tkinter.ttk.Frame):
         self.prev_nocase = nocase
         self.findings = []
         self.current = -1
-        self.text.tag_config("search", background='yellow', foreground="black")
+        self.text.tag_config("search", background="yellow", foreground="black")
         bold_font = tkinter.font.Font(self.text)
         bold_font.configure(weight="bold")
         self.text.tag_config("search_current", font=bold_font)
@@ -715,7 +678,7 @@ class SearchFrame(tkinter.ttk.Frame):
                     stopindex="end",
                     count=countVar,
                     regexp=self.regexp.get(),
-                    nocase=self.nocase.get()
+                    nocase=self.nocase.get(),
                 )
                 while pos:
                     end = "{0} + {1}c".format(pos, countVar.get())
@@ -728,22 +691,22 @@ class SearchFrame(tkinter.ttk.Frame):
                         stopindex="end",
                         count=countVar,
                         regexp=self.regexp.get(),
-                        nocase=self.nocase.get()
+                        nocase=self.nocase.get(),
                     )
                 self.current = 1
             elif self.findings:
-                prev = self.findings[self.current-1]
-                self.current = (self.current+1 if self.current < len(self.findings) else 1)
-                self.text.tag_remove("search_current",  prev[0],  prev[1])
+                prev = self.findings[self.current - 1]
+                self.current = self.current + 1 if self.current < len(self.findings) else 1
+                self.text.tag_remove("search_current", prev[0], prev[1])
 
             if self.findings:
                 self.text.tag_add(
                     "search_current",
-                    self.findings[self.current-1][0],
-                    self.findings[self.current-1][1]
+                    self.findings[self.current - 1][0],
+                    self.findings[self.current - 1][1],
                 )
                 matchesVar.set("match {0} out of {1}".format(self.current, len(self.findings)))
-                self.text.mark_set("insert", self.findings[self.current-1][1])
+                self.text.mark_set("insert", self.findings[self.current - 1][1])
                 self.text.see("insert")
             else:
                 matchesVar.set("no matches found")
@@ -760,14 +723,10 @@ class SearchFrame(tkinter.ttk.Frame):
         cancel_btn = tkinter.ttk.Button(find_in_text_top, text="cancel", command=cancel)
         matches_found_lbl = tkinter.Label(find_in_text_top, textvariable=matchesVar)
         regexp_btn = tkinter.ttk.Checkbutton(
-            find_in_text_top,
-            text="regular expression",
-            variable=self.regexp
+            find_in_text_top, text="regular expression", variable=self.regexp
         )
         nocase_btn = tkinter.ttk.Checkbutton(
-            find_in_text_top,
-            text="ignore case",
-            variable=self.nocase
+            find_in_text_top, text="ignore case", variable=self.nocase
         )
         label1.grid(row=0, column=0)
         text.grid(row=0, column=1)
@@ -778,6 +737,6 @@ class SearchFrame(tkinter.ttk.Frame):
         matches_found_lbl.grid(row=3, column=0, columnspan=2)
         text.focus_set()
 
-        find_in_text_top.bind('<Return>', nxt)
-        find_in_text_top.bind('<Escape>', cancel)
+        find_in_text_top.bind("<Return>", nxt)
+        find_in_text_top.bind("<Escape>", cancel)
         find_in_text_top.protocol("WM_DELETE_WINDOW", cancel)

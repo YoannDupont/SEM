@@ -45,12 +45,13 @@ from sem.logger import default_handler, file_handler
 clean_info_logger = logging.getLogger("sem.clean_info")
 clean_info_logger.addHandler(default_handler)
 
+
 class SEMModule(RootModule):
     def __init__(self, to_keep, log_level="WARNING", log_file=None, **kwargs):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
 
         if isinstance(to_keep, str):
-            self._allowed = to_keep.split(",") # comma-separated named fields
+            self._allowed = to_keep.split(",")  # comma-separated named fields
         else:
             self._allowed = to_keep
 
@@ -78,7 +79,7 @@ class SEMModule(RootModule):
             clean_info_logger.addHandler(file_handler(self._log_file))
         clean_info_logger.setLevel(self._log_level)
 
-        clean_info_logger.info('cleaning document')
+        clean_info_logger.info("cleaning document")
 
         allowed = set(self._allowed)
         fields = set(field for field in document.corpus.fields)
@@ -87,20 +88,18 @@ class SEMModule(RootModule):
         if len(allowed - fields) > 0:
             clean_info_logger.warn(
                 "the following fields are not present in document,"
-                " this might cause an error sometime later: {}".format(
-                    ", ".join(allowed - fields)
-                )
+                " this might cause an error sometime later: {}".format(", ".join(allowed - fields))
             )
 
         for i in range(len(document.corpus.sentences)):
             for j in range(len(document.corpus.sentences[i])):
                 document.corpus.sentences[i][j] = {
-                    a: document.corpus.sentences[i][j][a]
-                    for a in allowed
+                    a: document.corpus.sentences[i][j][a] for a in allowed
                 }
 
         laps = time.time() - start
-        clean_info_logger.info('done in {0}'.format(timedelta(seconds=laps)))
+        clean_info_logger.info("done in {0}".format(timedelta(seconds=laps)))
+
 
 def main(args):
     """
@@ -127,7 +126,7 @@ def main(args):
     allowed = ranges_to_set(
         args.ranges,
         len(open(args.infile, "rU", encoding=ienc).readline().strip().split()),
-        include_zero=True
+        include_zero=True,
     )
     max_abs = 0
     for element in allowed:
@@ -138,23 +137,19 @@ def main(args):
     if nelts < max_abs:
         clean_info_logger.error(
             'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(
-                max_abs,
-                nelts,
-                args.infile
+                max_abs, nelts, args.infile
             )
         )
         raise RuntimeError(
             'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(
-                max_abs,
-                nelts,
-                args.infile
+                max_abs, nelts, args.infile
             )
         )
 
     clean_info_logger.info('cleaning "{0}"'.format(args.infile))
-    clean_info_logger.info('keeping columns: {0}'.format(
-        ", ".join([str(s) for s in sorted(allowed)])
-    ))
+    clean_info_logger.info(
+        "keeping columns: {0}".format(", ".join([str(s) for s in sorted(allowed)]))
+    )
     clean_info_logger.info('writing "{0}"'.format(args.outfile))
 
     with open(args.outfile, "w", encoding=oenc) as output_stream:
@@ -165,7 +160,7 @@ def main(args):
                 output_stream.write("\t".join(tokens))
             output_stream.write("\n")
 
-    clean_info_logger.info('done')
+    clean_info_logger.info("done")
 
 
 import sem
@@ -173,24 +168,26 @@ import sem
 _subparsers = sem.argument_subparsers
 
 parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Remove unwanted columns from CoNLL-formatted file."
+    pathlib.Path(__file__).stem, description="Remove unwanted columns from CoNLL-formatted file."
 )
 
-parser.add_argument("infile",
-                    help="The input file")
-parser.add_argument("outfile",
-                    help="The output file ")
-parser.add_argument("ranges",
-                    help="The ranges of indexes to keep in the file.")
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: critical)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file")
+parser.add_argument("outfile", help="The output file ")
+parser.add_argument("ranges", help="The ranges of indexes to keep in the file.")
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: critical)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

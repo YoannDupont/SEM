@@ -1,4 +1,4 @@
-#-*- encoding: utf-8-*-
+# -*- encoding: utf-8-*-
 
 """
 file: __init__.py
@@ -33,7 +33,7 @@ import pathlib
 import platform
 
 SYSTEM = platform.system().lower()
-ON_WINDOWS = (SYSTEM == "windows")
+ON_WINDOWS = SYSTEM == "windows"
 
 SEM_HOME = pathlib.Path(__file__).resolve().parent
 SEM_DATA_DIR = pathlib.Path.home() / "sem_data"
@@ -46,11 +46,14 @@ _name = "SEM"
 
 __version__ = "3.3.0"
 
+
 def name():
     return _name
 
+
 def version():
     return __version__
+
 
 def full_name():
     return "{} v{}".format(name(), version())

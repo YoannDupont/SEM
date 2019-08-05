@@ -30,6 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 class Span(object):
     """
     The Span object.
@@ -45,8 +46,8 @@ class Span(object):
     __slots__ = ("_lb", "_ub")
 
     def __init__(self, lb, ub, length=-1):
-        self._lb = (min(lb, ub) if length < 0 else lb)
-        self._ub = (max(lb, ub) if length < 0 else lb+length)
+        self._lb = min(lb, ub) if length < 0 else lb
+        self._ub = max(lb, ub) if length < 0 else lb + length
 
     def __eq__(self, span):
         return self.lb == span.lb and self.ub == span.ub
@@ -119,7 +120,7 @@ class SpannedBounds(object):
 
     def add_forbiddens_regex(self, regex, s):
         for match in regex.finditer(s):
-            for index in range(match.start()+1, match.end()):
+            for index in range(match.start() + 1, match.end()):
                 self._forbidden.add(index)
 
     def force_regex(self, regex, s):
@@ -142,7 +143,7 @@ class SpannedBounds(object):
                 return (nth, False)
             elif i > span.ub:
                 continue
-            elif (i in span):
+            elif i in span:
                 return (nth, True)
         return (-1, False)
 
@@ -151,7 +152,7 @@ class SpannedBounds(object):
         Appends "span" at the end of bounds (Span list).
         """
 
-        for index in range(span.lb, span.ub+1):
+        for index in range(span.lb, span.ub + 1):
             if self.is_forbidden(index):
                 return
 
@@ -176,7 +177,7 @@ class SpannedBounds(object):
         if found:
             return
         else:
-            if (index > 0 and self[index-1].lb == self[index].ub):
+            if index > 0 and self[index - 1].lb == self[index].ub:
                 None
             elif index == -1:
                 self._bounds.append(span)
@@ -190,7 +191,7 @@ class SpannedBounds(object):
         span's upper bound is extended instead.
         """
 
-        for index in range(span.lb, span.ub+1):
+        for index in range(span.lb, span.ub + 1):
             if self.is_forbidden(index):
                 return
         if span in self._bounds[-1]:

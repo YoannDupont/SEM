@@ -30,6 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 class Annotator(object):
     def __init__(self, field, location, encoding="utf-8", *args, **kwargs):
         self._field = field

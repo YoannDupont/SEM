@@ -1,4 +1,4 @@
-#-*- encoding:utf-8 -*-
+# -*- encoding:utf-8 -*-
 
 """
 file: fr.py
@@ -58,30 +58,31 @@ _force.append(sem.constants.email_re)
 _spaces = sem.tokenisers.default.spaces
 _word = re.compile("^[^\\W\\d]+$", re.U + re.M)
 _number_with_unit = re.compile("([0-9][^0-9,.])|([^0-9,.][0-9])")
-_atomic = re.compile("[;:«»()\\[\\]{}=+*$£€/\\\"?!…%€$£]")
+_atomic = re.compile('[;:«»()\\[\\]{}=+*$£€/\\"?!…%€$£]')
 _comma_not_number = re.compile("(?<=[^0-9]),(?![0-9])", re.U + re.M)
 _apostrophe = re.compile("(?=['ʼ’])", re.U + re.M)
+
 
 def word_spans(content):
     spans = []
     offset = 0
 
     part = content
-    l = [match.span() for match in _spaces.finditer(part)]
+    l1 = [match.span() for match in _spaces.finditer(part)]
 
-    if l:
-        l1 = [(l[i][1], l[i+1][0]) for i in range(len(l)-1)]
-        if l[0][0] != 0:
-            l1.insert(0, (0, l[0][0]))
-        if l[-1][1] != len(part):
-            l1.append((l[-1][1], len(part)))
+    if l1:
+        l2 = [(l1[i][1], l1[i + 1][0]) for i in range(len(l1) - 1)]
+        if l1[0][0] != 0:
+            l2.insert(0, (0, l1[0][0]))
+        if l1[-1][1] != len(part):
+            l2.append((l1[-1][1], len(part)))
     else:
-        l1 = [(0, len(part))]
+        l2 = [(0, len(part))]
 
     i = 0
-    while i < len(l1):
-        span = l1[i]
-        text = part[span[0] : span[1]]
+    while i < len(l2):
+        span = l2[i]
+        text = part[span[0]: span[1]]
         shift = span[0]
         if len(text) == 1:
             i += 1
@@ -94,9 +95,9 @@ def word_spans(content):
             found = force.match(text)
             if found:
                 s, e = found.start(), found.end()
-                del l1[i]
-                l1.insert(i, (shift+e, shift+len(text)))
-                l1.insert(i, (shift+s, shift+e))
+                del l2[i]
+                l2.insert(i, (shift + e, shift + len(text)))
+                l2.insert(i, (shift + s, shift + e))
                 i += 1
                 break
         if found:
@@ -112,16 +113,16 @@ def word_spans(content):
         # atomic characters, they are always split
         prev = span[0]
         for find in _atomic.finditer(text):
-            if prev != shift+find.start():
-                tmp.append((prev, shift+find.start()))
-            tmp.append((shift+find.start(), shift+find.end()))
-            prev = shift+find.end()
+            if prev != shift + find.start():
+                tmp.append((prev, shift + find.start()))
+            tmp.append((shift + find.start(), shift + find.end()))
+            prev = shift + find.end()
         if tmp:
             if prev != span[1]:
                 tmp.append((prev, span[1]))
-            del l1[i]
+            del l2[i]
             for t in reversed(tmp):
-                l1.insert(i, t)
+                l2.insert(i, t)
             continue
         # commas
         prev = span[0]
@@ -129,62 +130,62 @@ def word_spans(content):
         if find:
             tmp.extend(
                 [
-                    (prev, shift+find.start()),
-                    (shift+find.start(), shift+find.end()),
-                    (shift+find.end(), span[1])
+                    (prev, shift + find.start()),
+                    (shift + find.start(), shift + find.end()),
+                    (shift + find.end(), span[1]),
                 ]
             )
-            prev = shift+find.end()+1
+            prev = shift + find.end() + 1
         if tmp:
-            del l1[i]
+            del l2[i]
             for t in reversed(tmp):
-                l1.insert(i, t)
+                l2.insert(i, t)
             continue
         # apostrophes
         prev = span[0]
         for find in _apostrophe.finditer(text):
-            tmp.append((prev, shift+find.start()+1))
-            prev = shift+find.start()+1
+            tmp.append((prev, shift + find.start() + 1))
+            prev = shift + find.start() + 1
         if prev < span[1]:
             tmp.append((prev, span[1]))
         if len(tmp) > 1:
-            del l1[i]
+            del l2[i]
             for t in reversed(tmp):
-                l1.insert(i, t)
+                l2.insert(i, t)
             continue
         del tmp[:]
         # number with unit
         prev = span[0]
         for find in _number_with_unit.finditer(text):
-            tmp.append((prev, span[0]+find.start()+1))
-            prev = span[0]+find.start()+1
+            tmp.append((prev, span[0] + find.start() + 1))
+            prev = span[0] + find.start() + 1
         if tmp:
             tmp.append((prev, span[1]))
-            del l1[i]
+            del l2[i]
             for t in reversed(tmp):
-                l1.insert(i, t)
+                l2.insert(i, t)
             continue
         # dots and ending commas
         if text and (text[-1] in ".," and not (len(text) == 2 and text[0].isupper())):
             mdots = _dots.search(text)
-            length = (len(mdots.group(1)) if mdots else 1)
+            length = len(mdots.group(1)) if mdots else 1
             if length != len(text):
-                tmp = [(span[0], span[1]-length), (span[1]-length, span[1])]
+                tmp = [(span[0], span[1] - length), (span[1] - length, span[1])]
         if tmp:
-            del l1[i]
+            del l2[i]
             for t in reversed(tmp):
-                l1.insert(i, t)
+                l2.insert(i, t)
             continue
         i += 1
 
-    spans = [Span(s[0]+offset, s[1]+offset) for s in l1 if s[0] < s[1]]
+    spans = [Span(s[0] + offset, s[1] + offset) for s in l2 if s[0] < s[1]]
     spans = [span for span in spans if len(span) > 0]
     return spans
 
 
 def sentence_bounds(content, token_spans):
     sent_bounds = []
-    tokens = [content[t.lb : t.ub] for t in token_spans]
+    tokens = [content[t.lb: t.ub] for t in token_spans]
     opening_counts = [0 for i in token_spans]
     count = 0
     for i in range(len(opening_counts)):
@@ -198,15 +199,15 @@ def sentence_bounds(content, token_spans):
     for index, span in enumerate(token_spans):
         token = tokens[index]
         if re.match("^[?!]+$", token) or token == "…" or re.match("\\.\\.+", token):
-            sent_bounds.append(Span(index+1, index+1))
+            sent_bounds.append(Span(index + 1, index + 1))
         elif token == ".":
             if opening_counts[index] == 0:
-                sent_bounds.append(Span(index+1, index+1))
+                sent_bounds.append(Span(index + 1, index + 1))
         elif (
             index < len(token_spans) - 1
-            and content[span.ub : token_spans[index+1].lb].count("\n") > 1
+            and content[span.ub: token_spans[index + 1].lb].count("\n") > 1
         ):
-            sent_bounds.append(Span(index+1, index+1))
+            sent_bounds.append(Span(index + 1, index + 1))
     sent_bounds.append(Span(len(tokens), len(tokens)))
 
     return sent_bounds

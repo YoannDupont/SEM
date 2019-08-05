@@ -45,12 +45,14 @@ from sem.storage import Span
 tei_np_logger = logging.getLogger("sem.tagger")
 tei_np_logger.addHandler(default_handler)
 
+
 def add_text(node, text):
     parts = text.split("\n")
     node.text = parts[0]
     for i in range(1, len(parts)):
         br = ET.SubElement(node, "lb")
         br.tail = "\n{}".format(parts[1])
+
 
 def add_tail(node, tail):
     parts = tail.split("\n")
@@ -59,6 +61,7 @@ def add_tail(node, tail):
         br = ET.SubElement(node, "lb")
         br.tail = "\n{}".format(parts[1])
 
+
 class Exporter(DefaultExporter):
     __ext = "analec.tei.xml"
 
@@ -66,11 +69,9 @@ class Exporter(DefaultExporter):
         pass
 
     def document_to_unicode(self, document, couples, encoding="utf-8", **kwargs):
-        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' \
-               + ET.tostring(
-                   self.document_to_data(document, couples),
-                   encoding="utf-8"
-                ).decode("utf-8")
+        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + ET.tostring(
+            self.document_to_data(document, couples), encoding="utf-8"
+        ).decode("utf-8")
 
     def document_to_data(self, document, couples, **kwargs):
         teiCorpus = ET.Element("teiCorpus")
@@ -117,8 +118,10 @@ class Exporter(DefaultExporter):
         try:
             chunking_field = lower["chunking"]
         except KeyError:
-            message = 'No "chunking" field was found, please check you have' \
-                      ' chunking information in your pipeline.'
+            message = (
+                'No "chunking" field was found, please check you have'
+                " chunking information in your pipeline."
+            )
             tei_np_logger.exception(message)
             raise KeyError(message)
 
@@ -131,12 +134,12 @@ class Exporter(DefaultExporter):
             "PRO": "PR_PRO",
             "PROREL": "PR_REL",
             "PROWH": "PR_WH",
-            "P+PRO": "PR_PP"
+            "P+PRO": "PR_PP",
         }
         words = document.segmentation("tokens").get_reference_spans()
-        paragraphs = \
-            document.segmentation("paragraphs").get_reference_spans() \
-            or Span(0, len(content))
+        paragraphs = document.segmentation("paragraphs").get_reference_spans() or Span(
+            0, len(content)
+        )
         np_chunks = [
             annotation
             for annotation in document.annotation(chunking_field)
@@ -146,14 +149,12 @@ class Exporter(DefaultExporter):
         pos = []
         for i in range(len(np_chunks)):
             chunk = np_chunks[i]
-            pos.append([
-                annot
-                for annot in pos_tags
-                if annot.lb >= chunk.lb and annot.ub <= chunk.ub
-            ])
+            pos.append(
+                [annot for annot in pos_tags if annot.lb >= chunk.lb and annot.ub <= chunk.ub]
+            )
 
         for i in range(len(np_chunks)):
-            np_chunks[i].ub = words[np_chunks[i].ub-1].ub
+            np_chunks[i].ub = words[np_chunks[i].ub - 1].ub
             np_chunks[i].lb = words[np_chunks[i].lb].lb
 
         nth = 0
@@ -165,9 +166,9 @@ class Exporter(DefaultExporter):
             ]
             p = ET.SubElement(body, "p")
             if len(nps) == 0:
-                p.text = content[paragraph.lb : paragraph.ub]
+                p.text = content[paragraph.lb: paragraph.ub]
             else:
-                p.text = content[paragraph.lb : nps[0].lb]
+                p.text = content[paragraph.lb: nps[0].lb]
                 for i, np in enumerate(nps):
                     nth += 1
                     np_start = ET.SubElement(
@@ -176,23 +177,23 @@ class Exporter(DefaultExporter):
                         {
                             "xml:id": "u-MENTION-{0}-start".format(nth),
                             "type": "AnalecDelimiter",
-                            "subtype": "UnitStart"
-                        }
+                            "subtype": "UnitStart",
+                        },
                     )
-                    np_start.tail = content[np.lb : np.ub]
+                    np_start.tail = content[np.lb: np.ub]
                     np_end = ET.SubElement(
                         p,
                         "anchor",
                         {
                             "xml:id": "u-MENTION-{0}-end".format(nth),
                             "type": "AnalecDelimiter",
-                            "subtype": "UnitEnd"
-                        }
+                            "subtype": "UnitEnd",
+                        },
                     )
-                    if i < len(nps)-1:
-                        np_end.tail = content[np.ub : nps[i+1].lb]
+                    if i < len(nps) - 1:
+                        np_end.tail = content[np.ub: nps[i + 1].lb]
                     else:
-                        np_end.tail = content[np.ub : paragraph.ub]
+                        np_end.tail = content[np.ub: paragraph.ub]
 
         back = ET.SubElement(root, "back")
         spanGrp = ET.SubElement(back, "spanGrp")
@@ -203,11 +204,11 @@ class Exporter(DefaultExporter):
                 spanGrp,
                 "span",
                 {
-                    "xml:id": "u-MENTION-{0}".format(i+1),
-                    "from": "#u-MENTION-{0}-start".format(i+1),
-                    "to": "#u-MENTION-{0}-end".format(i+1),
-                    "ana": "#u-MENTION-{0}-fs".format(i+1)
-                }
+                    "xml:id": "u-MENTION-{0}".format(i + 1),
+                    "from": "#u-MENTION-{0}-start".format(i + 1),
+                    "to": "#u-MENTION-{0}-end".format(i + 1),
+                    "ana": "#u-MENTION-{0}-fs".format(i + 1),
+                },
             )
 
         fvLib = ET.SubElement(back, "fvLib")
@@ -215,7 +216,7 @@ class Exporter(DefaultExporter):
         for i, np in enumerate(np_chunks):
             value = pronoun2analec.get(pos[i][0].value, "GN")
 
-            fs = ET.SubElement(fvLib, "fs", {"xml:id": "u-MENTION-{0}-fs".format(i+1)})
+            fs = ET.SubElement(fvLib, "fs", {"xml:id": "u-MENTION-{0}-fs".format(i + 1)})
             f = ET.SubElement(fs, "f")
             f.set("name", "REF")
             ET.SubElement(f, "string")

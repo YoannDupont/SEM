@@ -88,14 +88,16 @@ class SEMModule(RootModule):
             if self._mapping.get(annotation.value, None) != ""
         ]
 
-        document.add_annotation(Annotation(
-            self._annotation_name,
-            reference=ref_annotation.reference,
-            annotations=new_annotations
-        ))
+        document.add_annotation(
+            Annotation(
+                self._annotation_name,
+                reference=ref_annotation.reference,
+                annotations=new_annotations,
+            )
+        )
 
         laps = time.time() - start
-        map_annotations_logger.info('in %s', timedelta(seconds=laps))
+        map_annotations_logger.info("in %s", timedelta(seconds=laps))
 
 
 import sem
@@ -105,28 +107,32 @@ _subparsers = sem.argument_subparsers
 parser = _subparsers.add_parser(
     pathlib.Path(__file__).stem,
     description="Map annotations according to a mapping."
-                " If no mapping is provided for a given type,"
-                " it will remain unchanged."
-                " If an empty mapping is provided,"
-                " every annotation of that type will be discarded."
+    " If no mapping is provided for a given type,"
+    " it will remain unchanged."
+    " If an empty mapping is provided,"
+    " every annotation of that type will be discarded.",
 )
 
-parser.add_argument("infile",
-                    help="The input file (CoNLL format)")
-parser.add_argument("mapping",
-                    help="The mapping file")
-parser.add_argument("outfile",
-                    help="The output file")
-parser.add_argument("-c", "--column", type=int, default=-1,
-                    help="The column to map (default: %(default)s)")
-parser.add_argument("--input-encoding", dest="ienc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--output-encoding", dest="oenc",
-                    help="Encoding of the input (default: UTF-8)")
-parser.add_argument("--encoding", dest="enc", default="UTF-8",
-                    help="Encoding of both the input and the output (default: UTF-8)")
-parser.add_argument("-l", "--log", dest="log_level",
-                    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: %(default)s)")
-parser.add_argument("--log-file", dest="log_file",
-                    help="The name of the log file")
+parser.add_argument("infile", help="The input file (CoNLL format)")
+parser.add_argument("mapping", help="The mapping file")
+parser.add_argument("outfile", help="The output file")
+parser.add_argument(
+    "-c", "--column", type=int, default=-1, help="The column to map (default: %(default)s)"
+)
+parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")
+parser.add_argument(
+    "--encoding",
+    dest="enc",
+    default="UTF-8",
+    help="Encoding of both the input and the output (default: UTF-8)",
+)
+parser.add_argument(
+    "-l",
+    "--log",
+    dest="log_level",
+    choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+    default="WARNING",
+    help="Increase log level (default: %(default)s)",
+)
+parser.add_argument("--log-file", dest="log_file", help="The name of the log file")

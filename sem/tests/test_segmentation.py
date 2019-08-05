@@ -41,39 +41,40 @@ class TestSegmentation(unittest.TestCase):
         content = open(
             SEM_DATA_DIR / "non-regression" / "fr" / "in" / "segmentation.txt",
             "r",
-            encoding="utf-8"
+            encoding="utf-8",
         ).read()
-        conll = open(
-            SEM_DATA_DIR / "non-regression" / "fr" / "out" / "segmentation.txt",
-            "r",
-            encoding="utf-8"
-        ).read().strip()
+        conll = (
+            open(
+                SEM_DATA_DIR / "non-regression" / "fr" / "out" / "segmentation.txt",
+                "r",
+                encoding="utf-8",
+            )
+            .read()
+            .strip()
+        )
 
         token_spans = FrenchTokeniser.word_spans(content)
-        sentence_spans = sem.tokenisers.bounds2spans(FrenchTokeniser.sentence_bounds(
-            content,
-            token_spans
-        ))
-        paragraph_spans = sem.tokenisers.bounds2spans(FrenchTokeniser.paragraph_bounds(
-            content,
-            sentence_spans,
-            token_spans
-        ))
+        sentence_spans = sem.tokenisers.bounds2spans(
+            FrenchTokeniser.sentence_bounds(content, token_spans)
+        )
+        paragraph_spans = sem.tokenisers.bounds2spans(
+            FrenchTokeniser.paragraph_bounds(content, sentence_spans, token_spans)
+        )
 
-        tokens = [content[s.lb : s.ub] for s in token_spans]
-        sentences = [tokens[s.lb : s.ub] for s in sentence_spans]
+        tokens = [content[s.lb: s.ub] for s in token_spans]
+        sentences = [tokens[s.lb: s.ub] for s in sentence_spans]
         token_content = "".join(tokens)
         token_conll = "\n\n".join(["\n".join(tokens) for tokens in sentences])
         spaceless_content = content.replace("\r", "").replace("\n", "").replace(" ", "")
 
-        self.assertEquals(token_content, spaceless_content) # no lost content
-        self.assertEquals(token_conll, conll) # same segmentation
+        self.assertEquals(token_content, spaceless_content)  # no lost content
+        self.assertEquals(token_conll, conll)  # same segmentation
 
     def test_en(self):
         content = open(
             SEM_DATA_DIR / "non-regression" / "en" / "in" / "segmentation.txt",
             "r",
-            encoding="utf-8"
+            encoding="utf-8",
         ).read()
 
         token_spans = sem.tokenisers.bounds2spans(EnglishTokeniser.word_bounds(content))
@@ -84,11 +85,11 @@ class TestSegmentation(unittest.TestCase):
             EnglishTokeniser.paragraph_bounds(content, sentence_spans, token_spans)
         )
 
-        token_content = "".join([content[s.lb : s.ub] for s in token_spans])
+        token_content = "".join([content[s.lb: s.ub] for s in token_spans])
         spaceless_content = content.replace("\r", "").replace("\n", "").replace(" ", "")
 
-        self.assertEquals(token_content, spaceless_content) # no lost content
+        self.assertEquals(token_content, spaceless_content)  # no lost content
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

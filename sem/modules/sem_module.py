@@ -30,6 +30,7 @@ SOFTWARE.
 
 from sem.storage.holder import Holder
 
+
 class SEMModule(Holder):
     def __init__(self, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
         super(SEMModule, self).__init__(**kwargs)

@@ -32,6 +32,7 @@ SOFTWARE.
 
 from sem.exporters.exporter import Exporter as DefaultExporter
 
+
 class Exporter(DefaultExporter):
     __ext = "html"
 
@@ -63,7 +64,7 @@ class Exporter(DefaultExporter):
 
             if ub not in position2html:
                 position2html[ub] = []
-            position2html[ub].insert(0, '</span>')
+            position2html[ub].insert(0, "</span>")
             if lb not in position2html:
                 position2html[lb] = []
             position2html[lb].append('<span id="{0}" title="{0}">'.format(value))
@@ -71,11 +72,11 @@ class Exporter(DefaultExporter):
         for index in reversed(sorted(position2html.keys())):
             content = content[:index] + "".join(position2html[index]) + content[index:]
 
-        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(
-            self._lang
-        ))
-        content = content.replace("<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(
-            self._lang_style
-        ))
+        content = content.replace(
+            "<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(self._lang)
+        )
+        content = content.replace(
+            "<head>", '<head>\n<link rel="stylesheet" href="{0}" />'.format(self._lang_style)
+        )
 
         return content
