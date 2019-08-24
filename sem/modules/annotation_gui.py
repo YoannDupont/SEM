@@ -634,12 +634,13 @@ class AnnotationTool(tkinter.Frame):
         exporter = sem.exporters.get_exporter(fmt)()
         couples = {"ner": self.annotation_name}
         for document in corpus:
-            name = pathlib.Path(document.name.replace(":", ""))
+            name = document.name.replace(":", "")
+            if not name.endswith(".txt"):
+                name += ".txt"
+            name = pathlib.Path(name)
             out_path = output_path / "{0}.{1}".format(name.stem, exporter.extension())
             if fmt == "brat":
-                if not name.endswith(".txt"):
-                    name += ".txt"
-                with open(output_path / name, "w", encoding="utf-8") as output_stream:
+                with open(output_path / name.name, "w", encoding="utf-8") as output_stream:
                     output_stream.write(document.content)
             exporter.document_to_file(document, couples, out_path, encoding="utf-8")
 
