@@ -117,7 +117,7 @@ else:
     if differents:
         print()
         print("The following files are differents:")
-        print("\t" + " ".join(differents))
+        print("\t" + " ".join(str(diff) for diff in differents))
         answer = input("overwritte different files? [Y/n] ").lower()
         overwritte = validity.get(answer, True)
         if overwritte:

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-file: lexicon.py
+file: annotators.py
 
-Description: a tagger that uses lexica to annotate text
+Description: some annotators that can be used in SEM.
 
 author: Yoann Dupont
 
@@ -31,14 +31,18 @@ SOFTWARE.
 """
 
 import pathlib
-
-from sem.annotators.annotator import Annotator as RootAnnotator
+import logging
 
 from sem.features import MultiwordDictionaryFeature, NUL
-
-from sem.storage.annotation import chunk_annotation_from_sentence
-
+from sem.storage import chunk_annotation_from_sentence
 from sem.storage import Trie
+from sem.logger import default_handler
+from sem.CRF import Model as WapitiModel
+from sem.misc import check_model_available
+
+wapiti_logger = logging.getLogger("sem.annotators.wapiti")
+wapiti_logger.addHandler(default_handler)
+wapiti_logger.setLevel("INFO")
 
 
 def compile_chunks(sentence, column=-1):
@@ -47,7 +51,20 @@ def compile_chunks(sentence, column=-1):
     ]
 
 
+class Annotator(object):
+    """Root class for annotators, defines minimal methods."""
+
+    def __init__(self, field, location, encoding="utf-8", *args, **kwargs):
+        self._field = field
+        self._location = location
+
+    def process_document(self, document, *args, **kwargs):
+        raise NotImplementedError("process_document not implemented for root type Tagger")
+
+
 class LexicaFeature(MultiwordDictionaryFeature):
+    """A custom feature for LexiconAnnotator."""
+
     def __init__(self, path, entry, field, order=".order", input_encoding="utf-8", *args, **kwargs):
         super(LexicaFeature, self).__init__(entry=entry, *args, **kwargs)
 
@@ -163,11 +180,13 @@ class LexicaFeature(MultiwordDictionaryFeature):
         return res
 
 
-class Annotator(RootAnnotator):
+class LexiconAnnotator(Annotator):
+    """An annotator that uses a lexicon to provide annotations."""
+
     def __init__(
         self, field, location, token_field="word", input_encoding="utf-8", *args, **kwargs
     ):
-        super(Annotator, self).__init__(
+        super(LexiconAnnotator, self).__init__(
             field, location, input_encoding=input_encoding, *args, **kwargs
         )
 
@@ -184,3 +203,39 @@ class Annotator(RootAnnotator):
             tags.append(self._feature(sequence)[:])
 
         document.add_annotation_from_tags(tags, self._field, self._field)
+
+
+class WapitiAnnotator(Annotator):
+    """An annotator that uses a (python implementation of) wapiti model to provide annotations."""
+
+    def __init__(self, field, location, input_encoding=None, *args, **kwargs):
+        super(WapitiAnnotator, self).__init__(
+            field, location, input_encoding=input_encoding, *args, **kwargs
+        )
+
+        check_model_available(self._location, logger=wapiti_logger)
+
+        self._model = WapitiModel.from_wapiti_model(self._location, encoding=input_encoding)
+
+    def process_document(
+        self, document, annotation_name=None, annotation_fields=None, *args, **kwargs
+    ):
+        if annotation_name is None:
+            annotation_name = str(self._field)
+
+        tags = []
+        for sequence in document.corpus:
+            tagging, _, _ = self._model.tag_viterbi(sequence)
+            tags.append(tagging[:])
+
+        document.add_annotation_from_tags(tags, self._field, annotation_name)
+
+
+__annotators = {
+    "lexicon": LexiconAnnotator,
+    "wapiti": WapitiAnnotator
+}
+
+
+def get_annotator(name):
+    return __annotators[name]

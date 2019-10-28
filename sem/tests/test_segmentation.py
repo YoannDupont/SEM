@@ -32,11 +32,14 @@ import unittest
 
 from sem import SEM_DATA_DIR
 import sem.tokenisers
-import sem.tokenisers.fr as FrenchTokeniser
-import sem.tokenisers.en as EnglishTokeniser
 
 
 class TestSegmentation(unittest.TestCase):
+    def test_get(self):
+        default = sem.tokenisers.get_tokeniser("default")()
+        fr = sem.tokenisers.get_tokeniser("fr")()
+        en = sem.tokenisers.get_tokeniser("en")()
+
     def test_fr(self):
         content = open(
             SEM_DATA_DIR / "non-regression" / "fr" / "in" / "segmentation.txt",
@@ -53,12 +56,13 @@ class TestSegmentation(unittest.TestCase):
             .strip()
         )
 
-        token_spans = FrenchTokeniser.word_spans(content)
+        tokeniser = sem.tokenisers.FrenchTokeniser()
+        token_spans = tokeniser.word_spans(content)
         sentence_spans = sem.tokenisers.bounds2spans(
-            FrenchTokeniser.sentence_bounds(content, token_spans)
+            tokeniser.sentence_bounds(content, token_spans)
         )
         paragraph_spans = sem.tokenisers.bounds2spans(
-            FrenchTokeniser.paragraph_bounds(content, sentence_spans, token_spans)
+            tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
         )
 
         tokens = [content[s.lb: s.ub] for s in token_spans]
@@ -77,12 +81,13 @@ class TestSegmentation(unittest.TestCase):
             encoding="utf-8",
         ).read()
 
-        token_spans = sem.tokenisers.bounds2spans(EnglishTokeniser.word_bounds(content))
+        tokeniser = sem.tokenisers.EnglishTokeniser()
+        token_spans = tokeniser.word_spans(content)
         sentence_spans = sem.tokenisers.bounds2spans(
-            EnglishTokeniser.sentence_bounds(content, token_spans)
+            tokeniser.sentence_bounds(content, token_spans)
         )
         paragraph_spans = sem.tokenisers.bounds2spans(
-            EnglishTokeniser.paragraph_bounds(content, sentence_spans, token_spans)
+            tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
         )
 
         token_content = "".join([content[s.lb: s.ub] for s in token_spans])

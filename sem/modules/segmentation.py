@@ -4,9 +4,6 @@
 file: segmentation.py
 
 Description: performs text segmentation according to given tokeniser.
-It is searched in "obj/tokenisers", a valid name to give to this
-script is the basename (without extension) of any .py file that can be
-found in this directory.
 
 author: Yoann Dupont
 
@@ -41,8 +38,8 @@ from datetime import timedelta
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.misc import strip_html, read_chunks
 from sem.tokenisers import get_tokeniser, bounds2spans
-from sem.storage.document import Document
-from sem.storage.segmentation import Segmentation
+from sem.storage import Document
+from sem.storage import Segmentation
 from sem.storage import Span
 from sem.logger import default_handler, file_handler
 
@@ -90,7 +87,7 @@ class SEMModule(RootModule):
 
         if isinstance(tokeniser, str):
             segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
-            self._tokeniser = get_tokeniser(tokeniser)
+            self._tokeniser = get_tokeniser(tokeniser)()
         else:
             self._tokeniser = tokeniser
 

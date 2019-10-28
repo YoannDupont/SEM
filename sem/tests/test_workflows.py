@@ -31,19 +31,12 @@ SOFTWARE.
 import unittest
 
 from sem import SEM_RESOURCE_DIR
-from sem.storage import Document, Corpus, Holder
+from sem.storage import Document, Holder
 import sem.modules.tagger
 
 
 def launch(path_to_master):
     document = Document("document", "Ceci est un test.")
-    corpus = Corpus(
-        ["word"],
-        sentences=[
-            [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
-        ],
-    )
-    document._corpus = corpus
     pipeline, options, exporter, couples = sem.modules.tagger.load_master(path_to_master)
     args = Holder(
         pipeline=pipeline, options=options, exporter=None, couples=couples, infiles=[document]

@@ -41,7 +41,7 @@ try:
 except ImportError:
     from xml.etree.ElementTree import ElementTree, tostring as element2string
 
-from .sem_module import SEMModule as RootModule
+from sem.modules.sem_module import SEMModule as RootModule
 
 from sem.features import XML2Feature
 from sem.logger import default_handler, file_handler

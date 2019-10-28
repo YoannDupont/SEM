@@ -71,10 +71,7 @@ def main(args=None):
     for element in (sem.SEM_HOME / "modules").glob("*.py"):
         m = element.stem
         if valid_module(element.name):
-            try:
-                modules[m] = sem.modules.get_package(m)
-            except Exception as exc:
-                print("cannot load module {}: {}".format(m, exc.args[0]))
+            modules[m] = sem.modules.get_package(m)
     name = pathlib.Path(sys.argv[0]).name
     operation = sys.argv[1] if len(sys.argv) > 1 else "-h"
 

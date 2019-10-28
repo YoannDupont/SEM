@@ -40,13 +40,22 @@ import tkinter.ttk
 
 import sem
 from sem.constants import NUL
-from sem.storage.document import Document, SEMCorpus
-from sem.storage.annotation import Tag, Annotation
+from sem.storage import Document, SEMCorpus
+from sem.storage import Tag, Annotation
 from sem.logger import extended_handler
 import sem.importers
-from sem.gui.misc import find_potential_separator, find_occurrences, random_color, from_tagset
-from sem.gui.components import SEMTkTrainInterface, SearchFrame
-from sem.gui.components import SemTkMasterSelector, SemTkLangSelector
+from sem.gui_components import (
+    find_potential_separator,
+    find_occurrences,
+    random_color,
+    from_tagset
+)
+from sem.gui_components import (
+    SEMTkTrainInterface,
+    SearchFrame,
+    SemTkMasterSelector,
+    SemTkLangSelector
+)
 import sem.modules.tagger
 
 
@@ -638,7 +647,7 @@ class AnnotationTool(tkinter.Frame):
             if not name.endswith(".txt"):
                 name += ".txt"
             name = pathlib.Path(name)
-            out_path = output_path / "{0}.{1}".format(name.stem, exporter.extension())
+            out_path = output_path / "{0}.{1}".format(name.stem, exporter.extension)
             if fmt == "brat":
                 with open(output_path / name.name, "w", encoding="utf-8") as output_stream:
                     output_stream.write(document.content)

@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.storage.holder import Holder
+from sem.storage import Holder
 
 
 class SEMModule(Holder):

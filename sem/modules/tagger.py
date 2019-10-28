@@ -55,7 +55,6 @@ from sem.modules import get_module
 import sem.modules.pipeline
 import sem.modules.export
 import sem.exporters
-import sem.exporters.conll
 import sem.importers
 import sem.misc
 
@@ -79,15 +78,15 @@ def process(document, exporter, output_directory, couples, encoding, lang_style)
 
     if exporter is not None:
         name = document.escaped_name()
-        if "html" in exporter.extension():
+        if "html" in exporter.extension:
             shutil.copy(sem.SEM_RESOURCE_DIR / "css" / "tabs.css", output_directory)
             shutil.copy(
                 sem.SEM_RESOURCE_DIR / "css" / exporter._lang / lang_style, output_directory
             )
 
         shortname = pathlib.Path(name).stem
-        out_path = output_directory / "{0}.{1}".format(shortname, exporter.extension())
-        if exporter.extension() == "ann":
+        out_path = output_directory / "{0}.{1}".format(shortname, exporter.extension)
+        if exporter.extension == "ann":
             filename = shortname + ".txt"
             with open(output_directory / filename, "w", encoding=encoding) as output_stream:
                 output_stream.write(document.content)

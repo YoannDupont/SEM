@@ -42,7 +42,7 @@ except ImportError:
     import pickle
 
 from sem.logger import default_handler, file_handler
-from sem.storage.dictionaries import compile_token, compile_multiword
+from sem.storage import compile_token, compile_multiword
 
 compile_dictionary_logger = logging.getLogger("sem.compile_dictionary")
 compile_dictionary_logger.addHandler(default_handler)

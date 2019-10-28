@@ -34,7 +34,7 @@ import collections
 
 from sem.importers import read_conll
 from sem.storage import Annotation, Document
-from sem.storage.annotation import annotation_from_sentence
+from sem.storage import annotation_from_sentence
 
 import sem.importers
 

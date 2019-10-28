@@ -30,8 +30,9 @@ SOFTWARE.
 
 import unittest
 
-from sem.features import IdentityFeature, DictGetterFeature
 from sem.features import (
+    IdentityFeature,
+    DictGetterFeature,
     BOSFeature,
     EOSFeature,
     LowerFeature,
@@ -39,10 +40,16 @@ from sem.features import (
     IsUpperFeature,
     SubstitutionFeature,
     SequencerFeature,
-)  # arity features
-from sem.features import CheckFeature, SubsequenceFeature, TokenFeature
-from sem.features import SomeFeature, AllFeature, NoneFeature
-from sem.features import TokenDictionaryFeature, MultiwordDictionaryFeature, MapperFeature
+    CheckFeature,
+    SubsequenceFeature,
+    TokenFeature,
+    SomeFeature,
+    AllFeature,
+    NoneFeature,
+    TokenDictionaryFeature,
+    MultiwordDictionaryFeature,
+    MapperFeature
+)
 
 
 class TestFeatures(unittest.TestCase):

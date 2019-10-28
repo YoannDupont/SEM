@@ -52,7 +52,7 @@ from sem.storage import Document, SEMCorpus, Corpus
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
 from sem.storage import Span
-from sem.storage.annotation import tag_annotation_from_corpus, chunk_annotation_from_corpus
+from sem.storage import tag_annotation_from_corpus, chunk_annotation_from_corpus
 
 
 def load(
@@ -443,7 +443,7 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
     documents = []
     names = set()  # document names that were already seen
     for name in name_list:
-        if isinstance(name, sem.storage.Document):
+        if isinstance(name, Document):
             if logger:
                 logger.info("Reading %s", name.name)
             if name.name not in names:

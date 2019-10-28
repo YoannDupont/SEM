@@ -42,7 +42,7 @@ import sem.importers
 from sem.misc import str2bool
 from .sem_module import SEMModule as RootModule
 
-from sem.storage.document import SEMCorpus
+from sem.storage import SEMCorpus
 from sem.exporters import get_exporter
 from sem.logger import default_handler, file_handler
 

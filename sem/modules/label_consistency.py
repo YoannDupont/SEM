@@ -33,7 +33,7 @@ import re
 
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.storage import Tag, Trie, Span
-from sem.storage.annotation import chunk_annotation_from_sentence
+from sem.storage import chunk_annotation_from_sentence
 from sem.importers import read_conll
 from sem.features import MultiwordDictionaryFeature, NUL
 from sem.misc import longest_common_substring

@@ -42,7 +42,7 @@ import pathlib
 import sem
 from sem.modules.tagger import load_master, main as tagger
 from sem.storage import Holder, SEMCorpus
-from sem.gui.components import (
+from sem.gui_components import (
     SemTkMasterSelector,
     SemTkLangSelector,
     SemTkFileSelector,

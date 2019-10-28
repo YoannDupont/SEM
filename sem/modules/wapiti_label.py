@@ -35,7 +35,7 @@ import pathlib
 from datetime import timedelta
 
 import sem.importers
-from sem.exporters.conll import Exporter as CoNLLExporter
+from sem.exporters import CoNLLExporter
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.logger import default_handler, file_handler
 from sem.misc import check_model_available
