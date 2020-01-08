@@ -717,8 +717,8 @@ class Corpus(object):
 def compile_token(infile, encoding):
     tokens = set()
     for line in open(infile, "rU", encoding=encoding):
-        line = line.strip()
-        if line != "":
+        line = line.split("#", 1)[0].strip()
+        if line:
             tokens.add(line)
     return tokens
 
@@ -726,8 +726,10 @@ def compile_token(infile, encoding):
 def compile_multiword(infile, encoding):
     trie = Trie()
     for line in open(infile, "rU", encoding=encoding):
-        seq = line.strip().split()
-        trie.add(seq)
+        line = line.split("#", 1)[0].strip()
+        if line and not line.startswith("#"):
+            seq = line.split()
+            trie.add(seq)
     return trie
 
 

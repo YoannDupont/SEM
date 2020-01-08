@@ -32,6 +32,7 @@ SOFTWARE.
 
 import re
 import pathlib
+import warnings
 
 from sem.constants import NUL
 from sem.storage import Trie
@@ -665,7 +666,7 @@ class MultiwordDictionaryFeature(DictionaryFeature):
         if self._path is not None:
             try:
                 self._value = pickle.load(open(self._path))
-            except (pickle.UnpicklingError, ImportError, EOFError):
+            except (pickle.UnpicklingError, ImportError, EOFError, TypeError):
                 self._value = compile_multiword(self._path, "utf-8")
             self._entries = None
         elif self._entries:
@@ -774,48 +775,55 @@ class MapperFeature(DictionaryFeature):
 
 
 class DirectoryFeature(Feature):
-    def __init__(self, path, x2f, order=".order", ambiguous=False, *args, **kwargs):
+    def __init__(self, path, x2f, order=".order", ambiguous=False, features=None, *args, **kwargs):
         super(DirectoryFeature, self).__init__(self, *args, **kwargs)
         self._is_sequence = True
         self._ambiguous = ambiguous
 
-        order = order or ".order"
-
-        self.path = pathlib.Path(path).expanduser().absolute().resolve()
-        self.order = []
-        self.features = []
-
-        names = [p.name for p in self.path.glob("*")]
-        if order in names:
-            for line in open(self.path / order, "rU"):
-                line = line.strip()
-                if "#" in line:
-                    line = line[: line.index("#")].strip()
-                if line:
-                    self.order.append(line)
+        if features:
+            self.features = features[:]
         else:
-            self.order = [name for name in names if not name.startswith(".")]
+            warnings.warn(
+                "Using directory feature with path to folder will be removed in version 4.0.0",
+                FutureWarning
+            )
+            order = order or ".order"
 
-        self.order = self.order[::-1]
+            self.path = pathlib.Path(path).expanduser().absolute().resolve()
+            self.order = []
+            self.features = []
 
-        for name in self.order:
-            self.features.append(x2f.parse(ET.parse(self.path / name).getroot()))
-            self.features[-1]._name = name
-            if not (
-                self.features[-1].is_boolean
-                or self.features[-1].is_sequence
-                or isinstance(self.features[-1], MapperFeature)
-                or (
-                    isinstance(self.features[-1], TriggeredFeature)
-                    and isinstance(self.features[-1].operation, MapperFeature)
-                )
-                or (isinstance(self.features[-1], SubsequenceFeature))
-            ):
-                raise ValueError(
-                    "In {0} feature: {1} is neither boolean nor sequence".format(self.name, name)
-                )
-            if isinstance(self.features[-1], MultiwordDictionaryFeature):
-                self.features[-1]._appendice = self.features[-1]._appendice or "-{0}".format(name)
+            names = [p.name for p in self.path.glob("*")]
+            if order in names:
+                for line in open(self.path / order, "rU"):
+                    line = line.strip()
+                    if "#" in line:
+                        line = line[: line.index("#")].strip()
+                    if line:
+                        self.order.append(line)
+            else:
+                self.order = [name for name in names if not name.startswith(".")]
+
+            self.order = self.order[::-1]
+
+            for name in self.order:
+                self.features.append(x2f.parse(ET.parse(self.path / name).getroot()))
+                self.features[-1]._name = name
+                if not (
+                    self.features[-1].is_boolean
+                    or self.features[-1].is_sequence
+                    or isinstance(self.features[-1], MapperFeature)
+                    or (
+                        isinstance(self.features[-1], TriggeredFeature)
+                        and isinstance(self.features[-1].operation, MapperFeature)
+                    )
+                    or (isinstance(self.features[-1], SubsequenceFeature))
+                ):
+                    raise ValueError(
+                        "In {0} feature: {1} is neither boolean nor sequence".format(self.name, name)
+                    )
+                if isinstance(self.features[-1], MultiwordDictionaryFeature):
+                    self.features[-1]._appendice = self.features[-1]._appendice or "-{0}".format(name)
 
     def __call__(self, list2dict, *args, **kwargs):
         data = ["O"] * len(list2dict)
@@ -1018,11 +1026,25 @@ class XML2Feature(object):
 
         elif xml.tag == "directory":
             # path = abspath(join(dirname(self._path), attrib.pop("path")))
-            path = (pathlib.Path(self._path).parent / attrib.pop("path")).resolve()
             ambiguous = str2bool(attrib.pop("ambiguous", "false"))
-            return DirectoryFeature(
-                path, self, order=attrib.pop("order", ".order"), ambiguous=ambiguous, **attrib
-            )
+            children = list(xml)
+            if children:
+                features = []
+                for child in reversed(children):
+                    features.append(self.parse(child))
+                    name = pathlib.Path(child.attrib["path"]).stem
+                    if not features[-1].name:
+                        features[-1]._name = name
+                    if isinstance(features[-1], MultiwordDictionaryFeature):
+                        features[-1]._appendice = features[-1]._appendice or "-{}".format(name)
+                return DirectoryFeature(
+                    None, None, ambiguous=ambiguous, features=features, **attrib
+                )
+            else:
+                path = (pathlib.Path(self._path).parent / attrib.pop("path")).resolve()
+                return DirectoryFeature(
+                    path, self, order=attrib.pop("order", ".order"), ambiguous=ambiguous, **attrib
+                )
 
         elif xml.tag == "fill":
             entry = attrib.pop("entry")
