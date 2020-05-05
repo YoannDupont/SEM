@@ -1,7 +1,7 @@
 # -*- coding:utf-8-*-
 
 """
-file: template.py
+file: CRF.py
 
 author: Yoann Dupont
 

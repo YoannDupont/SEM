@@ -54,7 +54,7 @@ class SEMModule(RootModule):
             tagging_logger.addHandler(file_handler(self._log_file))
         tagging_logger.setLevel(self._log_level)
 
-        self._annotator = sem.annotators.get_annotator(annotator)(field, *args, **kwargs)
+        self._annotator = sem.annotators.get_annotator(annotator).load(field, *args, **kwargs)
 
     def process_document(self, document, **kwargs):
         start = time.time()

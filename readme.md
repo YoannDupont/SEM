@@ -86,12 +86,12 @@
 ```
 2. 
 ```latex
-@inproceedings{dupont2018exploration,
+@inproceedings{dupont2017exploration,
   title={Exploration de traits pour la reconnaissance d’entit{'e}s nomm{'e}es du Fran{\c{c}}ais par apprentissage automatique},
   author={Dupont, Yoann},
   booktitle={24e Conf{'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)},
   pages={42},
-  year={2018}
+  year={2017}
 }
 ```
 3. 

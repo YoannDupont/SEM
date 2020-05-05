@@ -118,8 +118,8 @@ else:
         print()
         print("The following files are differents:")
         print("\t" + " ".join(str(diff) for diff in differents))
-        answer = input("overwritte different files? [Y/n] ").lower()
-        overwritte = validity.get(answer, True)
+        answer = input("overwritte different files? [y/N] ").lower()
+        overwritte = validity.get(answer, False)
         if overwritte:
             for filename in differents:
                 dest = usr_sem_data / filename
@@ -152,6 +152,7 @@ setup(
         "chunking",
         "named entity recognition",
     ],
+    python_requires=">3.7.5",
     packages=find_packages(),
     include_package_data=True,
     entry_points={"console_scripts": ["sem = sem.__main__:main"]},

@@ -110,8 +110,7 @@ def get_section(cfg, section):
 
 
 def load_master(master, force_format="default", pipeline_mode="all"):
-    """
-    Load a SEM workflow from a file.
+    """Load a SEM workflow from a file.
 
     Parameters
     ----------
@@ -176,6 +175,15 @@ def load_master(master, force_format="default", pipeline_mode="all"):
             elif str(path).startswith("../") or str(path).startswith("./"):
                 value = str((pathlib.Path(master).parent / path).resolve())
             arguments[key.replace("-", "_")] = value
+        if list(xmlpipe):
+            subpipes = list(xmlpipe)
+            for pipe in subpipes:
+                path = pipe.attrib.get("path")
+                if path and path.startswith("../") or path.startswith("./"):
+                    pipe.attrib["path"] = str((pathlib.Path(master).parent / path).resolve())
+                if pipe.attrib.get("priority", "top-down") == "top-down":
+                    subpipes = subpipes[::-1]
+            arguments["xmllist"] = subpipes
         for section in options.sections():
             if section == "export":
                 continue
@@ -192,8 +200,7 @@ def load_master(master, force_format="default", pipeline_mode="all"):
 
 
 def main(args):
-    """
-    Return a document after it passed through a pipeline.
+    """Return a document after it passed through a pipeline.
 
     Parameters
     ----------

@@ -154,6 +154,11 @@ def main(args):
                 value = str2bool(value)
             except ValueError:
                 pass
+            if ',' in value:
+                try:
+                    value = [item for item in value.split(',') if item]
+                except AttributeError:
+                    pass
             options[key] = value
         options["encoding"] = ienc
     else:
@@ -211,7 +216,13 @@ parser.add_argument(
     "--import-options",
     nargs="*",
     dest="import_options",
-    help='Import-specific options. This is a list of "key=value" pairs.',
+    help=(
+        'Import-specific options. This is a list of "key=value" pairs.'
+        'Typical keys for this options are: "fields" (the list of CoNLL fields),'
+        '"word_field" (the name of the field where words are), "taggings" (the fields'
+        'that contains taggings to load as annotations), "chunkings" (IOB formatted'
+        'tags that represent some chunking (syntax or NE).'
+    ),
 )
 parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: UTF-8)")
 parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: UTF-8)")

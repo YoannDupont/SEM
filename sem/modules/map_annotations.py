@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
-"""
-file: map_annotations.py
+"""file: map_annotations.py
 
 Description: Map annotations according to a mapping. If no mapping is provided
 for a given type, it will remain unchanged. If an empty mapping is provided,
@@ -52,15 +51,15 @@ class SEMModule(RootModule):
         super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
 
         if isinstance(mapping, str):
-            self._mapping = compile_map(mapping, "utf-8")
+            with open(mapping, 'r', encoding="utf-8") as input_stream:
+                self._mapping = compile_map(input_stream)
         else:
             self._mapping = mapping
 
         self._annotation_name = annotation_name
 
     def process_document(self, document, **kwargs):
-        """
-        Updates a document with various segmentations and creates
+        """Updates a document with various segmentations and creates
         an sem.corpus (CoNLL-formatted data) using field argument as index.
 
         Parameters

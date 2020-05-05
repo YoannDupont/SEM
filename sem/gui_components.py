@@ -611,7 +611,6 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         return bool(self.compact_var.get())
 
     def trainCRF(self, events=None):
-        exporter = sem.exporters.CoNLLExporter()
         alg = self.algorithm()
         l1 = self.l1()
         l2 = self.l2()
@@ -741,13 +740,13 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         )
         sequences = []
         for sequence in sem.importers.read_conll(train_file, "utf-8"):
-            sequences.append(bytes("\n".join("\t".join(seq) for seq in sequence) + "\n", "utf-8"))
+            sequences.append(bytes(sequence.conll(range(len(sequence.keys()))) + "\n", "utf-8"))
         model.train(sequences)
         model.save(str(model_file))
         del model
 
         model_update_message = (
-            "\n\nNo candidate location found," " model update has to be done manually"
+            "\n\nNo candidate location found, model update has to be done manually"
         )
         if target_model:
             if target_model.exists():

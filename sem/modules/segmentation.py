@@ -36,12 +36,10 @@ import pathlib
 from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
-from sem.misc import strip_html, read_chunks
-from sem.tokenisers import get_tokeniser, bounds2spans
-from sem.storage import Document
-from sem.storage import Segmentation
-from sem.storage import Span
-from sem.logger import default_handler, file_handler
+from sem.misc import (strip_html, read_chunks)
+from sem.tokenisers import (get_tokeniser, bounds2spans)
+from sem.storage import (Document, Segmentation, Span)
+from sem.logger import (default_handler, file_handler)
 
 segmentation_logger = logging.getLogger("sem.segmentation")
 segmentation_logger.addHandler(default_handler)

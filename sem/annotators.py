@@ -32,10 +32,9 @@ SOFTWARE.
 
 import pathlib
 import logging
+import functools
 
-from sem.features import MultiwordDictionaryFeature, NUL
-from sem.storage import chunk_annotation_from_sentence
-from sem.storage import Trie
+from sem.features import (directory_feature, xml2feat)
 from sem.logger import default_handler
 from sem.CRF import Model as WapitiModel
 from sem.misc import check_model_available
@@ -45,177 +44,61 @@ wapiti_logger.addHandler(default_handler)
 wapiti_logger.setLevel("INFO")
 
 
-def compile_chunks(sentence, column=-1):
-    return [
-        [a.value, a.lb, a.ub] for a in chunk_annotation_from_sentence(sentence, column).annotations
-    ]
+class LexicaAnnotator:
+    """An annotator that uses lexica to provide annotations."""
 
+    def __init__(self, field, lexica, *args, **kwargs):
+        """The initialisation method of LexicaAnnotator.
 
-class Annotator(object):
-    """Root class for annotators, defines minimal methods."""
-
-    def __init__(self, field, location, encoding="utf-8", *args, **kwargs):
+        Parameters
+        ----------
+        lexica : function sem.storage.Sentence -> list[str]
+            Lexica is a functools.partial of `sem.features.directory_feature` with multiple
+            lexica that are either token or multiword features, used to provide annotations.
+        field : str
+            the name of the CoNLL field where annotations will be put. It is also the name
+            of the annotation set where annotations will be stored.
+        """
         self._field = field
-        self._location = location
+        self._feature = lexica
+
+    @classmethod
+    def load(cls, field, features=None, xmllist=(), path=None, token_field="word", **kwargs):
+        lexica = None
+        features = features or []
+        if features:
+            lexica = functools.partial(directory_feature, features=features)
+            return LexicaAnnotator(field, lexica)
+        elif xmllist:
+            path = path or pathlib.Path(".")
+            for child in xmllist:
+                features.append(xml2feat(child, default_entry=token_field, path=path))
+            lexica = functools.partial(directory_feature, features=features)
+            return LexicaAnnotator(field, lexica)
+        else:
+            raise ValueError(f"No data provided for loading {cls.__name__}.")
 
     def process_document(self, document, *args, **kwargs):
-        raise NotImplementedError("process_document not implemented for root type Tagger")
-
-
-class LexicaFeature(MultiwordDictionaryFeature):
-    """A custom feature for LexiconAnnotator."""
-
-    def __init__(self, path, entry, field, order=".order", input_encoding="utf-8", *args, **kwargs):
-        super(LexicaFeature, self).__init__(entry=entry, *args, **kwargs)
-
-        self._is_sequence = True
-        self._path = path
-        self.order = []
-        self._field = field
-        self._value = Trie()
-        order = order or ".order"
-        names = [path.name for path in pathlib.Path(self._path).glob("*")]
-
-        if order in names:
-            with open(pathlib.Path(self._path) / order, "r", newline="") as input_stream:
-                for line in input_stream:
-                    line = line.strip()
-                    if "#" in line:
-                        line = line[: line.index("#")].strip()
-                    if line:
-                        self.order.append(line)
-        else:
-            self.order = [name for name in names if not name.startswith(".")]
-
-        self.order = self.order[::-1]
-
-        for name in self.order:
-            with open(
-                pathlib.Path(self._path) / name, "r", encoding=input_encoding, newline=""
-            ) as input_stream:
-                entries = input_stream.read().strip().replace("\r", "").split("\n")
-            for entry in entries:
-                try:
-                    entry = entry[: entry.index("#")]
-                except Exception:
-                    pass
-                entry = entry.strip()
-                if entry != "":
-                    self._value.add_with_value(entry.split(), name)
-
-    def __call__(self, list2dict, *args, **kwargs):
-        res = ["O" for _ in range(len(list2dict))]
-        tmp = self._value._data
-        length = len(list2dict)
-        fst = 0
-        lst = -1  # last match found
-        cur = 0
-        entry = self._entry
-        ckey = None  # Current KEY
-        entities = []
-        value = None
-        while fst < length - 1:
-            cont = True
-            while cont and (cur < length):
-                ckey = list2dict[cur][entry]
-                if res[cur] == "O":
-                    if NUL in tmp:
-                        lst = cur
-                        value = tmp[NUL]
-                    tmp = tmp.get(ckey, {})
-                    cont = len(tmp) != 0
-                    cur += int(cont)
-                else:
-                    cont = False
-
-            if NUL in tmp:
-                lst = cur
-                value = tmp[NUL]
-
-            if lst != -1:
-                entities.append([value, fst, lst])
-                fst = lst
-                cur = fst
-                value = None
-            else:
-                fst += 1
-                cur = fst
-
-            tmp = self._value._data
-            lst = -1
-
-        if NUL in self._value._data.get(list2dict[-1][entry], []):
-            entities.append(
-                [self._value._data[list2dict[-1][entry]][NUL], len(list2dict) - 1, len(list2dict)]
-            )
-
-        if self._field in list2dict[0]:
-            gold = compile_chunks(list2dict, self._field)
-            for i in reversed(range(len(entities))):
-                e = entities[i]
-                for r in gold:
-                    if (
-                        (r[1] == e[1] and r[2] == e[2])
-                        or (r[1] == e[1] and r[2] >= e[2])
-                        or (r[1] <= e[1] and r[2] == e[2])
-                    ):
-                        del entities[i]
-                        break
-
-            for i in reversed(range(len(gold))):
-                r = gold[i]
-                for e in entities:
-                    if r[1] >= e[1] and r[2] <= e[2]:
-                        del gold[i]
-                        break
-        else:
-            gold = []
-
-        for r in gold + entities:
-            appendice = "-{}".format(r[0])
-            res[r[1]] = "B{}".format(appendice)
-            for i in range(r[1] + 1, r[2]):
-                res[i] = "I".format(appendice)
-
-        return res
-
-
-class LexiconAnnotator(Annotator):
-    """An annotator that uses a lexicon to provide annotations."""
-
-    def __init__(
-        self, field, location, token_field="word", input_encoding="utf-8", *args, **kwargs
-    ):
-        super(LexiconAnnotator, self).__init__(
-            field, location, input_encoding=input_encoding, *args, **kwargs
-        )
-
-        self._token_field = token_field
-
-        self._feature = LexicaFeature(
-            self._location, self._token_field, self._field, input_encoding=input_encoding
-        )
-
-    def process_document(self, document, annotation_fields=None, *args, **kwargs):
         tags = []
-        document.corpus.fields.append(self._field)
         for sequence in document.corpus:
-            tags.append(self._feature(sequence)[:])
+            tagging = self._feature(sequence)
+            sequence.add(tagging[:], self._field)
+            tags.append(tagging[:])
 
         document.add_annotation_from_tags(tags, self._field, self._field)
 
 
-class WapitiAnnotator(Annotator):
+class WapitiAnnotator:
     """An annotator that uses a (python implementation of) wapiti model to provide annotations."""
 
-    def __init__(self, field, location, input_encoding=None, *args, **kwargs):
-        super(WapitiAnnotator, self).__init__(
-            field, location, input_encoding=input_encoding, *args, **kwargs
-        )
+    def __init__(self, field, model):
+        self._field = field
+        self._model = model
 
-        check_model_available(self._location, logger=wapiti_logger)
-
-        self._model = WapitiModel.from_wapiti_model(self._location, encoding=input_encoding)
+    @classmethod
+    def load(cls, field, location, input_encoding=None, *args, **kwargs):
+        check_model_available(location, logger=wapiti_logger)
+        return (field, WapitiModel.from_wapiti_model(location, encoding=input_encoding))
 
     def process_document(
         self, document, annotation_name=None, annotation_fields=None, *args, **kwargs
@@ -231,8 +114,13 @@ class WapitiAnnotator(Annotator):
         document.add_annotation_from_tags(tags, self._field, annotation_name)
 
 
+def load(kind, *args, **kwargs):
+    clss = __annotators[kind]
+    return clss.load(*args, **kwargs)
+
+
 __annotators = {
-    "lexicon": LexiconAnnotator,
+    "lexica": LexicaAnnotator,
     "wapiti": WapitiAnnotator
 }
 

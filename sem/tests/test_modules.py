@@ -32,30 +32,20 @@ import unittest
 
 import sem.importers
 from sem import SEM_DATA_DIR
-from sem.storage import Document, Corpus
+from sem.storage import Document, Corpus, Sentence
 from sem.modules import EnrichModule, CleanModule, WapitiLabelModule, LabelConsistencyModule
 from sem.modules.enrich import Entry
-from sem.features import DictGetterFeature
-from sem.features import BOSFeature, EOSFeature
+from sem.features import bos, eos
 
 
 class TestModules(unittest.TestCase):
     def test_enrich(self):
-        document = Document("document", "Ceci est un test.")
         corpus = Corpus(
-            ["word"],
-            sentences=[
-                [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
-            ],
+            fields=["word"], sentences=[Sentence({"word": ["Ceci", "est", "un", "test", "."]})]
         )
-        document._corpus = corpus
+        document = Document("document", "Ceci est un test.", corpus=corpus)
 
-        features = []
-        cwg = DictGetterFeature(entry="word", x=0)
-        features.append(BOSFeature(name="BOS", entry="word", getter=cwg))
-        features.append(EOSFeature(name="EOS", entry="word", getter=cwg))
-
-        enrich = EnrichModule(bentries=[Entry("word")], features=features)
+        enrich = EnrichModule(bentries=[Entry("word")], features=[(bos, "BOS"), (eos, "EOS")])
 
         self.assertEquals(document._corpus.fields, ["word"])
 
@@ -63,21 +53,18 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word", "BOS", "EOS"])
 
+
     def test_clean(self):
-        document = Document("document", "Ceci est un test.")
         corpus = Corpus(
-            ["word", "remove"],
+            fields=["word", "remove"],
             sentences=[
-                [
-                    {"word": "Ceci", "remove": "Ceci"},
-                    {"word": "est", "remove": "est"},
-                    {"word": "un", "remove": "un"},
-                    {"word": "test", "remove": "test"},
-                    {"word": ".", "remove": "."},
-                ]
-            ],
+                Sentence({
+                    "word": ["Ceci", "est", "un", "test", "."],
+                    "remove": ["Ceci", "est", "un", "test", "."],
+                })
+            ]
         )
-        document._corpus = corpus
+        document = Document("document", "Ceci est un test.", corpus=corpus)
 
         self.assertEquals(document._corpus.fields, ["word", "remove"])
 
@@ -86,15 +73,12 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word"])
 
+
     def test_wapiti_label(self):
-        document = Document("document", "Ceci est un test.")
         corpus = Corpus(
-            ["word"],
-            sentences=[
-                [{"word": "Ceci"}, {"word": "est"}, {"word": "un"}, {"word": "test"}, {"word": "."}]
-            ],
+            fields=["word"], sentences=[Sentence({"word": ["Ceci", "est", "un", "test", "."]})]
         )
-        document._corpus = corpus
+        document = Document("document", "Ceci est un test.", corpus=corpus)
 
         self.assertEquals(document._corpus.fields, ["word"])
 
@@ -106,58 +90,48 @@ class TestModules(unittest.TestCase):
         self.assertEquals(document._corpus.fields, ["word", "the_new_field"])
 
         sentence = document._corpus.sentences[0]
-        self.assertEquals(sentence[0]["the_new_field"], "A")
-        self.assertEquals(sentence[1]["the_new_field"], "B")
-        self.assertEquals(sentence[2]["the_new_field"], "B")
-        self.assertEquals(sentence[3]["the_new_field"], "A")
-        self.assertEquals(sentence[4]["the_new_field"], "O")
+        self.assertEquals(sentence.feature("the_new_field"), ["A", "B", "B", "A", "O"])
+
 
     def test_label_consistency(self):
         corpus = Corpus(
-            ["word", "tag"],
+            fields=["word", "tag"],
             sentences=[
-                [
-                    {"word": "Ceci", "tag": "B-tag"},
-                    {"word": "est", "tag": "O"},
-                    {"word": "un", "tag": "O"},
-                    {"word": "test", "tag": "O"},
-                    {"word": ".", "tag": "O"},
-                ],
-                [
-                    {"word": "Ceci", "tag": "O"},
-                    {"word": "est", "tag": "O"},
-                    {"word": "un", "tag": "O"},
-                    {"word": "test", "tag": "O"},
-                    {"word": ".", "tag": "O"},
-                ],
-                [
-                    {"word": "ceci", "tag": "O"},
-                    {"word": "est", "tag": "O"},
-                    {"word": "un", "tag": "O"},
-                    {"word": "test", "tag": "O"},
-                    {"word": ".", "tag": "O"},
-                ],
+                Sentence({
+                    "word": ["Ceci", "est", "un", "test", "."],
+                    "tag": ["B-tag", "O", "O", "O", "O"]
+                }),
+                Sentence({
+                    "word": ["Ceci", "est", "un", "test", "."],
+                    "tag": ["O", "O", "O", "O", "O"]
+                }),
+                Sentence({
+                    "word": ["ceci", "est", "un", "test", "."],
+                    "tag": ["O", "O", "O", "O", "O"]
+                })
             ],
         )
         document = sem.importers.conll_data("document", corpus, "word")
         tags = []
         for sentence in document._corpus.sentences:
-            for token in sentence:
-                tags.append(token["tag"])
+            tags.extend(sentence.feature("tag"))
         self.assertEquals(tags.count("O"), 14)
         self.assertEquals(tags.count("B-tag"), 1)
+
+        self.assertEquals(document._corpus.sentences[0].feature("tag")[0], "B-tag")
+        self.assertEquals(document._corpus.sentences[1].feature("tag")[0], "O")
+        self.assertEquals(document._corpus.sentences[2].feature("tag")[0], "O")
 
         label_consistency = LabelConsistencyModule("tag", token_field="word")
         label_consistency.process_document(document)
 
-        self.assertEquals(document._corpus.sentences[0][0]["tag"], "B-tag")
-        self.assertEquals(document._corpus.sentences[1][0]["tag"], "B-tag")
-        self.assertEquals(document._corpus.sentences[2][0]["tag"], "O")
+        self.assertEquals(document._corpus.sentences[0].feature("tag")[0], "B-tag")
+        self.assertEquals(document._corpus.sentences[1].feature("tag")[0], "B-tag")
+        self.assertEquals(document._corpus.sentences[2].feature("tag")[0], "O")
 
         tags = []
         for sentence in document._corpus.sentences:
-            for token in sentence:
-                tags.append(token["tag"])
+            tags.extend(sentence.feature("tag"))
         self.assertEquals(tags.count("O"), 13)
         self.assertEquals(tags.count("B-tag"), 2)
 

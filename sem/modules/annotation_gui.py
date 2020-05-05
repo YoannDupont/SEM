@@ -263,7 +263,7 @@ class AnnotationTool(tkinter.Frame):
         self.annotation_row.add(self.text)
         self.annotation_row.add(self.tree)
         self.annotation_row.add(self.tree_scrollbar)
-        self.annotation_row.pack(side="left", fill="both", expand=True)
+        self.annotation_row.pack(side="left", fill='both', expand=True)
 
         self.text.bind("<Button-1>", self.click)
         self.text.bind("<Delete>", self.delete)
@@ -540,7 +540,7 @@ class AnnotationTool(tkinter.Frame):
     def openfile_gui(self, event=None):
         filenames = tkinter.filedialog.askopenfilenames(
             filetypes=[
-                ("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann")),
+                ("SEM readable files", (".txt", ".sem.xml", ".sem", ".ann", ".json")),
                 ("text files", ".txt"),
                 ("BRAT files", (".txt", ".ann")),
                 ("SEM XML files", ("*.sem.xml", ".sem")),
@@ -620,7 +620,7 @@ class AnnotationTool(tkinter.Frame):
 
     def save(self, event=None):
         filename = tkinter.filedialog.asksaveasfilename(defaultextension=".sem.xml")
-        if filename == "":
+        if not filename:
             return
 
         self.unselect()
@@ -752,7 +752,7 @@ class AnnotationTool(tkinter.Frame):
         if self.doc_is_modified:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
 
-        train_interface = SEMTkTrainInterface(self.corpus_documents)
+        SEMTkTrainInterface(self.corpus_documents)
 
     def handle_char(self, event):
         if self.adder is None:

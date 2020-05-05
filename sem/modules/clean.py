@@ -41,6 +41,7 @@ from sem.modules.sem_module import SEMModule as RootModule
 
 from sem.misc import ranges_to_set
 from sem.logger import default_handler, file_handler
+from sem.storage import Sentence
 
 clean_info_logger = logging.getLogger("sem.clean_info")
 clean_info_logger.addHandler(default_handler)
@@ -83,7 +84,6 @@ class SEMModule(RootModule):
 
         allowed = set(self._allowed)
         fields = set(field for field in document.corpus.fields)
-        document.corpus.fields = self._allowed[:]
 
         if len(allowed - fields) > 0:
             clean_info_logger.warn(
@@ -91,11 +91,14 @@ class SEMModule(RootModule):
                 " this might cause an error sometime later: {}".format(", ".join(allowed - fields))
             )
 
-        for i in range(len(document.corpus.sentences)):
-            for j in range(len(document.corpus.sentences[i])):
-                document.corpus.sentences[i][j] = {
-                    a: document.corpus.sentences[i][j][a] for a in allowed
-                }
+        for sentence in document.corpus.sentences:
+            sentence = Sentence({key: sentence.feature(key) for key in allowed})
+        # for i in range(len(document.corpus.sentences)):
+        #     for j in range(len(document.corpus.sentences[i])):
+        #         document.corpus.sentences[i][j] = {
+        #             a: document.corpus.sentences[i][j][a] for a in allowed
+        #         }
+        document._corpus.fields = self._allowed[:]
 
         laps = time.time() - start
         clean_info_logger.info("done in {0}".format(timedelta(seconds=laps)))

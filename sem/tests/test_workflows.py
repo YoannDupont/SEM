@@ -39,7 +39,7 @@ def launch(path_to_master):
     document = Document("document", "Ceci est un test.")
     pipeline, options, exporter, couples = sem.modules.tagger.load_master(path_to_master)
     args = Holder(
-        pipeline=pipeline, options=options, exporter=None, couples=couples, infiles=[document]
+        pipeline=pipeline, options=options, exporter=exporter, couples=couples, infiles=[document]
     )
     sem.modules.tagger.main(args)
 

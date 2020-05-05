@@ -33,10 +33,11 @@ import re
 
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.storage import Tag, Trie, Span
-from sem.storage import chunk_annotation_from_sentence
+from sem.storage import (chunk_annotation_from_sentence, compile_multiword)
 from sem.importers import read_conll
-from sem.features import MultiwordDictionaryFeature, NUL
+from sem.features import NUL
 from sem.misc import longest_common_substring
+import pickle
 
 
 def normalize(token):
@@ -65,7 +66,7 @@ def abbrev_candidate(token):
 def tokens_from_bounds(document, start, end):
     word_spans = document.segmentation("tokens")
     toks = []
-    for i, span in enumerate(word_spans):
+    for span in word_spans:
         if span.lb >= start:
             toks.append(document.content[span.lb: span.ub])
             if span.ub >= end:
@@ -119,7 +120,7 @@ def detect_abbreviations(document, field):
                     position2sentence[index] = sentence_spans_ref[i]
 
     reg2type = {}
-    for key, val in counts.items():
+    for key in counts:
         all_solutions = []
         for position in positions[key]:
             span = position2sentence[position]
@@ -220,7 +221,7 @@ def detect_abbreviations(document, field):
         except ValueError:
             pass
 
-    all_tags = [[token[field] for token in sent] for sent in document.corpus.sentences]
+    all_tags = [sent.feature(field) for sent in document.corpus.sentences]
     new_tags.sort(key=lambda x: (x.lb, -x.ub))
     for new_tag in new_tags:
         nth_word = 0
@@ -240,135 +241,118 @@ def detect_abbreviations(document, field):
     document.add_annotation_from_tags(all_tags, field, field)
 
 
-class LabelConsistencyFeature(MultiwordDictionaryFeature):
-    def __init__(self, form2entity, ne_entry, *args, **kwargs):
-        super(LabelConsistencyFeature, self).__init__(*args, **kwargs)
-        self._form2entity = form2entity
-        self._ne_entry = ne_entry
-
-    def __call__(self, list2dict, token_entry=None, annot_entry=None, *args, **kwargs):
-        ne_entry = annot_entry if annot_entry is not None else self._ne_entry
-        res = [t[ne_entry][:] for t in list2dict]
-        form2entity = self._form2entity
-        tmp = self._value._data
-        length = len(list2dict)
-        fst = 0
-        lst = -1  # last match found
-        cur = 0
-        entry = token_entry if token_entry is not None else self._entry
-        ckey = None  # Current KEY
-        while fst < length - 1:
-            cont = True
-            while cont and (cur < length):
-                ckey = list2dict[cur][entry]
-                if res[cur] == "O":
-                    if NUL in tmp:
-                        lst = cur
-                    tmp = tmp.get(ckey, {})
-                    cont = len(tmp) != 0
-                    cur += int(cont)
-                else:
-                    cont = False
-
-            if NUL in tmp:
-                lst = cur
-
-            if lst != -1:
-                form = " ".join([list2dict[i][entry] for i in range(fst, lst)])
-                appendice = "-{}".format(form2entity[form])
-                res[fst] = "B{}".format(appendice)
-                for i in range(fst + 1, lst):
-                    res[i] = "I{}".format(appendice)
-                fst = lst
-                cur = fst
+def label_consistency(sentence, form2entity, trie, entry, ne_entry):
+    length = len(sentence)
+    res = sentence.feature(ne_entry)[:]
+    tmp = trie
+    fst = 0
+    lst = -1  # last match found
+    cur = 0
+    ckey = None  # Current KEY
+    tokens = sentence.feature(entry)
+    while fst < length - 1:
+        cont = True
+        while cont and (cur < length):
+            ckey = tokens[cur]
+            if res[cur] == "O":
+                if NUL in tmp:
+                    lst = cur
+                tmp = tmp.get(ckey, {})
+                cont = len(tmp) != 0
+                cur += int(cont)
             else:
-                fst += 1
-                cur = fst
+                cont = False
 
-            tmp = self._value._data
-            lst = -1
+        if NUL in tmp:
+            lst = cur
 
-        if NUL in self._value._data.get(list2dict[-1][entry], []) and res[-1] == "O":
-            res[-1] = "B-{}".format(form2entity[list2dict[-1][entry]])
-
-        return res
-
-
-class OverridingLabelConsistencyFeature(LabelConsistencyFeature):
-    """
-    This is the second label consistency strategy.
-    It can change CRF entities if it finds a wider one.
-    Gives lower results on FTB
-    """
-
-    def __call__(self, list2dict, token_entry=None, annot_entry=None, *args, **kwargs):
-        res = ["O" for _ in range(len(list2dict))]
-        form2entity = self._form2entity
-        tmp = self._value._data
-        length = len(list2dict)
-        fst = 0
-        lst = -1  # last match found
-        cur = 0
-        entry = token_entry if token_entry is not None else self._entry
-        ckey = None  # Current KEY
-        entities = []
-        while fst < length - 1:
-            cont = True
-            while cont and (cur < length):
-                ckey = list2dict[cur][entry]
-                if res[cur] == "O":
-                    if NUL in tmp:
-                        lst = cur
-                    tmp = tmp.get(ckey, {})
-                    cont = len(tmp) != 0
-                    cur += int(cont)
-                else:
-                    cont = False
-
-            if NUL in tmp:
-                lst = cur
-
-            if lst != -1:
-                form = " ".join([list2dict[i][entry] for i in range(fst, lst)])
-                entities.append(Tag(form2entity[form], fst, lst))
-                fst = lst
-                cur = fst
-            else:
-                fst += 1
-                cur = fst
-
-            tmp = self._value._data
-            lst = -1
-
-        if NUL in self._value._data.get(list2dict[-1][entry], []):
-            entities.append(
-                Tag(form2entity[list2dict[-1][entry]], len(list2dict) - 1, len(list2dict))
-            )
-
-        ne_entry = annot_entry if annot_entry is not None else self._ne_entry
-        gold = chunk_annotation_from_sentence(list2dict, ne_entry).annotations
-
-        for i in reversed(range(len(entities))):
-            e = entities[i]
-            for r in gold:
-                if r.lb == e.lb and r.ub == e.ub:
-                    del entities[i]
-                    break
-
-        for i in reversed(range(len(gold))):
-            r = gold[i]
-            for e in entities:
-                if r.lb >= e.lb and r.ub <= e.ub:
-                    del gold[i]
-                    break
-
-        for r in gold + entities:
-            appendice = "-{}".format(r.value)
-            res[r.lb] = "B{}".format(appendice)
-            for i in range(r.lb + 1, r.ub):
+        if lst != -1:
+            form = " ".join([tokens[i] for i in range(fst, lst)])
+            appendice = "-{}".format(form2entity[form])
+            res[fst] = "B{}".format(appendice)
+            for i in range(fst + 1, lst):
                 res[i] = "I{}".format(appendice)
+            fst = lst
+            cur = fst
+        else:
+            fst += 1
+            cur = fst
 
-        return res
+        tmp = trie
+        lst = -1
+
+    if NUL in trie.get(tokens[-1], []) and res[-1] == "O":
+        res[-1] = "B-{}".format(form2entity[tokens[-1]])
+
+    return res
+
+
+def overriding_label_consistency(sentence, form2entity, trie, entry, ne_entry):
+    length = len(sentence)
+    res = ["O" for _ in range(length)]
+    tmp = trie
+    fst = 0
+    lst = -1  # last match found
+    cur = 0
+    ckey = None  # Current KEY
+    entities = []
+    tokens = sentence.feature(entry)
+    while fst < length - 1:
+        cont = True
+        while cont and (cur < length):
+            ckey = tokens[cur]
+            if res[cur] == "O":
+                if NUL in tmp:
+                    lst = cur
+                tmp = tmp.get(ckey, {})
+                cont = len(tmp) != 0
+                cur += int(cont)
+            else:
+                cont = False
+
+        if NUL in tmp:
+            lst = cur
+
+        if lst != -1:
+            form = " ".join([tokens[i] for i in range(fst, lst)])
+            entities.append(Tag(form2entity[form], fst, lst))
+            fst = lst
+            cur = fst
+        else:
+            fst += 1
+            cur = fst
+
+        tmp = trie
+        lst = -1
+
+    if NUL in trie.get(tokens[-1], []):
+        entities.append(
+            Tag(form2entity[tokens[-1]], length - 1, length)
+        )
+
+    gold = chunk_annotation_from_sentence(sentence, ne_entry).annotations
+
+    for i in reversed(range(len(entities))):
+        e = entities[i]
+        for r in gold:
+            if r.lb == e.lb and r.ub == e.ub:
+                del entities[i]
+                break
+
+    for i in reversed(range(len(gold))):
+        r = gold[i]
+        for e in entities:
+            if r.lb >= e.lb and r.ub <= e.ub:
+                del gold[i]
+                break
+
+    for r in gold + entities:
+        appendice = "-{}".format(r.value)
+        res[r.lb] = "B{}".format(appendice)
+        for i in range(r.lb + 1, r.ub):
+            res[i] = "I{}".format(appendice)
+
+    return res
 
 
 class SEMModule(RootModule):
@@ -386,13 +370,9 @@ class SEMModule(RootModule):
         self._token_field = token_field
 
         if label_consistency == "overriding":
-            self._feature = OverridingLabelConsistencyFeature(
-                None, ne_entry=self._field, entry=self._token_field, entries=None
-            )
+            self._feature = overriding_label_consistency
         else:
-            self._feature = LabelConsistencyFeature(
-                None, ne_entry=self._field, entry=self._token_field, entries=None
-            )
+            self._feature = label_consistency
 
     def process_document(self, document, abbreviation_resolution=True, **kwargs):
         corpus = document.corpus.sentences
@@ -405,7 +385,7 @@ class SEMModule(RootModule):
             G = chunk_annotation_from_sentence(p, column=field)
             for entity in G:
                 id = entity.value
-                form = " ".join([p[index][token_field] for index in range(entity.lb, entity.ub)])
+                form = " ".join(p.feature(token_field)[entity.lb: entity.ub])
                 if form not in counts:
                     counts[form] = {}
                 if id not in counts[form]:
@@ -419,19 +399,17 @@ class SEMModule(RootModule):
                 best = sorted(count.keys(), key=lambda x: -count[x])[0]
                 entities[form] = best
 
-        self._feature._form2entity = entities
-        self._feature._entries = entities.keys()
-        self._feature._value = Trie()
-        for entry in self._feature._entries:
+        value = Trie()
+        for entry in entities.keys():
             entry = entry.strip()
             if entry:
-                self._feature._value.add(entry.split())
+                value.add(entry.split())
 
         for p in corpus:
-            for i, value in enumerate(self._feature(p, token_entry=token_field, annot_entry=field)):
-                p[i][field] = value
+            # p[field] = self._feature(p, entities, value.data, token_field, field)
+            p.add(self._feature(p, entities, value.data, token_field, field), field)
 
-        tags = [[token[field] for token in sentence] for sentence in corpus]
+        tags = [sentence.feature(field) for sentence in corpus]
         document.add_annotation_from_tags(tags, field, field)
 
         if abbreviation_resolution:
@@ -463,19 +441,16 @@ def main(args):
             entities[form] = best
 
     if args.label_consistency == "non-overriding":
-        feature = LabelConsistencyFeature(
-            entities, ne_entry=args.tag_column, entry=args.token_column, entries=entities.keys()
-        )
+        feature = label_consistency
     else:
-        feature = OverridingLabelConsistencyFeature(
-            entities, ne_entry=args.tag_column, entry=args.token_column, entries=entities.keys()
-        )
+        feature = overriding_label_consistency
 
+    trie = compile_multiword(entities)
     with open(args.outfile, "w", encoding=oenc) as output_stream:
         for p in read_conll(args.infile, ienc):
-            for i, value in enumerate(feature(p)):
-                p[i][args.tag_column] = value
-                output_stream.write("\t".join(p[i]) + "\n")
+            p.add(feature(p, entities, trie.data, args.token_column, args.tag_column), args.tag_column)
+            for token in zip(*[p.feature(key) for key in p.keys()]):
+                output_stream.write(("\t".join(token)) + "\n")
             output_stream.write("\n")
 
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-file: annotation.py
+"""file: storage.py
 
 Description: defines multiple objects used for annotation. An annotation
 is a set of values positioned using a segmentation.
@@ -67,9 +66,8 @@ class Holder(object):
         return getattr(self, field, default)
 
 
-class Span(object):
-    """
-    The Span object.
+class Span:
+    """The Span object.
 
     Attributes
     ----------
@@ -126,9 +124,8 @@ class Span(object):
         self._ub += length
 
 
-class SpannedBounds(object):
-    """
-    The SpannedBounds object. Its purpose is to represent (word, sentence, etc.)
+class SpannedBounds:
+    """The SpannedBounds object. Its purpose is to represent (word, sentence, etc.)
     bounds as spans to later produce (word, sentence, etc.) spans.
 
     Attributes
@@ -160,8 +157,7 @@ class SpannedBounds(object):
                 self._forbidden.add(index)
 
     def force_regex(self, regex, s):
-        """
-        Applies a regex for elements that should be segmented in a certain
+        """Applies a regex for elements that should be segmented in a certain
         way and splits elements accordingly.
         """
 
@@ -170,9 +166,7 @@ class SpannedBounds(object):
             self.add(Span(match.end(), match.end()))
 
     def find(self, i):
-        """
-        Locate an index "i" somewhere in self._bounds.
-        """
+        """Locate an index "i" somewhere in self._bounds."""
 
         for nth, span in enumerate(self._bounds):
             if i < span.lb:
@@ -184,9 +178,7 @@ class SpannedBounds(object):
         return (-1, False)
 
     def append(self, span):
-        """
-        Appends "span" at the end of bounds (Span list).
-        """
+        """Appends "span" at the end of bounds (Span list)."""
 
         for index in range(span.lb, span.ub + 1):
             if self.is_forbidden(index):
@@ -201,9 +193,7 @@ class SpannedBounds(object):
         self._bounds.append(span)
 
     def add(self, span):
-        """
-        Add "span" at the best index of self._bounds
-        """
+        """Add "span" at the best index of self._bounds"""
 
         for index in range(span.lb, span.ub):
             if self.is_forbidden(index):
@@ -221,8 +211,7 @@ class SpannedBounds(object):
                 self._bounds.insert(index, span)
 
     def add_last(self, span):
-        """
-        Appends "span" at the end of bounds (Span list). If the last
+        """Appends "span" at the end of bounds (Span list). If the last
         span's upper bound is equal to "span's" lower bound, the last
         span's upper bound is extended instead.
         """
@@ -242,7 +231,7 @@ class SpannedBounds(object):
         return i in self._forbidden
 
 
-class Tag(object):
+class Tag:
 
     __slots__ = ("_span", "_value", "levels", "ids")
 
@@ -329,7 +318,7 @@ class Tag(object):
         return ".".join(values)
 
 
-class Annotation(object):
+class Annotation:
     def __init__(self, name, reference=None, annotations=None):
         self._name = name
         self._reference = reference
@@ -446,17 +435,15 @@ def get_bottom_level(annotations):
 str2filter = {"top level": get_top_level, "bottom level": get_bottom_level}
 
 
-def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
+def chunks_to_annotation(lst, shift=0, strict=False):
     annotation = Annotation("")
     start = 0
     length = 0
     value = ""
-    last = len(sentence) - 1
-    for index, element in enumerate(sentence):
-        tag = element[column]
+    last = len(lst) - 1
+    for index, tag in enumerate(lst):
         flag = tag[0]
-
-        if tag in OUT:
+        if flag in OUT:
             if value != "":  # we just got out of a chunk
                 annotation.append(Tag(value, start + shift, 0, length=length))
             value = ""
@@ -487,13 +474,15 @@ def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
                 value = ""
                 length = 0
             annotation.append(Tag(tag[2:], index + shift, 0, length=1))
-
     return annotation
 
 
+def chunk_annotation_from_sentence(sentence, column, shift=0, strict=False):
+    return chunks_to_annotation(sentence.feature(column), shift=shift, strict=strict)
+
+
 def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
-    """
-    Return an annotation from a sentence. The annotation has to have one
+    """Return an annotation from a sentence. The annotation has to have one
     of the following tagging schemes:
        - BIO (Begin In Out)
        - BILOU (Begin In Last Out Unit-length)
@@ -504,7 +493,7 @@ def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=Fa
 
     annotation = Annotation(name, reference=reference)
     shift = 0
-    for nth, sentence in enumerate(corpus):  # enumerate for better exception message
+    for sentence in corpus:
         annotation.extend(
             chunk_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations
         )
@@ -514,16 +503,14 @@ def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=Fa
 
 def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
     def is_begin(tag):
-        return tag[0] != "_"
+        return tag[0] != "_" or tag.startswith("__")
 
     annotation = Annotation("")
     start = 0
     length = 0
     value = ""
     last = len(sentence) - 1
-    for index, element in enumerate(sentence):
-        tag = element[column]
-
+    for index, tag in enumerate(sentence.feature(column)):
         if is_begin(tag):
             if value != "":  # begin after non-empty chunk ==> add annnotation
                 annotation.append(Tag(value, start + shift, 0, length=length))
@@ -532,7 +519,6 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
             length = 1
             if index == last:  # last token ==> add annotation
                 annotation.append(Tag(value, start + shift, 0, length=length))
-
         else:
             if value != tag[1:]:
                 if strict:
@@ -548,17 +534,15 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
 
 
 def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=False):
-    """
-    Return an annotation from a sentence. The annotation has the following
+    """Return an annotation from a sentence. The annotation has the following
     scheme:
         add "_" at the beginning of an annotation if it "continues"
         the previous tag. It is the same as BIO, "B-" is replaced by None
         and "I-" by "_".
     """
-
     annotation = Annotation(name, reference=reference)
     shift = 0
-    for nth, sentence in enumerate(corpus):  # enumerate for better exception message
+    for sentence in corpus:
         annotation.extend(
             tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict).annotations
         )
@@ -567,8 +551,7 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
 
 
 def annotation_from_sentence(sentence, column, shift=0, strict=False):
-    """
-    Return an Annotation object for sentence. Checks sentence before
+    """Return an Annotation object for sentence. Checks sentence before
     calling either tag_annotation_from_sentence
     or chunk_annotation_from_sentence
     """
@@ -589,9 +572,8 @@ _equivalence = dict(
 )
 
 
-class Entry(object):
-    """
-    The Entry object. It represents a field's identifier in a CoNLL corpus.
+class Entry:
+    """The Entry object. It represents a field's identifier in a CoNLL corpus.
     An Entry may be used only in certain circumstances: for example, the
     output tag may only appear in train mode.
     """
@@ -619,11 +601,11 @@ class Entry(object):
 
     @property
     def is_train(self):
-        return self._mode == _train
+        return self.mode == _train
 
     @property
     def is_label(self):
-        return self._mode == _label
+        return self.mode == _label
 
     @staticmethod
     def fromXML(xml_element):
@@ -633,17 +615,69 @@ class Entry(object):
         return self.mode == _equivalence[mode]
 
 
-class Corpus(object):
-    def __init__(self, fields=None, sentences=None):
-        if fields:
-            self.fields = fields[:]
-        else:
-            self.fields = []
+class Sentence:
 
-        if sentences:
-            self.sentences = sentences[:]
+    __slots__ = ("_features")
+
+    def __init__(self, features=None):
+        self._features = features or {}
+        if self._features:
+            iterator = iter(self._features.items())
+            lst = len(next(iterator)[1])
+            for key, value in self._features.items():
+                if len(value) != lst:
+                    raise ValueError("Invalid sentence: features of different lengths.")
+
+    def __len__(self):
+        keys = self.keys()
+        if keys:
+            return len(self._features[list(keys)[0]])
+        return 0
+
+    def conll(self, keys):
+        return "\n".join("\t".join(seq) for seq in zip(*[self.feature(key) for key in keys]))
+
+    def keys(self):
+        return self._features.keys()
+
+    def add(self, feature, key):
+        """Add a feature to the sentence by mapping the feature function
+        to the sentence.
+
+        Parameters
+        ----------
+        feature : function Sentence -> list or list
+            the feature function to apply to the Sentence or the list of values
+        key : str
+            The key where to put the output of the feature function
+        """
+        try:
+            feature.__call__
+        except AttributeError:  # not callable
+            value = feature
         else:
-            self.sentences = []
+            value = feature(self)
+        self._features[key] = value
+
+    def update(self, features_keys):
+        """Update Sentence with every feature given in argument.
+
+        Parameters
+        ----------
+        features_keys : List[(function Sentence -> list, str)]
+            the list of "feature function" and "key" pairs to add the Sentence.
+        """
+        for feature, key in features_keys:
+            self.add(feature, key)
+
+    def feature(self, name):
+        return self._features[name]
+
+
+class Corpus:
+    def __init__(self, sentences=None, fields=None):
+        self.sentences = sentences or []
+        self._fields = fields
 
     def __contains__(self, item):
         return item in self.fields
@@ -652,30 +686,30 @@ class Corpus(object):
         return len(self.sentences)
 
     def __iter__(self):
-        for element in self.iterate_on_sentences():
+        for element in self.sentences:
             yield element
 
     def __unicode__(self):
         return self.unicode(self.fields)
 
+    @property
+    def fields(self):
+        return self._fields or self.sentences[0].keys()
+
+    @fields.setter
+    def fields(self, value):
+        missing = sorted(set(value) - set(self.sentences[0].keys()))
+        if missing:
+            raise KeyError("missing fields: {}".format(','.join(missing)))
+        self._fields = value
+
     def unicode(self, fields, separator="\t"):
-        fmt = "\t".join(["{{{0}}}".format(field) for field in fields])
         sentences = []
         for sentence in self:
             sentences.append([])
-            for token in sentence:
-                sentences[-1].append((fmt.format(**token)) + "\n")
+            for token in zip(*[sentence.feature(key) for key in fields]):
+                sentences[-1].append(("\t".join(token)) + "\n")
         return "\n".join(["".join(sentence) for sentence in sentences])
-
-    def to_matrix(self, sentence):
-        sent = []
-        for token in sentence:
-            sent.append([token[field] for field in self.fields])
-        return sent
-
-    def iterate_on_sentences(self):
-        for element in self.sentences:
-            yield element
 
     def is_empty(self):
         return 0 == len(self.sentences)
@@ -683,82 +717,73 @@ class Corpus(object):
     def has_key(self, key):
         return key in self.fields
 
-    def append_sentence(self, sentence):
-        self.sentences.append(sentence)
-
     def from_sentences(self, sentences, field_name="word"):
-        del self.fields[:]
         del self.sentences[:]
 
-        self.fields = [field_name]
         for sentence in sentences:
-            self.sentences.append([])
-            for token in sentence:
-                self.sentences[-1].append({field_name: token})
+            self.sentences.append({field_name: sentence})
 
     def from_segmentation(self, content, tokens, sentences, field_name="word"):
-        self.fields = [field_name]
-        for sentence in sentences.spans:
-            self.append_sentence(
-                [
-                    {field_name: content[token.lb: token.ub]}
+        self.sentences = [
+            Sentence({
+                field_name: [
+                    content[token.lb: token.ub]
                     for token in tokens.spans[sentence.lb: sentence.ub]
                 ]
-            )
+            })
+            for sentence in sentences
+        ]
 
     def write(self, fd, fields=None):
-        fmt = "\t".join(["{{{0}}}".format(field) for field in (fields or self.fields)]) + "\n"
         for sentence in self:
-            for token in sentence:
-                fd.write(fmt.format(**token))
+            for token in zip(*[sentence.feature(key) for key in (fields or self.fields)]):
+                fd.write(("\t".join(str(item) for item in token)) + "\n")
             fd.write("\n")
 
 
-def compile_token(infile, encoding):
+def compile_token(iterator):
     tokens = set()
-    for line in open(infile, "rU", encoding=encoding):
-        line = line.split("#", 1)[0].strip()
-        if line:
-            tokens.add(line)
+    for item in iterator:
+        item = item.split("#", 1)[0].strip()
+        if item:
+            tokens.add(item)
     return tokens
 
 
-def compile_multiword(infile, encoding):
+def compile_multiword(iterator):
     trie = Trie()
-    for line in open(infile, "rU", encoding=encoding):
-        line = line.split("#", 1)[0].strip()
-        if line and not line.startswith("#"):
-            seq = line.split()
+    for item in iterator:
+        item = item.split("#", 1)[0].strip()
+        if item:
+            seq = item.split()
             trie.add(seq)
     return trie
 
 
-def compile_map(infile, encoding):
+def compile_map(iterator):
     out_map = {}
-    for line in open(infile, "rU", encoding=encoding):
-        line = line.strip()
-        if line != "":
+    for item in iterator:
+        item = item.strip()
+        if item != "":
             try:
-                key, value = line.split("\t")
+                key, value = item.split("\t")
             except ValueError:
-                key = line
+                key = item
                 value = ""
             out_map[key] = value
     return out_map
 
 
-class Segmentation(object):
-    """
-    Segmentation is just a holder for bounds. Those bounds can be word
+class Segmentation:
+    """Segmentation is just a holder for bounds. Those bounds can be word
     bounds or sentence bounds for example.
     By itself, it is not very useful, it become good in the context of
     a document for which it hold minimum useful information
     """
 
     def __init__(self, name, reference=None, spans=None):
-        """
-        parameters
-        ==========
+        """parameters
+        ----------
         name: unicode
             the name of the segmentation (tokens, sentences, paragraphs, etc.)
         reference: unicode or Segmentation
@@ -801,9 +826,7 @@ class Segmentation(object):
         return self._spans
 
     def get_reference_spans(self):
-        """
-        returns spans according to the reference chain.
-        """
+        """returns spans according to the reference chain."""
 
         if self.reference is None:
             return self.spans
@@ -820,14 +843,15 @@ document_logger.addHandler(default_handler)
 document_logger.setLevel("WARNING")
 
 
-class Document(Holder):
-    def __init__(self, name, content=None, encoding=None, lang=None, mime_type=None, **kwargs):
-        super(Document, self).__init__(**kwargs)
+class Document:
+    def __init__(
+        self, name, content=None, encoding=None, lang=None, mime_type=None, corpus=None, **kwargs
+    ):
         self._name = name
         self._content = content
         self._segmentations = {}
         self._annotations = {}
-        self._corpus = Corpus()
+        self._corpus = corpus or Corpus()
         self._metadatas = {}
         if encoding is not None:
             self._metadatas["encoding"] = encoding
@@ -1100,7 +1124,7 @@ class Document(Holder):
             spans = self.segmentation(reference_name).get_reference_spans()
             begin = 0
             i = 0
-            for j, annotation in enumerate(annot):
+            for annotation in annot:
                 start = annotation.lb
                 end = annotation.ub
                 while not (spans[i].lb <= start and start < spans[i].ub):
@@ -1118,9 +1142,7 @@ class Document(Holder):
             self.add_to_corpus(annotation_name, filter=filter)
 
     def add_to_corpus(self, annotation_name, filter=get_top_level):
-        base_annotations = self.annotation(annotation_name)
-        if not base_annotations:
-            raise KeyError("{0} annotation not found.".format(annotation_name))
+        base_annotations = self.annotation(annotation_name) or Annotation(annotation_name)
         annotations = base_annotations.get_reference_annotations()
 
         spans = self.segmentation("tokens").get_reference_spans()
@@ -1161,20 +1183,18 @@ class Document(Holder):
         shift = 0
         for sentence in self.corpus.sentences:
             span = next(sentence_spans)
-            for token in sentence:
-                token[annotation_name] = "O"
+            tags = ["O" for _ in range(len(sentence))]
             while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
-                sentence[cur_annot.lb - shift][annotation_name] = "B-{0}".format(cur_annot.value)
+                tags[cur_annot.lb - shift] = "B-{0}".format(cur_annot.value)
                 for k in range(cur_annot.lb + 1, cur_annot.ub):
-                    sentence[k - shift][annotation_name] = "I-{0}".format(cur_annot.value)
+                    tags[k - shift] = "I-{0}".format(cur_annot.value)
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]
                 except IndexError:
                     cur_annot = None
-            if cur_annot is not None and (
-                (span.lb <= cur_annot.lb < span.ub) and cur_annot.ub > span.ub
-            ):
+            sentence.add(tags, annotation_name)
+            if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
                 # annotation spans over at least two sentences
                 document_logger.warn(
                     "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
@@ -1194,7 +1214,7 @@ class Document(Holder):
         if BIO:
             self.add_chunking(tags, field, annotation_name)
         else:
-            self.add_tagging(sem.misc.correct_pos_tags(tags), field, annotation_name)
+            self.add_tagging(tags, field, annotation_name)
         if field not in self.corpus:
             self.corpus.fields += [field]
 
@@ -1202,21 +1222,13 @@ class Document(Holder):
         nth_token = 0
         annotation = []
 
-        for nth_sentence, tags in enumerate(sentence_tags):
-            if tags[0][0] == "_":
-                tags[0] = tags[0].lstrip("_")
-
+        for nth_sentence, tags in enumerate(sem.misc.correct_pos_tags(sentence_tags)):
             index = len(annotation)
             i = len(tags) - 1
             n = 0
             current = None  # current tag value (for multiword tags)
             while i >= 0:
-                change = not (current is None or tags[i].lstrip("_") == current)
-
                 if tags[i][0] != "_":
-                    if change:
-                        tags[i] = current
-
                     annotation.insert(index, Tag(tags[i], nth_token + i, 0, length=n + 1))
                     current = None
                     n = 0
@@ -1224,12 +1236,9 @@ class Document(Holder):
                     if current is None:
                         current = tags[i].lstrip("_")
                         n = 0
-                    if change:
-                        tags[i] = "_{}".format(current)
                     n += 1
-
-                self.corpus.sentences[nth_sentence][i][field] = tags[i]
                 i -= 1
+            self.corpus.sentences[nth_sentence].add(tags, field)
             nth_token += len(tags)
         self._annotations[annotation_name] = Annotation(
             annotation_name, reference=self.segmentation("tokens")
@@ -1238,17 +1247,14 @@ class Document(Holder):
 
     def add_chunking(self, sentence_tags, field, annotation_name):
         for nth_sentence, tags in enumerate(sentence_tags):
-            for i in range(len(tags)):
-                self.corpus.sentences[nth_sentence][i][field] = tags[i]
+            self.corpus.sentences[nth_sentence].add(tags, field)
         self._annotations[annotation_name] = chunk_annotation_from_corpus(
             self.corpus, field, annotation_name, reference=self.segmentation("tokens")
         )
 
 
-class SEMCorpus(Holder):
-    def __init__(self, documents=None, **kwargs):
-        super(SEMCorpus, self).__init__(**kwargs)
-
+class SEMCorpus:
+    def __init__(self, documents=None):
         if documents is None:
             self._documents = []
         else:
@@ -1306,8 +1312,7 @@ str2docfilter = {
 
 
 class Trie(object):
-    """
-    The Trie object.
+    """The Trie object.
 
     Attributes
     ----------
@@ -1351,7 +1356,7 @@ class Trie(object):
 
     def __len__(self):
         length = 0
-        for i in self:
+        for _ in self:
             length += 1
         return length
 

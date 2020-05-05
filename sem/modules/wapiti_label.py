@@ -56,6 +56,8 @@ class SEMModule(RootModule):
         self._model = str(model)
         self._field = field
         self._annotation_fields = annotation_fields
+        if type(self._annotation_fields) == str:
+            self._annotation_fields = self._annotation_fields.split(",")
 
         if self.pipeline_mode == "all" or expected_mode in ("all", self.pipeline_mode):
             check_model_available(model, logger=wapiti_label_logger)
@@ -113,10 +115,7 @@ class SEMModule(RootModule):
         wapiti_label_logger.info("in %s", timedelta(seconds=laps))
 
     def _label_document(self, document, encoding="utf-8"):
-        if self._annotation_fields:
-            fields = [document.corpus.entry(field) for field in self._annotation_fields]
-        else:
-            fields = document.corpus.fields
+        fields = self._annotation_fields or document.corpus.fields
         tags = []
         for sequence in document.corpus:
             tagging = self._tag_as_wrapper(sequence, fields)
@@ -126,14 +125,15 @@ class SEMModule(RootModule):
 
     def _tag_as_wrapper(self, sequence, fields, encoding="utf-8"):
         seq_str = "\n".join(
-            ["\t".join([str(token[field]) for field in fields]) for token in sequence]
+            "\t".join(str(it) for it in item)
+            for item in zip(*[sequence.feature(field) for field in fields])
         ).encode(encoding)
         s = self._wapiti_model.label_sequence(seq_str).decode(encoding)
         return s.strip().split("\n")
 
 
 def main(args):
-    for sentence in sem.importers.read_conll():
+    for sentence in sem.importers.read_conll(args.infile, "utf-8"):
         fields = ["field-{}".format(i) for i in range(len(sentence[0]))]
         word_field = fields[0]
         break

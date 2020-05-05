@@ -32,7 +32,8 @@ SOFTWARE.
 
 import glob
 import pathlib
-import urllib
+import urllib.parse
+import urllib.request
 import re
 import sys
 
@@ -48,7 +49,7 @@ except ImportError:
 
 import sem.logger
 import sem.misc
-from sem.storage import Document, SEMCorpus, Corpus
+from sem.storage import Document, SEMCorpus, Corpus, Sentence
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
 from sem.storage import Span
@@ -110,7 +111,14 @@ def load(
     if fields is not None and word_field is not None:
         if logger is not None:
             logger.info("No specific format found, trying CoNLL")
-        return conll_file(filename, fields, word_field, encoding=encoding)
+        return conll_file(
+            filename,
+            fields,
+            word_field,
+            encoding=encoding,
+            taggings=kwargs.get('taggings'),
+            chunkings=kwargs.get('chunkings')
+        )
 
     if logger is not None:
         logger.info("No specific format found, defaulting to text format")
@@ -136,23 +144,24 @@ def read_conll(name, encoding, fields=None, cleaner=str.strip, splitter=str.spli
     """
     clean = cleaner or (lambda x: x)
     split = splitter or (lambda x: x)
+    if fields:
+        to_data = lambda x, y: {key: val for key, val in zip(y, x)}
+    else:
+        to_data = lambda x, y: {index: item for index, item in enumerate(x)}
 
     with open(name, "r", encoding=encoding, newline="") as input_stream:
-        if fields:
-            to_data = lambda x, y: dict(zip(y, x))
-        else:
-            to_data = lambda x, y: x
-
         paragraph = []
         for line in input_stream:
             line = clean(line)
             if line != "":
-                paragraph.append(to_data(split(line), fields))
+                paragraph.append(split(line))
             elif paragraph != []:
-                yield paragraph
+                paragraph = [list(item) for item in zip(*paragraph)]
+                yield Sentence(to_data(paragraph, fields))
                 del paragraph[:]
         if paragraph != []:
-            yield paragraph
+            paragraph = [list(item) for item in zip(*paragraph)]
+            yield Sentence(to_data(paragraph, fields))
 
 
 def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, chunkings=None):
@@ -160,9 +169,14 @@ def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, ch
     Read CoNLL-formatted text from a file.
     """
     name = pathlib.Path(filename).name
-    sents = [sent[:] for sent in read_conll(filename, encoding, fields)]
+    sents = [sent for sent in read_conll(filename, encoding, fields)]
     return conll_data(
-        name, Corpus(fields, sents), word_field, encoding="utf-8", taggings=None, chunkings=None
+        name,
+        Corpus(fields=fields, sentences=sents),
+        word_field,
+        encoding="utf-8",
+        taggings=taggings,
+        chunkings=chunkings
     )
 
 
@@ -176,16 +190,18 @@ def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunki
     word_spans = []
     sentence_spans = []
     for sentence in corpus.sentences:
-        contents.append([])
-        for token in sentence:
-            word = token[word_field]
-            contents[-1].append(word[:])
+        contents.append(sentence.feature(word_field))
+        for word in contents[-1]:
             word_spans.append(Span(character_index, character_index + len(word)))
             character_index += len(word) + 1
         sentence_spans.append(Span(sentence_index, sentence_index + len(sentence)))
         sentence_index += len(sentence)
-    document = Document(name, "\n".join([" ".join(content) for content in contents]), encoding)
-    document._corpus = corpus  # TODO: should not access field with _
+    document = Document(
+        name,
+        content="\n".join([" ".join(content) for content in contents]),
+        encoding=encoding,
+        corpus=corpus
+    )
     document.add_segmentation(Segmentation("tokens", spans=word_spans))
     document.add_segmentation(
         Segmentation(
@@ -237,25 +253,25 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
 
     strip_html |= wikinews_format  # wikinews format is always stripped
 
-    charset = re.compile('charset="(.+?)"')
-    escaped_url = "".join([(urllib.quote(c) if ord(c) > 127 else c) for c in url.encode("utf-8")])
+    charset = re.compile(b'charset="(.+?)"')
+    escaped_url = "".join([(urllib.parse.quote(c) if ord(c) > 127 else c) for c in url])
     escaped_url = escaped_url.replace("%2525", "%25")
     escaped_url = escaped_url.replace('"', "&quot;")
 
     content = ""
-    f = urllib.urlopen(escaped_url)
+    f = urllib.request.urlopen(escaped_url)
     content = f.read()
     f.close()
-    encoding = charset.search(content)
-    if encoding is not None:
-        encoding = encoding.group(1) or "utf-8"
+    match = charset.search(content)
+    if match is not None:
+        encoding = match.group(1).decode("utf-8") or "utf-8"
     else:
         encoding = "utf-8"
     content = content.decode(encoding)
 
     regex = re.compile("^.+?[^/]/(?=[^/])", re.M)
     parts = regex.findall(escaped_url)
-    base_url = (escaped_url[:] + "/" if parts == [] else parts[0]).decode("iso-8859-1")
+    base_url = (escaped_url[:] + "/" if parts == [] else parts[0])
 
     content = content.replace('="//', '="http://')
     content = content.replace('="/', '="{0}'.format(base_url))

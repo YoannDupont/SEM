@@ -1,5 +1,5 @@
 """
-file: __init__.py
+file: tokenisers.py
 
 author: Yoann Dupont
 
@@ -61,7 +61,7 @@ class Tokeniser:
 
         return [Span(span[0], span[1]) for span in l2]
 
-    def sentence_bounds(content, token_spans):
+    def sentence_bounds(self, content, token_spans):
         """Return a list of bounds matching sentences.
 
         Parameters
@@ -127,7 +127,7 @@ class FrenchTokeniser(Tokeniser):
         self._digit_valid = set("0123456789,.-")
         self._simple_smileys = re.compile("^[:;x=],?-?[()DdPp]+$")
 
-        self._forbidden = [self._is_abn, self._abbrev, self._cls, self._simple_smileys]
+        self._forbidden = [self._is_abn, self._abbrev, self._simple_smileys]
 
         self._force = [sem.constants.url_re, sem.constants.email_re, self._cls]
 
@@ -166,13 +166,14 @@ class FrenchTokeniser(Tokeniser):
                 continue
             found = False
             for force in self._force:
-                found = force.match(text)
+                found = force.search(text)
                 if found:
                     s, e = found.start(), found.end()
                     del l2[i]
                     l2.insert(i, (shift + e, shift + len(text)))
                     l2.insert(i, (shift + s, shift + e))
-                    i += 1
+                    l2.insert(i, (shift, shift + s))
+                    i += 2
                     break
             if found:
                 continue

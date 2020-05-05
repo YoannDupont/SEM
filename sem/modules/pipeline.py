@@ -76,5 +76,5 @@ class Pipeline(SEMModule):
             if self.pipeline_mode == "all" or pipe.pipeline_mode in ("all", self.pipeline_mode):
                 pipe.process_document(document, **kwargs)
             else:
-                pipeline_logger.warn("pipe %s not executed", pipe)
+                pipeline_logger.info("pipe %s not executed", pipe)
         return document  # allows multiprocessing

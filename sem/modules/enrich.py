@@ -43,7 +43,7 @@ except ImportError:
 
 from sem.modules.sem_module import SEMModule as RootModule
 
-from sem.features import XML2Feature
+from sem.features import xml2feat
 from sem.logger import default_handler, file_handler
 from sem.importers import conll_file
 from sem.storage import Entry
@@ -92,10 +92,6 @@ class SEMModule(RootModule):
             )
             self._features = features
             self._names = set([entry.name for entry in self._aentries + self._bentries])
-
-    @property
-    def informations(self):
-        return self._informations
 
     @property
     def mode(self):
@@ -157,25 +153,17 @@ class SEMModule(RootModule):
 
         enrich_logger.info('enriching file "%s"', document.name)
 
-        new_fields = [feature.name for feature in self.features if feature.display]
-        document.corpus.fields += new_fields
+        fields = [entry.name for entry in self._bentries]
+        fields += [name for (feature, name) in self.features]
+        fields += [entry.name for entry in self._aentries]
         nth = 0
         for i, p in enumerate(document.corpus):
-            for feature in self.features:
-                if feature.is_sequence:
-                    for i, value in enumerate(feature(p)):
-                        p[i][feature.name] = value
-                else:
-                    for i in range(len(p)):
-                        p[i][feature.name] = feature(p, i)
-                        if feature.is_boolean:
-                            p[i][feature.name] = int(p[i][feature.name])
-                        elif p[i][feature.name] is None:
-                            p[i][feature.name] = feature.default()
+            p.update(self.features)
             nth += 1
             if 0 == nth % 1000:
                 enrich_logger.debug("%i sentences enriched", nth)
         enrich_logger.debug("%i sentences enriched", nth)
+        document.corpus.fields = fields[:]
 
         laps = time.time() - start
         enrich_logger.info("done in %s", timedelta(seconds=laps))
@@ -234,13 +222,12 @@ class SEMModule(RootModule):
                 elif entry.tag == "after" and current_entry.has_mode(self._mode):
                     self._aentries.append(current_entry)
 
-        self._x2f = XML2Feature(self.bentries + self.aentries, path=filename)
-
         features = list(children[1])
         del self._features[:]
         for feature in features:
-            self._features.append(self._x2f.parse(feature))
-            if self._features[-1].name is None:
+            feature_name = feature.attrib.get("name")
+            self._features.append((xml2feat(feature, path=filename), feature_name))
+            if not feature_name:
                 try:
                     raise ValueError("Nameless feature found.")
                 except ValueError as exc:
@@ -248,7 +235,7 @@ class SEMModule(RootModule):
                         enrich_logger.error(line.strip())
                     enrich_logger.exception(exc)
                     raise
-            check_entry(self._features[-1].name)
+            check_entry(feature_name)
 
 
 def main(args):
@@ -286,7 +273,8 @@ def main(args):
 
     bentries = [entry.name for entry in processor.bentries]
     aentries = [entry.name for entry in processor.aentries]
-    features = [feature.name for feature in processor.features if feature.display]
+    #features = [feature.name for feature in processor.features if feature.display]
+    features = [name for (feature, name) in processor.features]
     document = conll_file(
         args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc
     )

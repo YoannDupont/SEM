@@ -70,7 +70,6 @@ def add_tail(node, tail):
 
 
 class Exporter:
-
     def __init__(self, *args, **kwargs):
         pass
 
@@ -112,6 +111,11 @@ class Exporter:
         """
         raise NotImplementedError(
             "export_to_data not implemented for class {}".format(self.__class__)
+        )
+
+    def document_to_unicode(self, document, couples, **kwargs):
+        raise NotImplementedError(
+            'document_to_unicode is not implemented for {}'.format(self.__class__)
         )
 
 
@@ -172,7 +176,13 @@ class CoNLLExporter(Exporter):
             elif "token" in lower:
                 fields.append(lower["token"])
             else:
-                fields.append(document.corpus.fields[0])
+                all_keys = document.corpus.fields
+                field = (
+                    "word" if "word" in all_keys
+                    else "token" if "token" in all_keys
+                    else sorted(document.corpus.fields)[0]
+                )
+                fields.append(field)
 
             if "pos" in lower:
                 fields.append(lower["pos"])
@@ -239,13 +249,15 @@ class GateExporter(Exporter):
         textWithNodes = ET.SubElement(gateDocument, "TextWithNodes")
         content = document.content
         if "ner" in couples:
-            annotations = document.annotation(couples["ner"]).get_reference_annotations()
+            annotationset = document.annotation(couples["ner"])
+            annotations = annotationset.get_reference_annotations()
             boundaries = set()
             for annotation in annotations:
                 boundaries.add(annotation.lb)
                 boundaries.add(annotation.ub)
             boundaries = sorted(boundaries)
         else:
+            annotationset = None
             annotations = []
             boundaries = []
 
@@ -264,7 +276,7 @@ class GateExporter(Exporter):
         if annotations != []:
             id = 1
             typeAnnotationSet = ET.SubElement(gateDocument, "AnnotationSet")
-            typeAnnotationSet.set("Name", "NER")
+            typeAnnotationSet.set("Name", annotationset.name)
             for annot in annotations:
                 annotation = ET.SubElement(typeAnnotationSet, "Annotation")
                 annotation.set("Id", str(id))
@@ -1035,7 +1047,7 @@ class TextExporter(Exporter):
 
         data = []
         for sentence in corpus:
-            tokens = [token[token_field] for token in sentence]
+            tokens = sentence.feature(token_field)
 
             if "pos" in lower and lower["pos"] in corpus:
                 for annotation in get_pos(sentence, lower["pos"]):
@@ -1083,7 +1095,7 @@ __exporters = {
 
 
 def get_exporter(name):
-    return __exporters[name]
+    return __exporters[name.lower()]
 
 
 def available_exporters():

@@ -16,11 +16,23 @@ Run: ```apt install python-tk```
 
 Run: ```apt install build-essential```
 
-# Launch SEM installer
+# Install SEM
+
+## Install dependencies
 
 Go to SEM folder and launch the command :
 
-```python ./setup.py install --user```
+```pip install -r requirements.txt```
+
+If you are not in a virtual environment, use the `--user` flag.
+
+## Install SEM
+
+Go to SEM folder and launch the command :
+
+```python ./setup.py install```
+
+If you are not in a virtual environment, use the `--user` flag.
 
 # Install SEM on Windows
 
@@ -28,9 +40,9 @@ Go to SEM folder and launch the command :
 
 ### Install python
 
-Install the most recent python 2.7 possible : [python2.7.15](https://www.python.org/downloads/release/python-2715/)
-- [32 bits installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi)
-- [64 bits installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.amd64.msi) (recommended)
+Install python 3.7.5 or later: [python3.7.7](https://www.python.org/downloads/release/python-377/)
+- [32 bits installer](https://www.python.org/ftp/python/3.7.7/python-3.7.7-webinstall.exe)
+- [64 bits installer (web-based)](https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64-webinstall.exe) (recommended)
 
 ### setup tools
 
@@ -56,7 +68,17 @@ by
 
 Note: to compile Wapiti on Windows, either install [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/) or disable them as explained in ```ext/src/wapiti.h```
 
-## Launch SEM installer
+# Install SEM
+
+## Install dependencies
+
+Go to SEM folder and launch the command :
+
+```pip install -r requirements.txt```
+
+If you are not in a virtual environment, use the `--user` flag.
+
+## Install SEM
 
 Go to SEM folder and launch the command :
 
