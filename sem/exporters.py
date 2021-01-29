@@ -308,7 +308,7 @@ class HTMLInlineExporter(Exporter):
         if key is None or document.annotation(key) is None:
             raise KeyError("Cannot find any annotation for export.")
 
-        content = document.content[:]
+        content = document.original_content[:]
 
         position2html = {}
         annotations = document.annotation(key).get_reference_annotations()
@@ -1085,6 +1085,7 @@ __exporters = {
     "conll": CoNLLExporter,
     "gate": GateExporter,
     "html": HTMLExporter,
+    "html_inline": HTMLInlineExporter,
     "jason": JSONExporter,
     "sem_xml": SEMExporter,
     "tei_analec": AnalecTEIExporter,

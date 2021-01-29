@@ -845,10 +845,12 @@ document_logger.setLevel("WARNING")
 
 class Document:
     def __init__(
-        self, name, content=None, encoding=None, lang=None, mime_type=None, corpus=None, **kwargs
+        self, name, content=None, encoding=None, lang=None, mime_type=None, corpus=None,
+        original_content=None, **kwargs
     ):
         self._name = name
         self._content = content
+        self.original_content = original_content
         self._segmentations = {}
         self._annotations = {}
         self._corpus = corpus or Corpus()

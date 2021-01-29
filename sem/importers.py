@@ -290,7 +290,7 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     else:
         cleaned_content = new_content
 
-    if strip_html:
+    """if strip_html:
         h = HTMLParser()
         empty_line = re.compile("\n[ \t]+")
         spaces = re.compile("[ \t]+")
@@ -303,7 +303,7 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     spaces_begin = re.compile("^[ \t]+", re.M)
     spaces_end = re.compile("[ \t]+$", re.M)
     cleaned_content = spaces_begin.sub("", cleaned_content)
-    cleaned_content = spaces_end.sub("", cleaned_content)
+    cleaned_content = spaces_end.sub("", cleaned_content)"""
 
     mime_type = "text/plain" if strip_html else "text/html"
     return Document(
