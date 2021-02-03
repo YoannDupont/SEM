@@ -52,6 +52,10 @@
 7. Windows only: [MinGW64](https://sourceforge.net/projects/mingw-w64/?source=navbar): used to compile Wapiti on Windows.
 8. Windows only: [POSIX threads for Windows](https://sourceforge.net/p/pthreads4w/wiki/Home/): if you want to multithread Wapiti on Windows.
 
+## SEM source code vs SEM resources
+
+While SEM source code is released under the MIT licence, the resources present in this repository (including but not limited to lexica and models) have each their own licence which may (usually does) differ. SEM provides them for the sole purpose of research and teaching, they may not be used for any other reason. If you wish to create your own models, you will have to provide your own lexica, annotate your own data (or use data annotated under a permissive licence) and train your models yourself. You have to to check every resource licence and its compatibility for your project.
+
 ## Planned changes (for latest changes, see changelog.md)
 1. add lemmatiser.
 2. have more unit tests
