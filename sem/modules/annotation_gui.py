@@ -27,7 +27,6 @@ SOFTWARE.
 """
 
 import glob
-import logging
 import sys
 import pathlib
 
@@ -42,7 +41,7 @@ import sem
 from sem.constants import NUL
 from sem.storage import Document, SEMCorpus
 from sem.storage import Tag, Annotation
-from sem.logger import extended_handler
+import sem.logger
 import sem.importers
 from sem.gui_components import (
     find_potential_separator,
@@ -57,10 +56,6 @@ from sem.gui_components import (
     SemTkLangSelector
 )
 import sem.modules.tagger
-
-
-annotation_gui_logger = logging.getLogger("sem.annotation_gui")
-annotation_gui_logger.addHandler(extended_handler)
 
 
 def update_annotations(document, annotation_name, annotations):
@@ -86,10 +81,9 @@ def check_in_tagset(tag, tagset):
 
 
 class AnnotationTool(tkinter.Frame):
-    def __init__(self, parent, log_level, documents=None, tagset=None, *args, **kwargs):
+    def __init__(self, parent, documents=None, tagset=None, *args, **kwargs):
         tkinter.Frame.__init__(self, parent, *args, **kwargs)
 
-        annotation_gui_logger.setLevel(log_level)
         self.bind_all("<Alt-F4>", self.exit)
         self.resource_dir = sem.SEM_RESOURCE_DIR
         self.parent = parent
@@ -276,10 +270,13 @@ class AnnotationTool(tkinter.Frame):
         self.tree.bind("<Delete>", self.delete)
         self.tree.bind("<Shift-Delete>", self.delete_all)
 
-        # configuring a tag called BOLD
-        bold_font = tkinter.font.Font(self.text)
-        bold_font.configure(weight="bold")
-        self.text.tag_configure("BOLD", font=bold_font)
+        # configuring a tag called SELECTION for selected named entities
+        # bold_font = tkinter.font.Font(self.text)
+        # bold_font.configure(weight="bold")
+        # self.text.tag_configure("SELECTION", font=bold_font)
+        ul_font = tkinter.font.Font(self.text)
+        ul_font.configure(underline=1)
+        self.text.tag_configure("SELECTION", font=ul_font)
 
         self.workflow = None
 
@@ -860,7 +857,7 @@ class AnnotationTool(tkinter.Frame):
                 self.ner2history[item] = item2
                 self.adder.current_annotation = tag
 
-            self.text.tag_remove("BOLD", "1.0", "end")
+            self.text.tag_remove("SELECTION", "1.0", "end")
             self.type_combos[0].current(0)
         else:
             lb = self.position2charindex(first)
@@ -896,13 +893,13 @@ class AnnotationTool(tkinter.Frame):
             self.adder.current_hierarchy_level = 0
             self.update_level()
         else:
-            self.text.tag_add("BOLD", first, last)
+            self.text.tag_add("SELECTION", first, last)
 
     def click(self, event):
         if self.doc is None or self.adder is None:
             return
 
-        self.text.tag_remove("BOLD", "1.0", "end")
+        self.text.tag_remove("SELECTION", "1.0", "end")
         prev_selection = self.adder.current_annotation
         self.adder.current_annotation = None
         self.wish_to_add = None
@@ -929,7 +926,7 @@ class AnnotationTool(tkinter.Frame):
         if len(self.annotations) > 0:
             curr_annot = self.annotations[self.annotations_tick]
             ci2p = self.charindex2position
-            self.text.tag_add("BOLD", ci2p(curr_annot.lb), ci2p(curr_annot.ub))
+            self.text.tag_add("SELECTION", ci2p(curr_annot.lb), ci2p(curr_annot.ub))
             self.text.tag_remove(curr_annot.value, ci2p(curr_annot.lb), ci2p(curr_annot.ub))
             self.text.tag_add(curr_annot.value, ci2p(curr_annot.lb), ci2p(curr_annot.ub))
             self.adder.current_annotation = curr_annot
@@ -974,8 +971,8 @@ class AnnotationTool(tkinter.Frame):
         lb_str = self.charindex2position(annot.lb)
         ub_str = self.charindex2position(annot.ub)
 
-        self.text.tag_remove("BOLD", "1.0", "end")
-        self.text.tag_add("BOLD", lb_str, ub_str)
+        self.text.tag_remove("SELECTION", "1.0", "end")
+        self.text.tag_add("SELECTION", lb_str, ub_str)
         self.adder.current_annotation = annot
         self.wish_to_add = None
 
@@ -983,7 +980,7 @@ class AnnotationTool(tkinter.Frame):
         self.text.see("insert")
 
     def unselect(self, event=None):
-        self.text.tag_remove("BOLD", "1.0", "end")
+        self.text.tag_remove("SELECTION", "1.0", "end")
         self.wish_to_add = None
         if self.adder:
             self.adder.current_annotation = None
@@ -991,7 +988,7 @@ class AnnotationTool(tkinter.Frame):
             self.update_level()
 
     def delete(self, event):
-        self.text.tag_remove("BOLD", "1.0", "end")
+        self.text.tag_remove("SELECTION", "1.0", "end")
 
         if self.adder.current_annotation is None:
             return
@@ -1050,7 +1047,7 @@ class AnnotationTool(tkinter.Frame):
         self.adder.current_annotation = None
         self.adder.current_hierarchy_level = 0
         self.update_level()
-        self.text.tag_remove("BOLD", "1.0", "end")
+        self.text.tag_remove("SELECTION", "1.0", "end")
         self.doc_is_modified = True
 
     def position2charindex(self, position):
@@ -1158,7 +1155,7 @@ class AnnotationTool(tkinter.Frame):
                 self.text.tag_remove(tag_name, "1.0", "end")
             self.text.delete("1.0", "end")
             self.text.insert("end", self.doc.content)
-            self.text.tag_remove("BOLD", "1.0", "end")
+            self.text.tag_remove("SELECTION", "1.0", "end")
             self.text.configure(state="disabled")
 
             if self.doc.annotation(self.annotation_name):
@@ -1330,7 +1327,8 @@ parser.add_argument(
 def main(args):
     root = tkinter.Tk()
     root.title("SEM")
-    AnnotationTool(root, args.log_level, documents=args.documents, tagset=args.tagset).pack(
+    sem.logger.setLevel(args.log_level)
+    AnnotationTool(root, documents=args.documents, tagset=args.tagset).pack(
         expand=1, fill="both"
     )
     root.mainloop()

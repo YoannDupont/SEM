@@ -30,29 +30,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import pathlib
 import time
 from datetime import timedelta
 
 import sem.annotators
 from sem.modules.sem_module import SEMModule as RootModule
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.importers import read_conll
 from sem.importers import conll_file
 from sem.exporters import CoNLLExporter
 
-tagging_logger = logging.getLogger("sem.{}".format(pathlib.Path(__file__).stem))
-tagging_logger.addHandler(default_handler)
-
 
 class SEMModule(RootModule):
-    def __init__(self, annotator, field, log_level="WARNING", log_file=None, *args, **kwargs):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
-
-        if self._log_file is not None:
-            tagging_logger.addHandler(file_handler(self._log_file))
-        tagging_logger.setLevel(self._log_level)
+    def __init__(self, annotator, field, *args, **kwargs):
+        super(SEMModule, self).__init__(**kwargs)
 
         self._annotator = sem.annotators.get_annotator(annotator).load(field, *args, **kwargs)
 
@@ -60,7 +52,7 @@ class SEMModule(RootModule):
         start = time.time()
         self._annotator.process_document(document)
         laps = time.time() - start
-        tagging_logger.info("done in {}".format(timedelta(seconds=laps)))
+        sem.logger.info("done in {}".format(timedelta(seconds=laps)))
 
 
 def main(args):
@@ -86,8 +78,8 @@ def main(args):
     start = time.time()
 
     if args.log_file is not None:
-        tagging_logger.addHandler(file_handler(args.log_file))
-    tagging_logger.setLevel(args.log_level)
+        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
+    sem.logger.setLevel(args.log_level)
 
     infile = args.infile
     outfile = args.outfile
@@ -117,7 +109,7 @@ def main(args):
     exporter.document_to_file(document, None, outfile, encoding=oenc)
 
     laps = time.time() - start
-    tagging_logger.info("done in %s", timedelta(seconds=laps))
+    sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
 import sem

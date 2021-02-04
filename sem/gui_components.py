@@ -38,14 +38,13 @@ import os
 import multiprocessing
 import time
 import shutil
-import logging
 
 import sem
 import sem.exporters
 import sem.importers
+import sem.logger
 
 from sem.constants import NUL
-from sem.logger import default_handler
 from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
 from sem.modules import EnrichModule, WapitiLabelModule
 from sem.modules.tagger import load_master, main as tagger
@@ -500,7 +499,6 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         top=None,
         main_frame=None,
         text="Algorithm-specific variables",
-        log_level="INFO",
     ):
         if top:
             self.trainTop = top
@@ -516,10 +514,6 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         self.document_filter = document_filter or tkinter.StringVar(
             self.trainTop, value="all documents"
         )
-        self.log_level = log_level
-        self.wapiti_train_logger = logging.getLogger("sem.wapiti_train")
-        self.wapiti_train_logger.addHandler(default_handler)
-        self.wapiti_train_logger.setLevel(self.log_level)
 
         self.current_train = sem.SEM_DATA_DIR / "train"
         if not self.current_train.exists():
@@ -677,14 +671,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                 if isinstance(document, SEMCorpus):
                     for doc in document:
                         if doc.name in names:
-                            self.wapiti_train_logger.warn(
-                                "document %s already found, skipping", doc.name
-                            )
+                            sem.logger.warn("document %s already found, skipping", doc.name)
                             continue
                         elif not document_filter(doc, self.annotation_name):
-                            self.wapiti_train_logger.warn(
-                                "document %s has no annotations, skipping", doc.name
-                            )
+                            sem.logger.warn("document %s has no annotations, skipping", doc.name)
                             continue
                         args.infiles = [doc]
                         doc = tagger(args)[0]
@@ -696,14 +686,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                             fields = doc.corpus.fields[:-1]
                 else:
                     if document.name in names:
-                        self.wapiti_train_logger.warn(
-                            "document %s already found, skipping", document.name
-                        )
+                        sem.logger.warn("document %s already found, skipping", document.name)
                         continue
                     elif not document_filter(document, self.annotation_name):
-                        self.wapiti_train_logger.warn(
-                            "document %s has no annotations, skipping", document.name
-                        )
+                        sem.logger.warn("document %s has no annotations, skipping", document.name)
                         continue
 
                     document = tagger(args)[0]
@@ -754,13 +740,13 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                 ext = pathlib.Path(name).suffix
                 backup_name = "{}.backup-{}{}".format(bname, timestamp, ext)
                 dest = out_dir / backup_name
-                self.wapiti_train_logger.info("creating backup file before moving: %s", dest)
+                sem.logger.info("creating backup file before moving: %s", dest)
                 shutil.move(target_model, dest)
-            self.wapiti_train_logger.info("trained model moved to: %s", str(out_dir))
+            sem.logger.info("trained model moved to: %s", str(out_dir))
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
             shutil.copy(model_file, target_model)
 
-        self.wapiti_train_logger.info("files are located in: %s", str(output_dir))
+        sem.logger.info("files are located in: %s", str(output_dir))
         tkinter.messagebox.showinfo(
             "training SEM",
             "Everything went ok! files are located in: {0}{1}".format(

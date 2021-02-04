@@ -33,7 +33,6 @@ SOFTWARE.
 
 import cgi
 import json
-import logging
 
 import sem.storage
 from sem.storage import Segmentation
@@ -42,15 +41,12 @@ from sem.storage import (
     tag_annotation_from_sentence as get_pos,
     chunk_annotation_from_sentence as get_chunks,
 )
-from sem.logger import default_handler
+import sem.logger
 
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
     from xml.etree import ElementTree as ET
-
-tei_np_logger = logging.getLogger("sem.tagger")
-tei_np_logger.addHandler(default_handler)
 
 
 def add_text(node, text):
@@ -153,10 +149,8 @@ class CoNLLExporter(Exporter):
         pass
 
     def document_to_unicode(self, document, couples, **kwargs):
-        logger = kwargs.get("logger", None)
         if len(document.corpus.fields) == 0:
-            if logger is not None:
-                logger.warn("No fields found for Corpus, cannot create string.")
+            sem.logger.warn("No fields found for Corpus, cannot create string.")
             return ""
 
         if (
@@ -193,8 +187,7 @@ class CoNLLExporter(Exporter):
 
             for field in fields:
                 if field not in document.corpus:
-                    if logger is not None:
-                        logger.warn('field "%s" not in corpus, adding', field)
+                    sem.logger.warn('field "%s" not in corpus, adding', field)
                     document.add_to_corpus(field)
 
             return document.corpus.unicode(fields)
@@ -813,7 +806,7 @@ class TEINPExporter(Exporter):
                 'No "chunking" field was found, please check you have'
                 " chunking information in your pipeline."
             )
-            tei_np_logger.exception(message)
+            sem.logger.exception(message)
             raise KeyError(message)
 
         content = document.content

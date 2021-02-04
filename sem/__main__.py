@@ -31,7 +31,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import pathlib
 import unittest
 import sys
@@ -40,8 +39,6 @@ import sem
 import sem.modules
 
 from sem.misc import find_suggestions
-
-sem_logger = logging.getLogger("sem")
 
 
 def valid_module(m):

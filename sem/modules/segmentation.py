@@ -30,7 +30,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import time
 import pathlib
 from datetime import timedelta
@@ -39,10 +38,7 @@ from sem.modules.sem_module import SEMModule as RootModule
 from sem.misc import (strip_html, read_chunks)
 from sem.tokenisers import (get_tokeniser, bounds2spans)
 from sem.storage import (Document, Segmentation, Span)
-from sem.logger import (default_handler, file_handler)
-
-segmentation_logger = logging.getLogger("sem.segmentation")
-segmentation_logger.addHandler(default_handler)
+import sem.logger
 
 
 def token_spans_buffered(tokeniser, content):
@@ -80,11 +76,11 @@ def token_spans_buffered(tokeniser, content):
 
 
 class SEMModule(RootModule):
-    def __init__(self, tokeniser, log_level="WARNING", log_file=None, **kwargs):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+    def __init__(self, tokeniser, **kwargs):
+        super(SEMModule, self).__init__(**kwargs)
 
         if isinstance(tokeniser, str):
-            segmentation_logger.info('Getting tokeniser "{0}"'.format(tokeniser))
+            sem.logger.info('Getting tokeniser "{0}"'.format(tokeniser))
             self._tokeniser = get_tokeniser(tokeniser)()
         else:
             self._tokeniser = tokeniser
@@ -98,22 +94,13 @@ class SEMModule(RootModule):
         ----------
         document : sem.storage.Document
             the input data. It is a document with only a content
-        log_level : str or int
-            the logging level
-        log_file : str
-            if not None, the file to log to (does not remove command-line
-            logging).
         """
 
         start = time.time()
 
-        if self._log_file is not None:
-            segmentation_logger.addHandler(file_handler(self._log_file))
-        segmentation_logger.setLevel(self._log_level)
-
         current_tokeniser = self._tokeniser
 
-        segmentation_logger.debug('segmenting "%s" content', document.name)
+        sem.logger.debug('segmenting "%s" content', document.name)
 
         content = document.content
         if document.metadata("MIME") == "text/html":
@@ -131,13 +118,13 @@ class SEMModule(RootModule):
                 current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
             )
         else:
-            segmentation_logger.info(
+            sem.logger.info(
                 "{0} already has segmenation, not computing".format(document.name)
             )
             token_spans = document.segmentation("tokens").spans
             sentence_spans = document.segmentation("sentences").spans
             paragraph_spans = document.segmentation("paragraphs").spans
-        segmentation_logger.info(
+        sem.logger.info(
             '"{0}" segmented in {1} sentences, {2} tokens'.format(
                 document.name, len(sentence_spans), len(token_spans)
             )
@@ -167,22 +154,22 @@ class SEMModule(RootModule):
             )
 
         laps = time.time() - start
-        segmentation_logger.info("in {0}".format(timedelta(seconds=laps)))
+        sem.logger.info("in {0}".format(timedelta(seconds=laps)))
 
 
 def main(args):
     if args.log_file is not None:
-        segmentation_logger.addHandler(file_handler(args.log_file))
-    segmentation_logger.setLevel(args.log_level)
+        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
+    sem.logger.setLevel(args.log_level)
 
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
-    segmenter = SEMModule(args.tokeniser_name, log_level=args.log_level)
+    segmenter = SEMModule(args.tokeniser_name)
     document = Document(
         pathlib.Path(args.infile).name,
         content=open(args.infile, "rU", encoding=ienc).read().replace("\r", ""),
     )
-    segmenter.process_document(document, log_level=args.log_level)
+    segmenter.process_document(document)
     tokens_spans = document.segmentation("tokens")
     sentence_spans = document.segmentation("sentences")
     joiner = "\n" if args.output_format == "vector" else " "

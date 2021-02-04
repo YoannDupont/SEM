@@ -42,10 +42,10 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-try:
-    from HTMLParser import HTMLParser
-except ImportError:
-    from html.parser import HTMLParser
+# try:
+#     from HTMLParser import HTMLParser
+# except ImportError:
+#     from html.parser import HTMLParser
 
 import sem.logger
 import sem.misc
@@ -62,7 +62,6 @@ def load(
     fields=None,
     word_field=None,
     wikinews_format=False,
-    logger=None,
     strip_html=False,
     tagset_name=None,
     *args,
@@ -74,43 +73,36 @@ def load(
     """
 
     if type(filename) in (Document, SEMCorpus):
-        if logger is not None:
-            logger.info("detected format: SEM XML")
+        sem.logger.info("detected format: SEM XML")
         return filename
 
     filename = str(filename)  # may be Path
     if filename.startswith("http"):
-        if logger is not None:
-            logger.info("detected format: HTML")
+        sem.logger.info("detected format: HTML")
         return from_url(filename, strip_html=strip_html, wikinews_format=wikinews_format)
 
     if filename.endswith(".xml"):
         xml = ET.parse(filename)
         root_tag = xml.getroot().tag
         if root_tag == "sem":
-            if logger is not None:
-                logger.info("detected format: SEM XML")
+            sem.logger.info("detected format: SEM XML")
             return SEMCorpus.from_xml(xml)
         elif root_tag == "document":
-            if logger is not None:
-                logger.info("detected format: SEM XML")
+            sem.logger.info("detected format: SEM XML")
             return Document.from_xml(xml)
         elif root_tag == "GateDocument":
-            if logger is not None:
-                logger.info("detected format: GATE XML")
+            sem.logger.info("detected format: GATE XML")
             return gate_data(xml, pathlib.Path(filename).name)
 
     path = pathlib.Path(filename)
     ext = path.suffix
     no_ext = str(path.parent / path.stem)
     if (ext == ".ann") or (ext == ".txt" and pathlib.Path(no_ext + ".ann").exists()):
-        if logger is not None:
-            logger.info("detected format: BRAT")
+        sem.logger.info("detected format: BRAT")
         return brat_file(filename, encoding=encoding, tagset_name=tagset_name)
 
     if fields is not None and word_field is not None:
-        if logger is not None:
-            logger.info("No specific format found, trying CoNLL")
+        sem.logger.info("No specific format found, trying CoNLL")
         return conll_file(
             filename,
             fields,
@@ -120,8 +112,7 @@ def load(
             chunkings=kwargs.get('chunkings')
         )
 
-    if logger is not None:
-        logger.info("No specific format found, defaulting to text format")
+    sem.logger.info("No specific format found, defaulting to text format")
     # if everything else fails, just load as text document
     return text_file(filename, encoding=encoding)
 
@@ -441,7 +432,7 @@ def json_data(data):
         document.add_annotation(annotation)
 
 
-def documents_from_list(name_list, file_format, logger=None, **opts):
+def documents_from_list(name_list, file_format, **opts):
     """
     Create a Document list from a list which may contain either Document objects
     or string objects that need to be globbed.
@@ -460,18 +451,16 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
     names = set()  # document names that were already seen
     for name in name_list:
         if isinstance(name, Document):
-            if logger:
-                logger.info("Reading %s", name.name)
+            sem.logger.info("Reading %s", name.name)
             if name.name not in names:
                 documents.append(name)
                 names.add(name.name)
-            elif logger:
-                logger.info("document %s already found, not adding to the list.", name.name)
+            else:
+                sem.logger.info("document %s already found, not adding to the list.", name.name)
         else:
             name = str(name)
             for infile in glob.glob(name) or [name]:
-                if logger:
-                    logger.info("Reading %s", infile)
+                sem.logger.info("Reading %s", infile)
                 if file_format == "text":
                     document = Document(
                         pathlib.Path(infile).name,
@@ -487,15 +476,17 @@ def documents_from_list(name_list, file_format, logger=None, **opts):
                         infile = infile.decode(sys.getfilesystemencoding())
                     except Exception:
                         pass
-                    document = from_url(infile, logger=logger, **opts)
+                    document = from_url(infile, **opts)
                 elif file_format == "guess":
-                    document = load(infile, logger=logger, **opts)
+                    document = load(infile, **opts)
                 else:
                     raise ValueError("unknown format: {0}".format(file_format))
                 if document.name not in names:
                     documents.append(document)
                     names.add(document.name)
-                elif logger:
-                    logger.info("document %s already found, not adding to the list.", document.name)
+                else:
+                    sem.logger.info(
+                        "document %s already found, not adding to the list.", document.name
+                    )
 
     return documents

@@ -30,7 +30,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import os
 import shutil
 import multiprocessing
@@ -50,7 +49,7 @@ except ImportError:
     from xml.etree import ElementTree as ET
 
 import sem
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.modules import get_module
 import sem.modules.pipeline
 import sem.modules.export
@@ -58,10 +57,8 @@ import sem.exporters
 import sem.importers
 import sem.misc
 
-sem_tagger_logger = logging.getLogger("sem.tagger")
-sem_tagger_logger.addHandler(default_handler)
 if sem.ON_WINDOWS:
-    sem_tagger_logger.warn(
+    sem.logger.warn(
         "multiprocessing not handled on Windows. Documents will be processed sequentially."
     )
 
@@ -147,13 +144,9 @@ def load_master(master, force_format="default", pipeline_mode="all"):
             couples = dict(options.items("export"))
             export_format = couples["format"]
             if force_format is not None and force_format != "default":
-                sem_tagger_logger.info("using forced format: {0}".format(force_format))
+                sem.logger.info("using forced format: {0}".format(force_format))
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
-
-    if get_option(options, "log", "log_file") is not None:
-        sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
-    sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
 
     classes = {}
     pipes = []
@@ -191,8 +184,8 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 if key not in arguments:
                     arguments[key] = value
                 else:
-                    sem_tagger_logger.warn("Not adding already existing option: {0}".format(key))
-        sem_tagger_logger.info("loading {0}".format(xmlpipe.tag))
+                    sem.logger.warn("Not adding already existing option: {0}".format(key))
+        sem.logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
 
@@ -243,8 +236,8 @@ def main(args):
     __pipeline = pipeline
 
     if get_option(options, "log", "log_file") is not None:
-        sem_tagger_logger.addHandler(file_handler(get_option(options, "log", "log_file")))
-    sem_tagger_logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
+        sem.logger.addHandler(sem.logger.file_handler(get_option(options, "log", "log_file")))
+    sem.logger.setLevel(get_option(options, "log", "log_level", "WARNING"))
 
     if not output_directory.exists():
         os.makedirs(output_directory)
@@ -266,7 +259,7 @@ def main(args):
     n_procs = getattr(args, "n_procs", 1)
     if n_procs == 0:
         n_procs = multiprocessing.cpu_count()
-        sem_tagger_logger.info("no processors given, using %s", n_procs)
+        sem.logger.info("no processors given, using %s", n_procs)
     else:
         n_procs = min(max(n_procs, 1), multiprocessing.cpu_count())
     if n_procs > len(documents):
@@ -296,7 +289,7 @@ def main(args):
         pool.terminate()
 
     laps = time.time() - start
-    sem_tagger_logger.info("done in %s", timedelta(seconds=laps))
+    sem.logger.info("done in %s", timedelta(seconds=laps))
 
     return documents
 

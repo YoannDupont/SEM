@@ -32,7 +32,6 @@ SOFTWARE.
 
 import pathlib
 import sys
-import logging
 
 # measuring time laps
 import time
@@ -44,18 +43,13 @@ from .sem_module import SEMModule as RootModule
 
 from sem.storage import SEMCorpus
 from sem.exporters import get_exporter
-from sem.logger import default_handler, file_handler
-
-export_logger = logging.getLogger("sem.exportation")
-export_logger.addHandler(default_handler)
+import sem.logger
 
 
 class SEMModule(RootModule):
     def __init__(
         self,
         exporter,
-        log_level="WARNING",
-        log_file=None,
         lang="fr",
         lang_style="default.css",
         pos_column=None,
@@ -63,11 +57,7 @@ class SEMModule(RootModule):
         ner_column=None,
         **kwargs,
     ):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
-
-        if log_file is not None:
-            export_logger.addHandler(file_handler(log_file))
-        export_logger.setLevel(log_level)
+        super(SEMModule, self).__init__(**kwargs)
 
         self._lang = lang
         self._lang_style = lang_style
@@ -75,21 +65,17 @@ class SEMModule(RootModule):
         self._chunk_column = chunk_column
         self._ner_column = ner_column
         if isinstance(exporter, str):
-            export_logger.info("getting exporter {0}".format(exporter))
+            sem.logger.info("getting exporter {0}".format(exporter))
             Exporter = get_exporter(exporter)
             self._exporter = Exporter(lang=self._lang, lang_style=self._lang_style)
         else:
-            export_logger.info("using loaded exporter")
+            sem.logger.info("using loaded exporter")
             self._exporter = exporter
 
     def process_document(self, document, outfile=sys.stdout, output_encoding="utf-8", **kwargs):
         start = time.time()
 
-        if self._log_file is not None:
-            export_logger.addHandler(file_handler(self._log_file))
-        export_logger.setLevel(self._log_level)
-
-        export_logger.debug("setting name/column couples for exportation")
+        sem.logger.debug("setting name/column couples for exportation")
 
         pos_column = self._pos_column
         chunk_column = self._chunk_column
@@ -103,20 +89,20 @@ class SEMModule(RootModule):
 
         if pos_column:
             couples["pos"] = pos_column
-            export_logger.debug("POS column is {0}".format(pos_column))
+            sem.logger.debug("POS column is {0}".format(pos_column))
         if chunk_column:
             couples["chunking"] = chunk_column
-            export_logger.debug("chunking column is {0}".format(chunk_column))
+            sem.logger.debug("chunking column is {0}".format(chunk_column))
         if ner_column:
             couples["ner"] = ner_column
-            export_logger.debug("NER column is {0}".format(ner_column))
+            sem.logger.debug("NER column is {0}".format(ner_column))
 
-        export_logger.debug("exporting document to {0} format".format(self._exporter.extension))
+        sem.logger.debug("exporting document to {0} format".format(self._exporter.extension))
 
         self._exporter.document_to_file(document, couples, outfile, encoding=output_encoding)
 
         laps = time.time() - start
-        export_logger.info("done in %s", timedelta(seconds=laps))
+        sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
 def main(args):
@@ -130,8 +116,6 @@ def main(args):
     import_options = args.import_options or {}
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
-    # log_file = args.log_file
-    # log_level = args.log_level
 
     pos_column = args.pos_column
     chunk_column = args.chunk_column
@@ -166,20 +150,20 @@ def main(args):
 
     infile_is_str = isinstance(infile, str)
     if infile_is_str:
-        export_logger.info("loading input file")
-        document = sem.importers.load(infile, logger=export_logger, **options)
+        sem.logger.info("loading input file")
+        document = sem.importers.load(infile, **options)
         if isinstance(document, SEMCorpus):
-            export_logger.warn("input file is SEM corpus, only exporting the first document")
+            sem.logger.warn("input file is SEM corpus, only exporting the first document")
             document = document[0]
     else:
-        export_logger.info("using input document")
+        sem.logger.info("using input document")
         document = infile
 
-    export_logger.debug("exporting document {0}".format(document.name))
-    exporter.process_document(document, outfile, encoding=oenc, logger=export_logger)
+    sem.logger.debug("exporting document {0}".format(document.name))
+    exporter.process_document(document, outfile, encoding=oenc)
 
     laps = time.time() - start
-    export_logger.info("done in %s", timedelta(seconds=laps))
+    sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
 import sem

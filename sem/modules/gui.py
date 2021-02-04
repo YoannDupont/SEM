@@ -35,7 +35,6 @@ from tkinter import ttk
 import tkinter.messagebox
 
 import time
-import logging
 import os
 import pathlib
 
@@ -49,14 +48,11 @@ from sem.gui_components import (
     SemTkExportSelector,
     SEMTkTrainInterface,
 )
-from sem.logger import default_handler
-
-gui_logger = logging.getLogger("sem.gui")
-gui_logger.addHandler(default_handler)
+import sem.logger
 
 
 class SemTkMainWindow(ttk.Frame):
-    def __init__(self, root, resource_dir, log_level="INFO"):
+    def __init__(self, root, resource_dir):
         """
         create the main window.
         """
@@ -64,9 +60,6 @@ class SemTkMainWindow(ttk.Frame):
         ttk.Frame.__init__(self, root)
 
         self.resource_dir = resource_dir
-        self.log_level = log_level
-
-        gui_logger.setLevel(self.log_level)
 
         self.current_files = None
         self.current_output = sem.SEM_DATA_DIR / "outputs"
@@ -162,7 +155,7 @@ class SemTkMainWindow(ttk.Frame):
             tkinter.messagebox.showerror("launching SEM", "Error: {}".format(e))
             raise
             return
-        gui_logger.info("files are located in: {}".format(output_dir))
+        sem.logger.info("files are located in: {}".format(output_dir))
         tkinter.messagebox.showinfo(
             "launching SEM", "Everything went ok! files are located in: {}".format(output_dir)
         )
@@ -202,7 +195,7 @@ parser.add_argument(
     dest="log_level",
     choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
     default="INFO",
-    help="Increase log level (default: critical)",
+    help="Increase log level (default: %(default)s)",
 )
 
 
@@ -210,7 +203,8 @@ def main(args):
     root = tkinter.Tk()
     root.title("SEM")
     root.minsize(width=380, height=200)
+    sem.logger.setLevel(args.log_level)
 
-    SemTkMainWindow(root, args.resources, log_level=args.log_level).pack()
+    SemTkMainWindow(root, args.resources).pack()
 
     root.mainloop()

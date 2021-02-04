@@ -41,11 +41,8 @@ try:
 except ImportError:
     import pickle
 
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.storage import compile_token, compile_multiword
-
-compile_dictionary_logger = logging.getLogger("sem.compile_dictionary")
-compile_dictionary_logger.addHandler(default_handler)
 
 _compile = {"token": compile_token, "multiword": compile_multiword}
 _choices = set(_compile.keys())
@@ -55,27 +52,27 @@ def compile_dictionary(
     infile, outfile, kind="token", ienc="UTF-8", log_level=logging.CRITICAL, log_file=None
 ):
     if log_file is not None:
-        compile_dictionary_logger.addHandler(file_handler(log_file))
-    compile_dictionary_logger.setLevel(log_level)
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
 
     if kind not in _choices:
         raise RuntimeError("Invalid kind: {0}".format(kind))
 
-    compile_dictionary_logger.info(
+    sem.logger.info(
         'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile)
     )
 
     try:
         dictionary_compile = _compile[kind]
     except KeyError:  # invalid kind asked
-        compile_dictionary_logger.exception(
+        sem.logger.exception(
             "Invalid kind: {0}. Should be in: {1}".format(kind, ", ".join(_compile.keys()))
         )
         raise
 
     pickle.dump(dictionary_compile(infile, ienc), open(outfile, "w"))
 
-    compile_dictionary_logger.info("done")
+    sem.logger.info("done")
 
 
 if __name__ == "__main__":

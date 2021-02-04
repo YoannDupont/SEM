@@ -31,8 +31,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
-
 import time
 from datetime import timedelta
 
@@ -44,14 +42,11 @@ except ImportError:
 from sem.modules.sem_module import SEMModule as RootModule
 
 from sem.features import xml2feat
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.importers import conll_file
 from sem.storage import Entry
 
 import pathlib
-
-enrich_logger = logging.getLogger("sem.enrich")
-enrich_logger.addHandler(default_handler)
 
 
 class SEMModule(RootModule):
@@ -62,11 +57,9 @@ class SEMModule(RootModule):
         aentries=None,
         features=None,
         mode="label",
-        log_level="WARNING",
-        log_file=None,
         **kwargs,
     ):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+        super(SEMModule, self).__init__(**kwargs)
 
         self._mode = mode
         self._source = path
@@ -77,7 +70,7 @@ class SEMModule(RootModule):
         self._x2f = None  # the feature parser, initialised in parse
 
         if self._source is not None:
-            enrich_logger.info("loading %s", self._source)
+            sem.logger.info("loading %s", self._source)
             self._parse(self._source)
         else:
             self._bentries = (
@@ -104,7 +97,7 @@ class SEMModule(RootModule):
                 "cannot change mode for Enrich module: source for informations is not a file."
             )
         self._mode = mode
-        enrich_logger.info("loading %s", self._source)
+        sem.logger.info("loading %s", self._source)
         self._parse(self._source)
 
     @property
@@ -129,18 +122,9 @@ class SEMModule(RootModule):
         document : sem.storage.Document
             the input data, contains an object representing CoNLL-formatted
             data. Each token is a dict which works like TSV.
-        log_level : str or int
-            the logging level
-        log_file : str
-            if not None, the file to log to (does not remove command-line
-            logging).
         """
 
         start = time.time()
-
-        if self._log_file is not None:
-            enrich_logger.addHandler(file_handler(self._log_file))
-        enrich_logger.setLevel(self._log_level)
 
         missing_fields = set([I.name for I in self.bentries + self.aentries]) - set(
             document.corpus.fields
@@ -151,7 +135,7 @@ class SEMModule(RootModule):
                 "Missing fields in input corpus: {0}".format(",".join(sorted(missing_fields)))
             )
 
-        enrich_logger.info('enriching file "%s"', document.name)
+        sem.logger.info('enriching file "%s"', document.name)
 
         fields = [entry.name for entry in self._bentries]
         fields += [name for (feature, name) in self.features]
@@ -161,12 +145,12 @@ class SEMModule(RootModule):
             p.update(self.features)
             nth += 1
             if 0 == nth % 1000:
-                enrich_logger.debug("%i sentences enriched", nth)
-        enrich_logger.debug("%i sentences enriched", nth)
+                sem.logger.debug("%i sentences enriched", nth)
+        sem.logger.debug("%i sentences enriched", nth)
         document.corpus.fields = fields[:]
 
         laps = time.time() - start
-        enrich_logger.info("done in %s", timedelta(seconds=laps))
+        sem.logger.info("done in %s", timedelta(seconds=laps))
 
     def _parse(self, filename):
         def check_entry(entry_name):
@@ -232,8 +216,8 @@ class SEMModule(RootModule):
                     raise ValueError("Nameless feature found.")
                 except ValueError as exc:
                     for line in element2string(feature).rstrip().split("\n"):
-                        enrich_logger.error(line.strip())
-                    enrich_logger.exception(exc)
+                        sem.logger.error(line.strip())
+                    sem.logger.exception(exc)
                     raise
             check_entry(feature_name)
 
@@ -263,17 +247,17 @@ def main(args):
     start = time.time()
 
     if args.log_file is not None:
-        enrich_logger.addHandler(file_handler(args.log_file))
-    enrich_logger.setLevel(args.log_level)
-    enrich_logger.info('parsing enrichment file "%s"', args.infofile)
+        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
+    sem.logger.setLevel(args.log_level)
+    sem.logger.info('parsing enrichment file "%s"', args.infofile)
 
     processor = SEMModule(path=args.infofile, mode=args.mode)
 
-    enrich_logger.debug('enriching file "%s"', args.infile)
+    sem.logger.debug('enriching file "%s"', args.infile)
 
     bentries = [entry.name for entry in processor.bentries]
     aentries = [entry.name for entry in processor.aentries]
-    #features = [feature.name for feature in processor.features if feature.display]
+    # features = [feature.name for feature in processor.features if feature.display]
     features = [name for (feature, name) in processor.features]
     document = conll_file(
         args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc
@@ -290,7 +274,7 @@ def main(args):
             output_stream.write("\n")
 
     laps = time.time() - start
-    enrich_logger.info("done in %s", timedelta(seconds=laps))
+    sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
 import sem

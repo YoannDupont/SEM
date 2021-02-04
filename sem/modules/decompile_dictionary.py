@@ -35,17 +35,13 @@ SOFTWARE.
 """
 
 import logging
-from sem.logger import file_handler
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
-from sem.logger import default_handler
-
-decompile_dictionary_logger = logging.getLogger("sem.decompile_dictionary")
-decompile_dictionary_logger.addHandler(default_handler)
+import sem.logger
 
 
 def _entry_token(token):
@@ -66,13 +62,13 @@ def decompile_dictionary(
     infile, outfile, kind="token", oenc="UTF-8", log_level=logging.CRITICAL, log_file=None
 ):
     if log_file is not None:
-        decompile_dictionary_logger.addHandler(file_handler(log_file))
-    decompile_dictionary_logger.setLevel(log_level)
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
 
     if kind not in _choices:
         raise RuntimeError("Invalid kind: {0}".format(kind))
 
-    decompile_dictionary_logger.info(
+    sem.logger.info(
         'compiling {0} dictionary from "{1}" to "{2}"'.format(kind, infile, outfile)
     )
 
@@ -85,7 +81,7 @@ def decompile_dictionary(
         for token in sorted(tokens):
             output_stream.write(entry(token) + "\n")
 
-    decompile_dictionary_logger.info("done")
+    sem.logger.info("done")
 
 
 if __name__ == "__main__":

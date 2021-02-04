@@ -30,26 +30,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import pathlib
 
-# measuring time laps
 import time
 from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
 
 from sem.misc import ranges_to_set
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.storage import Sentence
-
-clean_info_logger = logging.getLogger("sem.clean_info")
-clean_info_logger.addHandler(default_handler)
 
 
 class SEMModule(RootModule):
-    def __init__(self, to_keep, log_level="WARNING", log_file=None, **kwargs):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+    def __init__(self, to_keep, **kwargs):
+        super(SEMModule, self).__init__(**kwargs)
 
         if isinstance(to_keep, str):
             self._allowed = to_keep.split(",")  # comma-separated named fields
@@ -76,17 +71,13 @@ class SEMModule(RootModule):
 
         start = time.time()
 
-        if self._log_file is not None:
-            clean_info_logger.addHandler(file_handler(self._log_file))
-        clean_info_logger.setLevel(self._log_level)
-
-        clean_info_logger.info("cleaning document")
+        sem.logger.info("cleaning document")
 
         allowed = set(self._allowed)
         fields = set(field for field in document.corpus.fields)
 
         if len(allowed - fields) > 0:
-            clean_info_logger.warn(
+            sem.logger.warn(
                 "the following fields are not present in document,"
                 " this might cause an error sometime later: {}".format(", ".join(allowed - fields))
             )
@@ -101,7 +92,7 @@ class SEMModule(RootModule):
         document._corpus.fields = self._allowed[:]
 
         laps = time.time() - start
-        clean_info_logger.info("done in {0}".format(timedelta(seconds=laps)))
+        sem.logger.info("done in {0}".format(timedelta(seconds=laps)))
 
 
 def main(args):
@@ -120,8 +111,8 @@ def main(args):
     """
 
     if args.log_file is not None:
-        clean_info_logger.addHandler(file_handler(args.log_file))
-    clean_info_logger.setLevel(args.log_level)
+        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
+    sem.logger.setLevel(args.log_level)
 
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
@@ -138,7 +129,7 @@ def main(args):
     nelts = len(open(args.infile, "rU", encoding=ienc).readline().strip().split())
 
     if nelts < max_abs:
-        clean_info_logger.error(
+        sem.logger.error(
             'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(
                 max_abs, nelts, args.infile
             )
@@ -149,11 +140,11 @@ def main(args):
             )
         )
 
-    clean_info_logger.info('cleaning "{0}"'.format(args.infile))
-    clean_info_logger.info(
+    sem.logger.info('cleaning "{0}"'.format(args.infile))
+    sem.logger.info(
         "keeping columns: {0}".format(", ".join([str(s) for s in sorted(allowed)]))
     )
-    clean_info_logger.info('writing "{0}"'.format(args.outfile))
+    sem.logger.info('writing "{0}"'.format(args.outfile))
 
     with open(args.outfile, "w", encoding=oenc) as output_stream:
         for line in open(args.infile, "rU", encoding=ienc):
@@ -163,7 +154,7 @@ def main(args):
                 output_stream.write("\t".join(tokens))
             output_stream.write("\n")
 
-    clean_info_logger.info("done")
+    sem.logger.info("done")
 
 
 import sem

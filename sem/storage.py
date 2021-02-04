@@ -32,7 +32,6 @@ SOFTWARE.
 
 import pathlib
 import cgi
-import logging
 import re
 
 try:
@@ -47,7 +46,7 @@ except ImportError:
 
 import sem
 import sem.misc
-from sem.logger import default_handler
+import sem.logger
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 from sem.constants import NUL
 
@@ -838,11 +837,6 @@ class Segmentation:
             ]
 
 
-document_logger = logging.getLogger("sem.storage.document")
-document_logger.addHandler(default_handler)
-document_logger.setLevel("WARNING")
-
-
 class Document:
     def __init__(
         self, name, content=None, encoding=None, lang=None, mime_type=None, corpus=None,
@@ -1165,7 +1159,7 @@ class Document:
                 annotation.lb = begin
                 annotation.ub = i + 1
             else:
-                document_logger.warn("cannot add annotation {0}".format(annotation))
+                sem.logger.warn("cannot add annotation {0}".format(annotation))
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
@@ -1198,7 +1192,7 @@ class Document:
             sentence.add(tags, annotation_name)
             if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
                 # annotation spans over at least two sentences
-                document_logger.warn(
+                sem.logger.warn(
                     "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
                 )
                 try:

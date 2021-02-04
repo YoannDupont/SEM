@@ -32,23 +32,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
 import time
 import pathlib
 from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.storage import Annotation, Tag
-from sem.logger import default_handler, file_handler
+import sem.logger
 from sem.storage import compile_map
-
-map_annotations_logger = logging.getLogger("sem.map_annotations")
-map_annotations_logger.addHandler(default_handler)
 
 
 class SEMModule(RootModule):
-    def __init__(self, mapping, annotation_name, log_level="WARNING", log_file=None, **kwargs):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+    def __init__(self, mapping, annotation_name, **kwargs):
+        super(SEMModule, self).__init__(**kwargs)
 
         if isinstance(mapping, str):
             with open(mapping, 'r', encoding="utf-8") as input_stream:
@@ -66,18 +62,9 @@ class SEMModule(RootModule):
         ----------
         document : sem.storage.Document
             the input data. It is a document with only a content
-        log_level : str or int
-            the logging level
-        log_file : str
-            if not None, the file to log to (does not remove command-line
-            logging).
         """
 
         start = time.time()
-
-        if self._log_file is not None:
-            map_annotations_logger.addHandler(file_handler(self._log_file))
-        map_annotations_logger.setLevel(self._log_level)
 
         ref_annotation = document.annotation(self._annotation_name)
         ref_annotations = ref_annotation.annotations
@@ -96,7 +83,7 @@ class SEMModule(RootModule):
         )
 
         laps = time.time() - start
-        map_annotations_logger.info("in %s", timedelta(seconds=laps))
+        sem.logger.info("in %s", timedelta(seconds=laps))
 
 
 import sem

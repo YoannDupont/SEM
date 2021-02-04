@@ -32,11 +32,9 @@ from sem.storage import Holder
 
 
 class SEMModule(Holder):
-    def __init__(self, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
+    def __init__(self, pipeline_mode="all", **kwargs):
         super(SEMModule, self).__init__(**kwargs)
 
-        self._log_level = log_level
-        self._log_file = log_file
         self._pipeline_mode = pipeline_mode
 
     @property

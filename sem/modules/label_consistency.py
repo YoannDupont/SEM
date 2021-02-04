@@ -37,7 +37,6 @@ from sem.storage import (chunk_annotation_from_sentence, compile_multiword)
 from sem.importers import read_conll
 from sem.features import NUL
 from sem.misc import longest_common_substring
-import pickle
 
 
 def normalize(token):
@@ -359,13 +358,11 @@ class SEMModule(RootModule):
     def __init__(
         self,
         field,
-        log_level="WARNING",
-        log_file=None,
         token_field="word",
         label_consistency="overriding",
         **kwargs,
     ):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+        super(SEMModule, self).__init__(**kwargs)
         self._field = field
         self._token_field = token_field
 

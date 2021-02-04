@@ -28,18 +28,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import logging
-
 from sem.modules.sem_module import SEMModule
-from sem.logger import default_handler
-
-pipeline_logger = logging.getLogger("sem.pipeline")
-pipeline_logger.addHandler(default_handler)
+import sem.logger
 
 
 class Pipeline(SEMModule):
-    def __init__(self, pipes, log_level="WARNING", log_file=None, pipeline_mode="all", **kwargs):
-        super(Pipeline, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+    def __init__(self, pipes, pipeline_mode="all", **kwargs):
+        super(Pipeline, self).__init__(**kwargs)
 
         self._pipes = pipes
         self._pipeline_mode = pipeline_mode
@@ -76,5 +71,5 @@ class Pipeline(SEMModule):
             if self.pipeline_mode == "all" or pipe.pipeline_mode in ("all", self.pipeline_mode):
                 pipe.process_document(document, **kwargs)
             else:
-                pipeline_logger.info("pipe %s not executed", pipe)
+                sem.logger.info("pipe %s not executed", pipe)
         return document  # allows multiprocessing

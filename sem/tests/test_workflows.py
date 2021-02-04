@@ -54,7 +54,7 @@ class TestWorkflows(unittest.TestCase):
     def test_chunking(self):
         launch(SEM_RESOURCE_DIR / "master" / "fr" / "chunking.xml")
 
-    def test_no_chunking(self):
+    def test_np_chunking(self):
         launch(SEM_RESOURCE_DIR / "master" / "fr" / "np_chunking.xml")
 
     def test_ner(self):

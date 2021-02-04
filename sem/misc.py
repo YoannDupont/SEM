@@ -38,6 +38,8 @@ import tarfile
 from contextlib import contextmanager
 from io import open, StringIO
 
+import sem.logger
+
 
 def find_suggestions(target, candidates, case_sensitive=True):
     trgt = target if case_sensitive else target.lower()
@@ -117,13 +119,12 @@ def correct_pos_tags(tags):
     return corrected
 
 
-def check_model_available(model, logger=None):
+def check_model_available(model):
     path = pathlib.Path(model)
     if not path.exists():
         targz = pathlib.Path(str(path) + ".tar.gz")
         if targz.exists():
-            if logger is not None:
-                logger.info("Model not extracted, extracting {0}".format(str(targz.resolve())))
+            sem.logger.info("Model not extracted, extracting {0}".format(str(targz.resolve())))
             with tarfile.open(targz, "r:gz") as tar:
                 tar.extractall(targz.parent)
         else:

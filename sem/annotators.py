@@ -31,17 +31,11 @@ SOFTWARE.
 """
 
 import pathlib
-import logging
 import functools
 
 from sem.features import (directory_feature, xml2feat)
-from sem.logger import default_handler
 from sem.CRF import Model as WapitiModel
 from sem.misc import check_model_available
-
-wapiti_logger = logging.getLogger("sem.annotators.wapiti")
-wapiti_logger.addHandler(default_handler)
-wapiti_logger.setLevel("INFO")
 
 
 class LexicaAnnotator:
@@ -97,7 +91,7 @@ class WapitiAnnotator:
 
     @classmethod
     def load(cls, field, location, input_encoding=None, *args, **kwargs):
-        check_model_available(location, logger=wapiti_logger)
+        check_model_available(location)
         return (field, WapitiModel.from_wapiti_model(location, encoding=input_encoding))
 
     def process_document(

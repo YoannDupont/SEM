@@ -29,28 +29,20 @@ SOFTWARE.
 """
 
 from wapiti.api import Model as WapitiModel
-import logging
 import time
 import pathlib
 from datetime import timedelta
 
 import sem.importers
+import sem.logger
 from sem.exporters import CoNLLExporter
 from sem.modules.sem_module import SEMModule as RootModule
-from sem.logger import default_handler, file_handler
 from sem.misc import check_model_available
 
 
-wapiti_label_logger = logging.getLogger("sem.wapiti_label")
-wapiti_label_logger.addHandler(default_handler)
-wapiti_label_logger.setLevel("INFO")
-
-
 class SEMModule(RootModule):
-    def __init__(
-        self, model, field, annotation_fields=None, log_level="WARNING", log_file=None, **kwargs
-    ):
-        super(SEMModule, self).__init__(log_level=log_level, log_file=log_file, **kwargs)
+    def __init__(self, model, field, annotation_fields=None, **kwargs):
+        super(SEMModule, self).__init__(**kwargs)
         expected_mode = kwargs.get("expected_mode", self.pipeline_mode)
 
         self._model = str(model)
@@ -60,7 +52,7 @@ class SEMModule(RootModule):
             self._annotation_fields = self._annotation_fields.split(",")
 
         if self.pipeline_mode == "all" or expected_mode in ("all", self.pipeline_mode):
-            check_model_available(model, logger=wapiti_label_logger)
+            check_model_available(model)
             self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
         else:
             self._wapiti_model = None
@@ -75,7 +67,7 @@ class SEMModule(RootModule):
 
     def check_mode(self, expected_mode):
         if (not self._wapiti_model) and self.pipeline_mode == expected_mode:
-            check_model_available(self._model, logger=wapiti_label_logger)
+            check_model_available(self._model)
             self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
 
     def process_document(self, document, encoding="utf-8", **kwargs):
@@ -86,33 +78,24 @@ class SEMModule(RootModule):
         ----------
         document : sem.storage.Document
             the input data. It is a document with only a content
-        log_level : str or int
-            the logging level
-        log_file : str
-            if not None, the file to log to (does not remove command-line
-            logging).
         """
 
         start = time.time()
 
-        if self._log_file is not None:
-            wapiti_label_logger.addHandler(file_handler(self._log_file))
-        wapiti_label_logger.setLevel(self._log_level)
-
         if self._field in document.corpus.fields:
-            wapiti_label_logger.warn(
+            sem.logger.warn(
                 "field %s already exists in document, not annotating", self._field
             )
 
             tags = [[s[self._field] for s in sentence] for sentence in document.corpus]
             document.add_annotation_from_tags(tags, self._field, self._field)
         else:
-            wapiti_label_logger.info("annotating document with %s field", self._field)
+            sem.logger.info("annotating document with %s field", self._field)
 
             self._label_document(document, encoding)
 
         laps = time.time() - start
-        wapiti_label_logger.info("in %s", timedelta(seconds=laps))
+        sem.logger.info("in %s", timedelta(seconds=laps))
 
     def _label_document(self, document, encoding="utf-8"):
         fields = self._annotation_fields or document.corpus.fields

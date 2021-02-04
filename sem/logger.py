@@ -3,7 +3,7 @@
 """
 file: logger.py
 
-Description: basic SEM logging utility.
+Description: basic logging utility for SEM.
 
 author: Yoann Dupont
 
@@ -33,18 +33,25 @@ SOFTWARE.
 import logging
 
 # the SEM logging format(s)
-logging_format = "%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s\t%(message)s"
+logging_format = "%(levelname)s\t%(asctime)s\t%(name)s.%(module)s\t%(funcName)s\t%(message)s"
 logging_formatter = logging.Formatter(fmt=logging_format)
-extended_logging_format = (
-    "%(levelname)s\t%(asctime)s\t%(name)s\t%(funcName)s:%(lineno)d\t%(message)s"
-)
-extended_logging_formatter = logging.Formatter(fmt=extended_logging_format)
 
-# the default handler used by SEM to log on command-line
 default_handler = logging.StreamHandler()
 default_handler.setFormatter(logging_formatter)
-extended_handler = logging.StreamHandler()
-extended_handler.setFormatter(extended_logging_formatter)
+
+# The following allows to have only one logger for SEM.
+
+logger = logging.getLogger("sem")
+logger.addHandler(default_handler)
+logger.setLevel("WARNING")
+
+debug = logger.debug
+info = logger.info
+warning = logger.warning
+error = logger.error
+critical = logger.critical
+addHandler = logger.addHandler
+setLevel = logger.setLevel
 
 
 def file_handler(filename, mode="a", encoding=None, delay=False):
