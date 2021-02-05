@@ -49,6 +49,7 @@ debug = logger.debug
 info = logger.info
 warning = logger.warning
 error = logger.error
+exception = logger.exception
 critical = logger.critical
 addHandler = logger.addHandler
 setLevel = logger.setLevel
