@@ -172,14 +172,6 @@ def substitute(string, pattern, repl):
     return re.sub(pattern, repl, string)
 
 
-def not_op(s, f):
-    return [not item for item in f(s)]
-
-
-def and_op(s, f1, f2):
-    return [left and right for left, right in zip(f1(s), f2(s))]
-
-
 def boolean_format(fmt):
     if fmt.lower() in ("bo", "b/o"):
         return bo_fmt
@@ -197,6 +189,14 @@ def bo_fmt(value, appendice):
 def zo_fmt(value, appendice):
     """Zero/One format."""
     return int(value)
+
+
+def not_op(s, f, fmt=zo_fmt):
+    return [fmt(not item, '') for item in f(s)]
+
+
+def and_op(s, f1, f2, fmt=zo_fmt):
+    return [fmt(left and right, '') for left, right in zip(f1(s), f2(s))]
 
 
 def token_gazetteer(s, gazetteer, y, appendice='', fmt=bo_fmt):
@@ -295,11 +295,12 @@ def xml2feat(xml, default_entry="word", default_shift=0, path=None):
     x = attrib.get("shift", default_shift)
 
     if xml.tag == "boolean":
+        fmt = boolean_format(attrib.get("format", "0/1"))
         if action.lower() == "and":
             left, right = list(xml)
-            return functools.partial(and_op, f1=xml2feat(left), f2=xml2feat(right))
+            return functools.partial(and_op, f1=xml2feat(left), f2=xml2feat(right), fmt=fmt)
         elif action.lower() == "not":
-            return functools.partial(not_op, f=xml2feat(list(xml)[0]))
+            return functools.partial(not_op, f=xml2feat(list(xml)[0]), fmt=fmt)
 
     if xml.tag == "string":
         if action.lower() == "equal":

@@ -30,6 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
 import os
 import shutil
 import multiprocessing
@@ -58,7 +59,7 @@ import sem.importers
 import sem.misc
 
 if sem.ON_WINDOWS:
-    sem.logger.warn(
+    sem.logger.warning(
         "multiprocessing not handled on Windows. Documents will be processed sequentially."
     )
 
@@ -95,7 +96,7 @@ def process(document, exporter, output_directory, couples, encoding, lang_style)
 def get_option(cfg, section, option, default=None):
     try:
         return cfg.get(section, option)
-    except Exception:
+    except (configparser.NoSectionError, configparser.NoOptionError):
         return default
 
 
@@ -184,7 +185,7 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 if key not in arguments:
                     arguments[key] = value
                 else:
-                    sem.logger.warn("Not adding already existing option: {0}".format(key))
+                    sem.logger.warning("Not adding already existing option: {0}".format(key))
         sem.logger.info("loading {0}".format(xmlpipe.tag))
         pipes.append(Class(**arguments))
     pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
@@ -192,7 +193,12 @@ def load_master(master, force_format="default", pipeline_mode="all"):
     return pipeline, options, exporter, couples
 
 
-def main(args):
+def main(argv=None):
+    args = parser.parse_args(argv)
+    tagger(args)
+
+
+def tagger(args):
     """Return a document after it passed through a pipeline.
 
     Parameters
@@ -294,14 +300,17 @@ def main(args):
     return documents
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Performs various operations given in a master configuration file"
-    " that defines a pipeline.",
+# import sem
+#
+# _subparsers = sem.argument_subparsers
+#
+# parser = _subparsers.add_parser(
+#     pathlib.Path(__file__).stem,
+#     description="Performs various operations given in a master configuration file"
+#     " that defines a pipeline.",
+# )
+parser = argparse.ArgumentParser(
+    "Performs various operations given in a master configuration file that defines a pipeline."
 )
 
 parser.add_argument(

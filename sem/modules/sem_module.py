@@ -28,18 +28,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import sem.logger
+
 from sem.storage import Holder
 
 
+DEFAULT_LICENSE = (
+    "No license provided.\n"
+    "Unless you find contradictory information from an official source,"
+    " this is provided for research, teaching and personal use only,"
+    " it may not be used for any other purpose."
+)
+
+
 class SEMModule(Holder):
-    def __init__(self, pipeline_mode="all", **kwargs):
+    def __init__(self, pipeline_mode="all", license=None, **kwargs):
         super(SEMModule, self).__init__(**kwargs)
 
         self._pipeline_mode = pipeline_mode
+        self._license = license or DEFAULT_LICENSE
 
     @property
     def pipeline_mode(self):
         return self._pipeline_mode
+
+    @property
+    def license(self):
+        return self._license
+
+    @license.setter
+    def license(self, license):
+        if self._license and self._license != DEFAULT_LICENSE:
+            sem.logger.warning("changing non default license.")
+        self._license = license
 
     def check_mode(self, expected_mode):
         pass

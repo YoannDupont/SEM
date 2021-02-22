@@ -671,10 +671,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                 if isinstance(document, SEMCorpus):
                     for doc in document:
                         if doc.name in names:
-                            sem.logger.warn("document %s already found, skipping", doc.name)
+                            sem.logger.warning("document %s already found, skipping", doc.name)
                             continue
                         elif not document_filter(doc, self.annotation_name):
-                            sem.logger.warn("document %s has no annotations, skipping", doc.name)
+                            sem.logger.warning("document %s has no annotations, skipping", doc.name)
                             continue
                         args.infiles = [doc]
                         doc = tagger(args)[0]
@@ -686,10 +686,12 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                             fields = doc.corpus.fields[:-1]
                 else:
                     if document.name in names:
-                        sem.logger.warn("document %s already found, skipping", document.name)
+                        sem.logger.warning("document %s already found, skipping", document.name)
                         continue
                     elif not document_filter(document, self.annotation_name):
-                        sem.logger.warn("document %s has no annotations, skipping", document.name)
+                        sem.logger.warning(
+                            "document %s has no annotations, skipping", document.name
+                        )
                         continue
 
                     document = tagger(args)[0]

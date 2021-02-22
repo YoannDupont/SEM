@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import argparse
+# import argparse
 import pathlib
 import platform
 
@@ -38,13 +38,17 @@ ON_WINDOWS = SYSTEM == "windows"
 SEM_HOME = pathlib.Path(__file__).resolve().parent
 SEM_DATA_DIR = pathlib.Path.home() / "sem_data"
 SEM_RESOURCE_DIR = pathlib.Path(SEM_DATA_DIR) / "resources"
+SEM_PIPELINE_DIR = SEM_RESOURCE_DIR / "pipelines"
 SEM_HOMEPAGE = "http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
-argument_parser = argparse.ArgumentParser()
-argument_subparsers = argument_parser.add_subparsers()
+# argument_parser = argparse.ArgumentParser()
+# argument_subparsers = argument_parser.add_subparsers()
+SEM_RESOURCE_BASE_URL = (
+    "https://raw.githubusercontent.com/YoannDupont/SEM-resources/{branch}/{kind}/{name}{extension}"
+)
 
 _name = "SEM"
 
-__version__ = "3.3.0"
+__version__ = "4.0.0"
 
 
 def name():

@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pathlib
+import argparse
 import re
 
 from sem.modules.sem_module import SEMModule as RootModule
@@ -240,7 +240,7 @@ def detect_abbreviations(document, field):
     document.add_annotation_from_tags(all_tags, field, field)
 
 
-def label_consistency(sentence, form2entity, trie, entry, ne_entry):
+def non_overriding_label_consistency(sentence, form2entity, trie, entry, ne_entry):
     length = len(sentence)
     res = sentence.feature(ne_entry)[:]
     tmp = trie
@@ -369,7 +369,7 @@ class SEMModule(RootModule):
         if label_consistency == "overriding":
             self._feature = overriding_label_consistency
         else:
-            self._feature = label_consistency
+            self._feature = non_overriding_label_consistency
 
     def process_document(self, document, abbreviation_resolution=True, **kwargs):
         corpus = document.corpus.sentences
@@ -413,7 +413,11 @@ class SEMModule(RootModule):
             detect_abbreviations(document, field)
 
 
-def main(args):
+def main(argv=None):
+    label_consistency(parser.parse_args(argv))
+
+
+def label_consistency(args):
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
 
@@ -438,26 +442,23 @@ def main(args):
             entities[form] = best
 
     if args.label_consistency == "non-overriding":
-        feature = label_consistency
+        feature = non_overriding_label_consistency
     else:
         feature = overriding_label_consistency
 
     trie = compile_multiword(entities)
     with open(args.outfile, "w", encoding=oenc) as output_stream:
         for p in read_conll(args.infile, ienc):
-            p.add(feature(p, entities, trie.data, args.token_column, args.tag_column), args.tag_column)
+            p.add(
+                feature(p, entities, trie.data, args.token_column, args.tag_column),
+                args.tag_column
+            )
             for token in zip(*[p.feature(key) for key in p.keys()]):
                 output_stream.write(("\t".join(token)) + "\n")
             output_stream.write("\n")
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="Broadcasts annotations based on form."
-)
+parser = argparse.ArgumentParser("Broadcasts annotations based on form.")
 
 parser.add_argument("infile", help="The input file (CoNLL format)")
 parser.add_argument("outfile", help="The output file")

@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pathlib
+import argparse
 import time
 from datetime import timedelta
 
@@ -55,7 +55,11 @@ class SEMModule(RootModule):
         sem.logger.info("done in {}".format(timedelta(seconds=laps)))
 
 
-def main(args):
+def main(argv=None):
+    annotate(parser.parse_args(argv))
+
+
+def annotate(args):
     """
     Takes a CoNLL-formatted file and write another CoNLL-formatted file
     with additional features in it.
@@ -112,13 +116,7 @@ def main(args):
     sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="Annotate file with specified annotator."
-)
+parser = argparse.ArgumentParser("An annotation tool for SEM.")
 
 parser.add_argument("infile", help="The input file (CoNLL format)")
 parser.add_argument("outfile", help="The output file (CoNLL format)")

@@ -53,6 +53,7 @@ exception = logger.exception
 critical = logger.critical
 addHandler = logger.addHandler
 setLevel = logger.setLevel
+level = logger.level
 
 
 def file_handler(filename, mode="a", encoding=None, delay=False):

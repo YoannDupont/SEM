@@ -36,7 +36,7 @@ import tkinter.messagebox
 
 import time
 import os
-import pathlib
+import argparse
 
 import sem
 from sem.modules.tagger import load_master, main as tagger
@@ -175,11 +175,23 @@ class SemTkMainWindow(ttk.Frame):
         train_interface = SEMTkTrainInterface(self.file_selector, self.lang_selector, self.master)
 
 
-_subparsers = sem.argument_subparsers
+def main(argv=None):
+    gui(parser.parse_args(argv))
 
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Launched GUI for SEM for tagging documents and training new models.",
+
+def gui(args):
+    root = tkinter.Tk()
+    root.title("SEM")
+    root.minsize(width=380, height=200)
+    sem.logger.setLevel(args.log_level)
+
+    SemTkMainWindow(root, args.resources).pack()
+
+    root.mainloop()
+
+
+parser = argparse.ArgumentParser(
+    "Launch GUI for SEM for tagging documents and training new models."
 )
 
 parser.add_argument(
@@ -197,14 +209,3 @@ parser.add_argument(
     default="INFO",
     help="Increase log level (default: %(default)s)",
 )
-
-
-def main(args):
-    root = tkinter.Tk()
-    root.title("SEM")
-    root.minsize(width=380, height=200)
-    sem.logger.setLevel(args.log_level)
-
-    SemTkMainWindow(root, args.resources).pack()
-
-    root.mainloop()

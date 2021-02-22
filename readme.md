@@ -41,6 +41,7 @@
    1. run GUI (see "main features" above) and annotate "non-regression/fr/in/segmentation.txt"
    2. or run: `python -m sem tagger resources/master/fr/NER.xml ./non-regression/fr/in/segmentation.txt -o sem_output`
 4. (optional) go through the [SEM tutorial](https://github.com/YoannDupont/SEM-tutorial)
+5. (optional) go through some of the examples given in the `examples` folder.
 
 ## External resources used by SEM
 1. [French Treebank](http://www.llf.cnrs.fr/fr/Gens/Abeille/French-Treebank-fr.php) by [Abeillé et al. (2003)](http://link.springer.com/chapter/10.1007%2F978-94-010-0201-1_10): corpus used for POS and chunking.
@@ -54,15 +55,14 @@
 
 ## SEM source code vs SEM resources
 
-While SEM source code is released under the MIT licence, the resources present in this repository (including but not limited to lexica and models) have each their own licence which may (usually does) differ. SEM provides them for the sole purpose of research and teaching, they may not be used for any other reason. If you wish to create your own models, you will have to provide your own lexica, annotate your own data (or use data annotated under a permissive licence) and train your models yourself. You have to to check every resource licence and its compatibility for your project.
+While SEM source code is released under the MIT licence, the resources present in this repository (including but not limited to lexica and models) have each their own licence which may (usually does) differ. SEM provides them for research, teaching and personal use, they may not be used for any other reason. If you wish to create your own models, you will have to provide your own lexica, annotate your own data (or use data annotated under a permissive licence) and train your models yourself. You have to to check every resource licence and its compatibility for your project.
+
+SEM resources are being moved to a specific repository: [SEM-resources](https://github.com/YoannDupont/SEM-resources). SEM will provide means to download them on your computer.
 
 ## Planned changes (for latest changes, see changelog.md)
-1. add lemmatiser.
+1. add lemmatiser
 2. have more unit tests
-3. improve segmentation
-   1. handle URLs starting with country indicator (ex: "en.wikipedia.org")
-   2. handle URLs starting with subdomain (ex: "blog.[...]")
-4. publish some benchmarks
+3. publish some benchmarks
 
 ## SEM references (with task[s] of interest)
 1. [DUPONT, Yoann et PLANCQ, Clément. Un étiqueteur en ligne du Français. session démonstration de TALN-RECITAL, 2017, p. 15.](http://taln2017.cnrs.fr/wp-content/uploads/2017/06/actes_TALN_2017-vol3.pdf#page=25)

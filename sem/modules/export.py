@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pathlib
+import argparse
 import sys
 
 # measuring time laps
@@ -105,7 +105,11 @@ class SEMModule(RootModule):
         sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
-def main(args):
+def main(argv=None):
+    export(parser.parse_args(argv))
+
+
+def export(args):
     start = time.time()
 
     infile = args.infile
@@ -153,7 +157,7 @@ def main(args):
         sem.logger.info("loading input file")
         document = sem.importers.load(infile, **options)
         if isinstance(document, SEMCorpus):
-            sem.logger.warn("input file is SEM corpus, only exporting the first document")
+            sem.logger.warning("input file is SEM corpus, only exporting the first document")
             document = document[0]
     else:
         sem.logger.info("using input document")
@@ -166,13 +170,7 @@ def main(args):
     sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="Export CoNLL-formatted data to specified format."
-)
+parser = argparse.ArgumentParser("Export CoNLL-formatted data to specified format.")
 
 parser.add_argument("infile", help="The input file")
 parser.add_argument("exporter_name", help="The name of the exporter to use")

@@ -33,7 +33,7 @@ SOFTWARE.
 """
 
 import time
-import pathlib
+import argparse
 from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
@@ -86,13 +86,8 @@ class SEMModule(RootModule):
         sem.logger.info("in %s", timedelta(seconds=laps))
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Map annotations according to a mapping."
+parser = argparse.ArgumentParser(
+    "Map annotations according to a mapping."
     " If no mapping is provided for a given type,"
     " it will remain unchanged."
     " If an empty mapping is provided,"

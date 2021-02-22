@@ -104,7 +104,7 @@ else:
     if missing:
         print()
         print("The following files are missing:")
-        print("\t" + " ".join(missing))
+        print("\t" + " ".join([str(m) for m in missing]))
         answer = input("add missing files? [Y/n] ").lower()
         add_missing = validity.get(answer, True)
         if add_missing:
@@ -155,5 +155,20 @@ setup(
     python_requires=">3.7.5",
     packages=find_packages(),
     include_package_data=True,
-    entry_points={"console_scripts": ["sem = sem.__main__:main"]},
+    entry_points={
+        "console_scripts": [
+            "sem = sem.__main__:main",
+            "sem-annotate = sem.modules.annotate:main",
+            "sem-annotation_gui = sem.modules.annotation_gui:main",
+            "sem-clean = sem.modules.clean:main",
+            "sem-download = sem.modules.download:main",
+            "sem-enrich = sem.modules.enrich:main",
+            "sem-evaluate = sem.modules.evaluate:main",
+            "sem-export = sem.modules.export:main",
+            "sem-gui = sem.modules.gui:main",
+            "sem-label_consistency = sem.modules.label_consistency:main",
+            "sem-segmentation = sem.modules.segmentation:main",
+            "sem-tagger = sem.modules.tagger:main"
+        ]
+    },
 )

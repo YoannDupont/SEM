@@ -45,7 +45,7 @@ def valid_module(m):
     return not (m.startswith("_") or m in ["sem_module.py", "pipeline.py"])
 
 
-def main(args=None):
+def main(argv=None):
     def banter():
         def username():
             import os
@@ -58,27 +58,28 @@ def main(args=None):
             "Do thou mockest me?",
             "Try again?",
             "I'm sorry {0}, I'm afraid I can't do that.".format(username()),
-            "The greatest trick this module ever pulled what convincing the users it did not exist.",
+            "The greatest trick this module ever pulled was convincing the users it did not exist.",
             "It's just a typo.",
         ]
-        random.shuffle(banters)
-        return banters[0]
+        return random.choice(banters)
 
     modules = {}
     for element in (sem.SEM_HOME / "modules").glob("*.py"):
         m = element.stem
         if valid_module(element.name):
-            modules[m] = sem.modules.get_package(m)
+            pkg = sem.modules.get_package(m)
+            if hasattr(pkg, "main"):
+                modules[m] = pkg
     name = pathlib.Path(sys.argv[0]).name
     operation = sys.argv[1] if len(sys.argv) > 1 else "-h"
 
     if operation in modules:
         module = modules[operation]
-        module.main(sem.argument_parser.parse_args())
+        module.main(sys.argv[2:])
     elif operation in ["-h", "--help"]:
         print("Usage: {0} <module> [module arguments]\n".format(name))
         print("Module list:")
-        for module in modules:
+        for module in sorted(modules):
             print("\t{0}".format(module))
         print()
         print("for SEM's current version: -v or --version\n")

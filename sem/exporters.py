@@ -30,7 +30,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import cgi
 import json
 
@@ -123,10 +122,12 @@ class BratExporter(Exporter):
 
     def document_to_unicode(self, document, couples, **kwargs):
         lowers = dict([(x.lower(), y) for (x, y) in couples.items()])
+        if "ner" not in lowers and "NER" in document.annotations:
+            lowers["ner"] = "NER"
         if "ner" not in lowers:
-            return ""
+            sem.logger.exception("No NER annotation specified for BRAT exporter")
         if not document.annotation(lowers["ner"]):
-            return ""
+            sem.logger.exception("No annotation %s in document", lowers["ner"])
         content = document.content
         parts = []
         for id, annotation in enumerate(
@@ -150,7 +151,7 @@ class CoNLLExporter(Exporter):
 
     def document_to_unicode(self, document, couples, **kwargs):
         if len(document.corpus.fields) == 0:
-            sem.logger.warn("No fields found for Corpus, cannot create string.")
+            sem.logger.warning("No fields found for Corpus, cannot create string.")
             return ""
 
         if (
@@ -187,7 +188,7 @@ class CoNLLExporter(Exporter):
 
             for field in fields:
                 if field not in document.corpus:
-                    sem.logger.warn('field "%s" not in corpus, adding', field)
+                    sem.logger.warning('field "%s" not in corpus, adding', field)
                     document.add_to_corpus(field)
 
             return document.corpus.unicode(fields)
@@ -241,6 +242,8 @@ class GateExporter(Exporter):
         # The text with anchors
         textWithNodes = ET.SubElement(gateDocument, "TextWithNodes")
         content = document.content
+        if "ner" not in couples and "NER" in document.annotations:
+            couples["ner"] = "NER"
         if "ner" in couples:
             annotationset = document.annotation(couples["ner"])
             annotations = annotationset.get_reference_annotations()
@@ -370,17 +373,15 @@ class HTMLExporter(Exporter):
         chunk_html = []
         ner_html = []
 
-        current_key = entry_names.get("pos", None)
+        current_key = entry_names.get("pos", "POS")
         if current_key and current_key in document.annotations:
-            pos_html = self.add_annotation_document(document, entry_names["pos"])
-        current_key = entry_names.get("chunking", None)
+            pos_html = self.add_annotation_document(document, current_key)
+        current_key = entry_names.get("chunking", entry_names.get("chunk", "chunking"))
         if current_key and current_key in document.annotations:
-            chunk_html = self.add_annotation_document(
-                document, entry_names.get("chunk", entry_names["chunking"])
-            )
-        current_key = entry_names.get("ner", None)
+            chunk_html = self.add_annotation_document(document, current_key)
+        current_key = entry_names.get("ner", "NER")
         if current_key and current_key in document.annotations:
-            ner_html = self.add_annotation_document(document, entry_names["ner"])
+            ner_html = self.add_annotation_document(document, current_key)
 
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
 
@@ -589,10 +590,9 @@ class SEMExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_file(
-        self, document: sem.storage.Document, couples, output, encoding="utf-8", **kwargs
-    ):
-        document.write(open(output, "w", encoding=encoding), add_header=True)
+    def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
+        with open(output, "w", encoding=encoding) as output_stream:
+            document.write(output_stream, add_header=True)
 
     def document_to_data(self, document, couples, **kwargs):
         """

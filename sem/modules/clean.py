@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pathlib
+import argparse
 
 import time
 from datetime import timedelta
@@ -77,7 +77,7 @@ class SEMModule(RootModule):
         fields = set(field for field in document.corpus.fields)
 
         if len(allowed - fields) > 0:
-            sem.logger.warn(
+            sem.logger.warning(
                 "the following fields are not present in document,"
                 " this might cause an error sometime later: {}".format(", ".join(allowed - fields))
             )
@@ -95,7 +95,11 @@ class SEMModule(RootModule):
         sem.logger.info("done in {0}".format(timedelta(seconds=laps)))
 
 
-def main(args):
+def main(argv=None):
+    clean(parser.parse_args(argv))
+
+
+def clean(args):
     """
     Cleans a CoNLL-formatted file, removing fields at given indices.
 
@@ -157,13 +161,7 @@ def main(args):
     sem.logger.info("done")
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="Remove unwanted columns from CoNLL-formatted file."
-)
+parser = argparse.ArgumentParser("Remove unwanted columns from CoNLL-formatted file.")
 
 parser.add_argument("infile", help="The input file")
 parser.add_argument("outfile", help="The output file ")

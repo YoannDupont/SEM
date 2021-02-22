@@ -34,6 +34,7 @@ SOFTWARE.
 import pathlib
 import re
 import tarfile
+import dill
 
 from contextlib import contextmanager
 from io import open, StringIO
@@ -129,6 +130,70 @@ def check_model_available(model):
                 tar.extractall(targz.parent)
         else:
             raise FileNotFoundError("Cannot find model file: {0}".format(model))
+
+
+def load_pipeline(path, auto_download=True):
+    """Load a serialized (potentially .tar.gz) pipeline.
+    Pipelines are serialized using dill.
+    If the pipeline does not exist and auto_download is set to True,
+    SEM will attempt to download the pipeline and load it.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The path (relative or absolute) to the pipeline.
+        SEM will look for the file in the following folders:
+        "." and sem.PIPELINE_DIR (defined in sem.__init__.py)
+    auto_download : Boolean (default: True)
+        Download the pipeline if not found on the computer.
+
+    Returns
+    -------
+    sem.modules.pipeline.Pipeline
+        A SEM pipeline ready to process some documents.
+    """
+    def download_pipeline(path):
+        import os
+        import urllib.request
+
+        outfile_path = sem.SEM_PIPELINE_DIR / path.with_suffix(".tar.gz")
+        url = sem.SEM_RESOURCE_BASE_URL.format(
+            branch="main", kind="pipelines", name=str(path), extension=".tar.gz"
+        )
+        sem.logger.info("downloading %s...", url)
+        response = urllib.request.urlopen(url)
+        data = response.read()
+        try:
+            os.makedirs(outfile_path.parent)
+        except FileExistsError:
+            pass
+        with open(outfile_path, "wb") as output_stream:
+            output_stream.write(data)
+
+    path = pathlib.Path(path)
+    pipeline = None
+    for folder in [pathlib.Path(), sem.SEM_PIPELINE_DIR]:
+        actual_path = folder / path
+        try:
+            check_model_available(actual_path)
+            sem.logger.info("Loading %s", str(actual_path))
+            with open(actual_path, "rb") as input_stream:
+                pipeline = dill.load(input_stream)
+        except FileNotFoundError:
+            pass
+
+    if pipeline is None:
+        if auto_download:
+            download_pipeline(path)
+            actual_path = sem.SEM_PIPELINE_DIR / path
+            check_model_available(actual_path)  # extract if need be
+            sem.logger.info("Loading %s", str(actual_path))
+            with open(actual_path, "rb") as input_stream:
+                pipeline = dill.load(input_stream)
+        else:
+            raise FileNotFoundError("Could not find pipeline {}".format(path))
+
+    return pipeline
 
 
 def strip_html(html, keep_offsets=False):
@@ -333,7 +398,7 @@ def r_open(source, encoding="utf-8"):
         yield src
         try:
             src.close()
-        except Exception:
+        except AttributeError:
             pass
 
 

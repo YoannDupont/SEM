@@ -26,6 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
 import glob
 import sys
 import pathlib
@@ -1306,11 +1307,21 @@ class AnnotationTool(tkinter.Frame):
         self.load_document(same_doc=True)
 
 
-_subparsers = sem.argument_subparsers
+def main(argv=None):
+    annotation_gui(parser.parse_args(argv))
 
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="An annotation tool for SEM."
-)
+
+def annotation_gui(args):
+    root = tkinter.Tk()
+    root.title("SEM")
+    sem.logger.setLevel(args.log_level)
+    AnnotationTool(root, documents=args.documents, tagset=args.tagset).pack(
+        expand=1, fill="both"
+    )
+    root.mainloop()
+
+
+parser = argparse.ArgumentParser("An annotation tool for SEM.")
 
 parser.add_argument("-d", "--documents", nargs="*", help="Documents to load at startup.")
 parser.add_argument("-t", "--tagset", help="The tagser to load at startup.")
@@ -1322,13 +1333,3 @@ parser.add_argument(
     default="WARNING",
     help="Increase log level (default: %(default)s)",
 )
-
-
-def main(args):
-    root = tkinter.Tk()
-    root.title("SEM")
-    sem.logger.setLevel(args.log_level)
-    AnnotationTool(root, documents=args.documents, tagset=args.tagset).pack(
-        expand=1, fill="both"
-    )
-    root.mainloop()

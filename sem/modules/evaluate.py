@@ -28,7 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pathlib
+import argparse
 import os
 import collections
 
@@ -44,117 +44,69 @@ BOUNDARY_ERROR = "boundary error"
 TYPE_AND_BOUNDARY_ERROR = "type+boundary error"
 NOISE_ERROR = "noise error"
 SILENCE_ERROR = "silence error"
+TP = "true positive"
+FP = "false positive"
+FN = "false negative"
 
-ERRORS_KINDS = [TYPE_ERROR, BOUNDARY_ERROR, TYPE_AND_BOUNDARY_ERROR, NOISE_ERROR, SILENCE_ERROR]
+ERRORS_KINDS = [
+    FP, FN, TYPE_ERROR, BOUNDARY_ERROR, TYPE_AND_BOUNDARY_ERROR, NOISE_ERROR, SILENCE_ERROR
+]
 OUTPUT_KINDS = [CORRECT] + ERRORS_KINDS
 
 
 def mean(numbers):
-    return float(sum(numbers)) / len(numbers)
+    return sum(numbers) / len(numbers)
 
 
 def precision(d):
-    numerator = float(len(d[CORRECT]))
-    denominator = float(
-        len(
-            d[CORRECT]
-            + d[TYPE_ERROR]
-            + d[BOUNDARY_ERROR]
-            + d[TYPE_AND_BOUNDARY_ERROR]
-            + d[NOISE_ERROR]
-        )
-    )
-    if denominator == 0.0:
+    numerator = len(d.get(TP, []))
+    denominator = len(d.get(TP, []) + d.get(FP, []))
+    if denominator == 0:
         return 0.0
     else:
         return numerator / denominator
-    return float(len(d[CORRECT])) / len(
-        d[CORRECT] + d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR] + d[NOISE_ERROR]
-    )
 
 
 def recall(d):
-    numerator = float(len(d[CORRECT]))
-    denominator = len(
-        d[CORRECT]
-        + d[TYPE_ERROR]
-        + d[BOUNDARY_ERROR]
-        + d[TYPE_AND_BOUNDARY_ERROR]
-        + d[SILENCE_ERROR]
-    )
-    if denominator == 0.0:
+    numerator = len(d.get(TP, []))
+    denominator = len(d.get(TP, []) + d.get(FN, []))
+    if denominator == 0:
         return 0.0
     else:
         return numerator / denominator
-    return float(len(d[CORRECT])) / len(
-        d[CORRECT]
-        + d[TYPE_ERROR]
-        + d[BOUNDARY_ERROR]
-        + d[TYPE_AND_BOUNDARY_ERROR]
-        + d[SILENCE_ERROR]
-    )
-
-
-def undergeneration(d):
-    numerator = float(len(d[SILENCE_ERROR]))
-    denominator = float(
-        len(
-            d[CORRECT]
-            + d[TYPE_ERROR]
-            + d[BOUNDARY_ERROR]
-            + d[TYPE_AND_BOUNDARY_ERROR]
-            + d[SILENCE_ERROR]
-        )
-    )
-    if denominator == 0.0:
-        return 0.0
-    else:
-        return numerator / denominator
-    return float(len(d[SILENCE_ERROR])) / len(
-        d[CORRECT]
-        + d[TYPE_ERROR]
-        + d[BOUNDARY_ERROR]
-        + d[TYPE_AND_BOUNDARY_ERROR]
-        + d[SILENCE_ERROR]
-    )
-
-
-def overgeneration(d):
-    numerator = float(len(d[NOISE_ERROR]))
-    denominator = float(
-        len(
-            d[CORRECT]
-            + d[TYPE_ERROR]
-            + d[BOUNDARY_ERROR]
-            + d[TYPE_AND_BOUNDARY_ERROR]
-            + d[NOISE_ERROR]
-        )
-    )
-    if denominator == 0.0:
-        return 0.0
-    else:
-        return numerator / denominator
-    return float(len(d[NOISE_ERROR])) / len(
-        d[CORRECT] + d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR] + d[NOISE_ERROR]
-    )
-
-
-def substitution(d):
-    numerator = float(len(d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR]))
-    denominator = float(
-        len(d[CORRECT] + d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR])
-    )
-    if denominator == 0.0:
-        return 0.0
-    else:
-        return numerator / denominator
-    return float(len(d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR])) / len(
-        d[CORRECT] + d[TYPE_ERROR] + d[BOUNDARY_ERROR] + d[TYPE_AND_BOUNDARY_ERROR]
-    )
 
 
 def fscore(P, R, beta=1.0):
-    return (1 + (beta ** 2)) * P * R / (((beta ** 2) * P) + R) if P + R != 0 else 0.0
+    return (1 + (beta ** 2)) * P * R / (((beta ** 2) * P) + R) if P + R != 0.0 else 0.0
+
+
+def undergeneration(d):
+    numerator = len(d.get(SILENCE_ERROR, []))
+    denominator = len(d.get(TP, []) + d.get(FN, []))
+    if denominator == 0:
+        return 0.0
+    else:
+        return numerator / denominator
+
+
+def overgeneration(d):
+    numerator = len(d.get(NOISE_ERROR, []))
+    denominator = len(d.get(TP, []) + d.get(FP, []))
+    if denominator == 0:
+        return 0.0
+    else:
+        return numerator / denominator
+
+
+def substitution(d):
+    numerator = len(d.get(FP, [])) - len(d.get(NOISE_ERROR, []))
+    denominator = (
+        len(d.get(TP, []) + d.get(FP, [])) - len(d.get(NOISE_ERROR, []))
+    )
+    if denominator == 0:
+        return 0.0
+    else:
+        return numerator / denominator
 
 
 def get_diff(content, gold, guess, error_kind, context_size=20):
@@ -246,7 +198,11 @@ def get_diff(content, gold, guess, error_kind, context_size=20):
     return diff.replace("\r", "").replace("\n", " ").replace('"', '\\"')
 
 
-def main(args):
+def main(argv=None):
+    evaluate(parser.parse_args(argv))
+
+
+def evaluate(args):
     infile = args.infile
     reference_column = args.reference_column
     tagging_column = args.tagging_column
@@ -268,9 +224,9 @@ def main(args):
         n_line = 0
         for p in read_conll(infile, ienc):
             nth += 1
-            keys = keys or range(len(p[0]))
-            L.extend(annotation_from_sentence(p, column=reference_column, shift=n_line - nth))
-            R.extend(annotation_from_sentence(p, column=tagging_column, shift=n_line - nth))
+            keys = keys or list(p.keys())
+            L.extend(annotation_from_sentence(p, column=keys[reference_column], shift=n_line - nth))
+            R.extend(annotation_from_sentence(p, column=keys[tagging_column], shift=n_line - nth))
             n_line += len(p) + 1
         document = sem.importers.conll_file(infile, keys, keys[0], encoding=ienc)
         L = Annotation(
@@ -311,6 +267,7 @@ def main(args):
                 del R[j]
                 i -= 1
                 d[CORRECT].append([LR, RR])
+                d[TP].append(LR)
                 break
             j += 1
         i += 1
@@ -326,6 +283,8 @@ def main(args):
                 del L[i]
                 del R[j]
                 d[TYPE_ERROR].append([LR, RR])
+                d[FN].append(LR)
+                d[FP].append(RR)
                 break
             j += 1
         i += 1
@@ -344,6 +303,8 @@ def main(args):
                 del R[j]
                 i -= 1
                 d[BOUNDARY_ERROR].append([LR, RR])
+                d[FN].append(LR)
+                d[FP].append(RR)
                 break
             j += 1
         i += 1
@@ -364,12 +325,16 @@ def main(args):
                 del R[j]
                 i -= 1
                 d[TYPE_AND_BOUNDARY_ERROR].append([LR, RR])
+                d[FN].append(LR)
+                d[FP].append(RR)
                 break
             j += 1
         i += 1
 
     d[SILENCE_ERROR] = L[:]
     d[NOISE_ERROR] = R[:]
+    d[FN].extend(L[:])
+    d[FP].extend(R[:])
 
     entities = set()
     for l in d.values():
@@ -440,6 +405,9 @@ def main(args):
         ]
         sub_d[NOISE_ERROR] = [m for m in d[NOISE_ERROR] if m.value == entity]
         sub_d[SILENCE_ERROR] = [m for m in d[SILENCE_ERROR] if m.value == entity]
+        sub_d[TP] = [m for m in d[TP] if m.value == entity]
+        sub_d[FP] = [m for m in d[FP] if m.value == entity]
+        sub_d[FN] = [m for m in d[FN] if m.value == entity]
         counts[entity] = sub_d
 
     # basic counts
@@ -486,13 +454,7 @@ def main(args):
     print("global\tsubstitution\t{0:.4f}".format(substitution(d)))
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem, description="Get F1-score for tagging using the IOB scheme."
-)
+parser = argparse.ArgumentParser("Get F1-score for tagging using the IOB scheme.")
 
 parser.add_argument("infile", help="The input file (CoNLL format)")
 parser.add_argument(

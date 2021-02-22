@@ -30,6 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
 import time
 import pathlib
 from datetime import timedelta
@@ -157,7 +158,11 @@ class SEMModule(RootModule):
         sem.logger.info("in {0}".format(timedelta(seconds=laps)))
 
 
-def main(args):
+def main(argv=None):
+    segmentation(parser.parse_args(argv))
+
+
+def segmentation(args):
     if args.log_file is not None:
         sem.logger.addHandler(sem.logger.file_handler(args.log_file))
     sem.logger.setLevel(args.log_level)
@@ -184,14 +189,9 @@ def main(args):
             output_stream.write("\n")
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Segments the textual content of a sentence into tokens."
-    " They can either be outputted line per line or in a vectorised format.",
+parser = argparse.ArgumentParser(
+    "Segments the textual content of a sentence into tokens."
+    " They can either be outputted line per line or in a vectorised format."
 )
 
 parser.add_argument("infile", help="The input file (raw text)")

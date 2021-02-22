@@ -555,7 +555,7 @@ def annotation_from_sentence(sentence, column, shift=0, strict=False):
     or chunk_annotation_from_sentence
     """
     flags = BEGIN + IN + LAST + SINGLE + OUT
-    if all([token[column][0] in flags for token in sentence]):
+    if all(token[0] in flags for token in sentence.feature(column)):
         return chunk_annotation_from_sentence(sentence, column, shift=shift, strict=strict)
     else:
         return tag_annotation_from_sentence(sentence, column, shift=shift, strict=strict)
@@ -568,6 +568,10 @@ _label = "label"
 _modes = _train_set | _label_set
 _equivalence = dict(
     [[mode, _train] for mode in _train_set] + [[mode, _label] for mode in _label_set]
+)
+_allowed = dict(
+    [[mode, set([_train, _label])] for mode in _train_set]
+    + [[mode, set([_label])] for mode in _label_set]
 )
 
 
@@ -611,7 +615,7 @@ class Entry:
         return Entry(**xml_element.attrib)
 
     def has_mode(self, mode):
-        return self.mode == _equivalence[mode]
+        return self.mode in _allowed[mode]
 
 
 class Sentence:
@@ -634,7 +638,10 @@ class Sentence:
         return 0
 
     def conll(self, keys):
-        return "\n".join("\t".join(seq) for seq in zip(*[self.feature(key) for key in keys]))
+        return "\n".join(
+            "\t".join(str(token) for token in seq)
+            for seq in zip(*[self.feature(key) for key in keys])
+        )
 
     def keys(self):
         return self._features.keys()
@@ -671,6 +678,9 @@ class Sentence:
 
     def feature(self, name):
         return self._features[name]
+
+    def remove(self, key):
+        del self._features[key]
 
 
 class Corpus:
@@ -1159,7 +1169,7 @@ class Document:
                 annotation.lb = begin
                 annotation.ub = i + 1
             else:
-                sem.logger.warn("cannot add annotation {0}".format(annotation))
+                sem.logger.warning("cannot add annotation {0}".format(annotation))
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
@@ -1192,7 +1202,7 @@ class Document:
             sentence.add(tags, annotation_name)
             if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
                 # annotation spans over at least two sentences
-                sem.logger.warn(
+                sem.logger.warning(
                     "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
                 )
                 try:

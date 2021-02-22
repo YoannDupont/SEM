@@ -31,6 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import argparse
 import time
 from datetime import timedelta
 
@@ -46,7 +47,7 @@ import sem.logger
 from sem.importers import conll_file
 from sem.storage import Entry
 
-import pathlib
+# import pathlib
 
 
 class SEMModule(RootModule):
@@ -67,6 +68,7 @@ class SEMModule(RootModule):
         self._aentries = []  # informations that are after ...
         self._features = []  # informations that are added
         self._names = set()
+        self._temporary = set()  # features that will be deleted at the end of process
         self._x2f = None  # the feature parser, initialised in parse
 
         if self._source is not None:
@@ -112,6 +114,12 @@ class SEMModule(RootModule):
     def features(self):
         return self._features
 
+    def fields(self):
+        fields = [entry.name for entry in self._bentries]
+        fields += [name for (feature, name) in self.features if name not in self._temporary]
+        fields += [entry.name for entry in self._aentries]
+        return fields
+
     def process_document(self, document, **kwargs):
         """
         Updates the CoNLL-formatted corpus inside a document with various
@@ -137,12 +145,12 @@ class SEMModule(RootModule):
 
         sem.logger.info('enriching file "%s"', document.name)
 
-        fields = [entry.name for entry in self._bentries]
-        fields += [name for (feature, name) in self.features]
-        fields += [entry.name for entry in self._aentries]
+        fields = self.fields()
         nth = 0
         for i, p in enumerate(document.corpus):
             p.update(self.features)
+            for tmp in self._temporary:
+                p.remove(tmp)
             nth += 1
             if 0 == nth % 1000:
                 sem.logger.debug("%i sentences enriched", nth)
@@ -210,6 +218,8 @@ class SEMModule(RootModule):
         del self._features[:]
         for feature in features:
             feature_name = feature.attrib.get("name")
+            if not sem.misc.str2bool(feature.attrib.get("display", "yes")):
+                self._temporary.add(feature_name)
             self._features.append((xml2feat(feature, path=filename), feature_name))
             if not feature_name:
                 try:
@@ -222,7 +232,11 @@ class SEMModule(RootModule):
             check_entry(feature_name)
 
 
-def main(args):
+def main(argv=None):
+    enrich(parser.parse_args(argv))
+
+
+def enrich(args):
     """
     Takes a CoNLL-formatted file and write another CoNLL-formatted file
     with additional features in it.
@@ -257,33 +271,23 @@ def main(args):
 
     bentries = [entry.name for entry in processor.bentries]
     aentries = [entry.name for entry in processor.aentries]
-    # features = [feature.name for feature in processor.features if feature.display]
-    features = [name for (feature, name) in processor.features]
     document = conll_file(
         args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc
     )
 
     processor.process_document(document)
-    str_format = (
-        "\t".join(["{{{}}}".format(field) for field in bentries + features + aentries]) + "\n"
-    )
+    fields = processor.fields()
     with open(args.outfile, "w", encoding=args.oenc or args.enc) as output_stream:
         for sentence in document.corpus:
-            for token in sentence:
-                output_stream.write(str_format.format(**token))
-            output_stream.write("\n")
+            output_stream.write(sentence.conll(fields))
+            output_stream.write("\n\n")
 
     laps = time.time() - start
     sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
-import sem
-
-_subparsers = sem.argument_subparsers
-
-parser = _subparsers.add_parser(
-    pathlib.Path(__file__).stem,
-    description="Adds information to a file using and XML-styled configuration file.",
+parser = argparse.ArgumentParser(
+    "Adds information to a file using and XML-styled configuration file."
 )
 
 parser.add_argument("infile", help="The input file (CoNLL format)")
