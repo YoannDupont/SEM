@@ -30,8 +30,6 @@ SOFTWARE.
 
 import sem.logger
 
-from sem.storage import Holder
-
 
 DEFAULT_LICENSE = (
     "No license provided.\n"
@@ -41,7 +39,7 @@ DEFAULT_LICENSE = (
 )
 
 
-class SEMModule(Holder):
+class SEMModule:
     def __init__(self, pipeline_mode="all", license=None, **kwargs):
         super(SEMModule, self).__init__(**kwargs)
 

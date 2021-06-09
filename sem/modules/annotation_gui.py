@@ -474,7 +474,7 @@ class AnnotationTool(tkinter.Frame):
         for filename in filenames:
             if filename.endswith(".sem.xml") or filename.endswith(".sem"):
                 try:
-                    docs = SEMCorpus.from_xml(
+                    docs = sem.importers.sem_corpus_from_xml(
                         filename, chunks_to_load=chunks_to_load, load_subtypes=True
                     ).documents
                     for doc in docs:  # using reference annotations
@@ -492,7 +492,7 @@ class AnnotationTool(tkinter.Frame):
                         documents.append(doc)
                         names.add(doc.name)
                 except Exception:
-                    doc = Document.from_xml(
+                    doc = sem.importers.sem_document_from_xml(
                         filename, chunks_to_load=chunks_to_load, load_subtypes=True
                     )
                     if doc.name not in names:
@@ -1172,7 +1172,6 @@ class AnnotationTool(tkinter.Frame):
                         ),
                     )
                     self.annot2treeitems[self.annotation_name]["{}".format(annot)] = item
-                    annot.ids[self.annotation_name] = item
                     self.treeitem2annot[item] = annot
                     self.current_annotations.add(annot)
                     if self.adder.shortcut_trie.goto(annot.levels[0]) is None:

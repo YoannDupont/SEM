@@ -47,7 +47,7 @@ import sem.logger
 from sem.constants import NUL
 from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
 from sem.modules import EnrichModule, WapitiLabelModule
-from sem.modules.tagger import load_master, main as tagger
+from sem.modules.tagger import load_master, tagger
 
 from wapiti.api import Model as WapitiModel
 
@@ -209,7 +209,7 @@ class Adder:
         self.frame.text.tag_remove("BOLD", "1.0", "end")
 
 
-class Adder2(object):
+class Adder2:
     def __init__(self, tagset, levels, shortcut_trie):
         self.tagset = tagset
         self.levels = levels

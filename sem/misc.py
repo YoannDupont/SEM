@@ -258,6 +258,9 @@ def strip_html(html, keep_offsets=False):
         )
     else:
         stripped_html = tag.sub(repl, stripped_html).replace("&nbsp;", " ").replace("&#160;", " ")
+        stripped_html = re.sub("\n[ \t]+", "\n", stripped_html)
+        stripped_html = re.sub("[ \t]+", " ", stripped_html)
+        stripped_html = re.sub("\n{2,}", "\n\n", stripped_html)
 
     return stripped_html
 

@@ -39,8 +39,9 @@ import os
 import argparse
 
 import sem
-from sem.modules.tagger import load_master, main as tagger
-from sem.storage import Holder, SEMCorpus
+import sem.importers
+from sem.modules.tagger import load_master, tagger
+from sem.storage import Holder
 from sem.gui_components import (
     SemTkMasterSelector,
     SemTkLangSelector,
@@ -142,7 +143,7 @@ class SemTkMainWindow(ttk.Frame):
             for current_file in current_files:
                 corpus = None
                 try:
-                    corpus = SEMCorpus.from_xml(current_file)
+                    corpus = sem.importers.sem_document_from_xml(current_file)
                 except Exception:
                     pass
                 if corpus is not None:

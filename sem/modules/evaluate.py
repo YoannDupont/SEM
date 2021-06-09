@@ -33,7 +33,7 @@ import os
 import collections
 
 from sem.importers import read_conll
-from sem.storage import Annotation, Document
+from sem.storage import Annotation
 from sem.storage import annotation_from_sentence
 
 import sem.importers
@@ -240,8 +240,8 @@ def evaluate(args):
         L = document.annotation("NER").get_reference_annotations()
         R = sem.importers.brat_file(infile).annotation("NER").get_reference_annotations()
     elif input_format in ("sem", "SEM"):
-        document = Document.from_xml(reference_file)
-        system = Document.from_xml(infile)
+        document = sem.importers.sem_document_from_xml(reference_file)
+        system = sem.importers.sem_document_from_xml(infile)
         common_annotations = set(document.annotations.keys()) & set(system.annotations.keys())
         if len(common_annotations) == 1 and annotation_name is None:
             annotation_name = list(common_annotations)[0]

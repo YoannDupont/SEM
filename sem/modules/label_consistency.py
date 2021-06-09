@@ -427,7 +427,9 @@ def label_consistency(args):
         G = chunk_annotation_from_sentence(p, column=args.tag_column)
         for entity in G:
             id = entity.value
-            form = " ".join([p[index][args.token_column] for index in range(entity.lb, entity.ub)])
+            form = " ".join(
+                [p.feature(args.token_column)[index] for index in range(entity.lb, entity.ub)]
+            )
             if form not in counts:
                 counts[form] = {}
             if id not in counts[form]:

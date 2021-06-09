@@ -592,6 +592,8 @@ class SEMExporter(Exporter):
 
     def document_to_file(self, document, couples, output, encoding="utf-8", **kwargs):
         with open(output, "w", encoding=encoding) as output_stream:
+            # both SEM documents and SEM corpora have their write method,
+            # this allows to have only one exporter for both
             document.write(output_stream, add_header=True)
 
     def document_to_data(self, document, couples, **kwargs):

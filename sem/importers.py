@@ -42,10 +42,7 @@ try:
 except ImportError:
     from xml.etree import ElementTree as ET
 
-# try:
-#     from HTMLParser import HTMLParser
-# except ImportError:
-#     from html.parser import HTMLParser
+from html.parser import HTMLParser
 
 import sem.logger
 import sem.misc
@@ -86,10 +83,10 @@ def load(
         root_tag = xml.getroot().tag
         if root_tag == "sem":
             sem.logger.info("detected format: SEM XML")
-            return SEMCorpus.from_xml(xml)
+            return sem_corpus_from_xml(xml)
         elif root_tag == "document":
             sem.logger.info("detected format: SEM XML")
-            return Document.from_xml(xml)
+            return sem_document_from_xml(xml)
         elif root_tag == "GateDocument":
             sem.logger.info("detected format: GATE XML")
             return gate_data(xml, pathlib.Path(filename).name)
@@ -115,6 +112,133 @@ def load(
     sem.logger.info("No specific format found, defaulting to text format")
     # if everything else fails, just load as text document
     return text_file(filename, encoding=encoding)
+
+
+def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator="."):
+    if isinstance(xml, str):
+        data = ET.parse(xml)
+    elif isinstance(xml, ET.ElementTree):
+        data = xml
+    elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
+        data = xml
+    else:
+        raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
+
+    if isinstance(data, ET.ElementTree):
+        root = data.getroot()
+    elif isinstance(data, type(ET.Element("a"))):
+        root = data
+
+    if root.tag == "sem":
+        root = list(root)[0]
+    elif root.tag != "document":
+        raise TypeError("Invalid XML document type for XML-SEM document: {0}".format(root.tag))
+
+    htmlparser = HTMLParser()
+    document = Document(root.attrib.get("name", "_DOCUMENT_"))
+    for element in list(root):
+        if element.tag == "metadata":
+            document._metadatas = element.attrib
+        elif element.tag == "content":
+            document.content = htmlparser.unescape(element.text)
+        elif element.tag == "segmentations":
+            for segmentation in list(element):
+                spans = [
+                    Span(
+                        lb=int(span.attrib.get("start", span.attrib["s"])),
+                        ub=0,
+                        length=int(span.attrib.get("length", span.attrib["l"])),
+                    )
+                    for span in list(segmentation)
+                ]
+                reference = segmentation.get("reference", None)
+                if reference:
+                    reference = document.segmentation(reference)
+                document.add_segmentation(
+                    Segmentation(segmentation.attrib["name"], spans=spans, reference=reference)
+                )
+        elif element.tag == "annotations":
+            for annotation in list(element):
+                tags = []
+                for tag in list(annotation):
+                    value = tag.attrib.get("value", tag.attrib["v"])
+                    if not load_subtypes:
+                        value = value.strip(type_separator).split(type_separator)[0]
+                    tags.append(
+                        Tag(
+                            value=value,
+                            lb=int(tag.attrib.get("start", tag.attrib["s"])),
+                            ub=0,
+                            length=int(tag.attrib.get("length", tag.attrib["l"])),
+                        )
+                    )
+                reference = annotation.get("reference", None)
+                if reference:
+                    reference = document.segmentation(reference)
+                annotation = Annotation(annotation.attrib["name"], reference=reference)
+                annotation.annotations = tags
+                document.add_annotation(annotation)
+
+    if document.segmentation("tokens") and document.segmentation("sentences"):
+        document.corpus.from_segmentation(
+            document.content,
+            document.segmentation("tokens"),
+            document.segmentation("sentences"),
+        )
+
+        if chunks_to_load is not None:
+            for chunk_to_load in chunks_to_load:
+                cur_annot = document.annotation(chunk_to_load)
+                if cur_annot and cur_annot.reference is None:
+                    document.set_reference(cur_annot.name, "tokens")
+                i = 0
+                sent_iter = iter(document.corpus)
+                shift = 0
+                present = set([(a.lb, a.ub) for a in cur_annot])
+                for sentence in document.segmentation("sentences"):
+                    sent = next(sent_iter)
+                    annots = []
+                    while i < len(cur_annot) and cur_annot[i].ub <= sentence.ub:
+                        annots.append(cur_annot[i])
+                        if tuple([cur_annot[i].lb, cur_annot[i].ub]) not in present:
+                            raise Exception
+                        i += 1
+                    l1 = ["O" for _ in range(len(sentence))]
+                    for annot in annots:
+                        l1[annot.lb - shift] = "B-{0}".format(annot.value)
+                        for j in range(annot.lb + 1 - shift, annot.ub - shift):
+                            l1[j] = "I-{}".format(annot.value)
+                    for j in range(len(l1)):
+                        sent[j]["NER"] = l1[j]
+                    shift += len(sentence)
+                document.corpus.fields.append(chunk_to_load)
+
+    return document
+
+
+def sem_corpus_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator="."):
+    if isinstance(xml, str):
+        data = ET.parse(xml)
+    elif isinstance(xml, ET.ElementTree):
+        data = xml
+    elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
+        data = xml
+    else:
+        raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
+
+    root = data.getroot()
+    if root.tag != "sem":
+        raise ValueError("Not sem xml file type: '{0}'".format(root.tag))
+    doc_list = []
+    for document in list(root):
+        doc_list.append(Document.from_xml(document))
+    return SEMCorpus(doc_list)
+
+
+def add_document(self, document):
+    ok = not any([d.name == document.name for d in self.documents])
+    if ok:
+        self._documents.append(document)
 
 
 def text_file(filename, encoding="utf-8"):
@@ -222,7 +346,7 @@ def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunki
     return document
 
 
-def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
+def from_url(url, strip_html=False, wikinews_format=False, keep_offsets=True, **kwargs):
     """
     Load a SEM Document using an URL.
 
@@ -243,6 +367,7 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
         return None
 
     strip_html |= wikinews_format  # wikinews format is always stripped
+    keep_offsets &= not wikinews_format  # wikinews format never keeps offsets
 
     charset = re.compile(b'charset="(.+?)"')
     escaped_url = "".join([(urllib.parse.quote(c) if ord(c) > 127 else c) for c in url])
@@ -272,7 +397,7 @@ def from_url(url, strip_html=False, wikinews_format=False, **kwargs):
     content = content.replace("</p>", "</p>\n\n")
 
     if strip_html:
-        new_content = sem.misc.strip_html(content, keep_offsets=True)
+        new_content = sem.misc.strip_html(content, keep_offsets=keep_offsets)
     else:
         new_content = content
 

@@ -34,24 +34,15 @@ import pathlib
 import cgi
 import re
 
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    from xml.etree import ElementTree as ET
-
-try:
-    from HTMLParser import HTMLParser
-except ImportError:
-    from html.parser import HTMLParser
-
 import sem
 import sem.misc
 import sem.logger
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
 from sem.constants import NUL
+from sem.CRF import Quark
 
 
-class Holder(object):
+class Holder:
     def __init__(self, **kwargs):
         self.__dict__ = kwargs
 
@@ -123,130 +114,34 @@ class Span:
         self._ub += length
 
 
-class SpannedBounds:
-    """The SpannedBounds object. Its purpose is to represent (word, sentence, etc.)
-    bounds as spans to later produce (word, sentence, etc.) spans.
-
-    Attributes
-    ----------
-    _bounds : list of Span
-        the list of bounds between words, sentences, etc.
-    _forbidden : set of int
-        the list of indices that cannot be a word bound. It is forbidden
-        to split a word at this index
+def add_last(spanlist, span):
+    """Appends "span" at the end of the list. If the last
+    span's upper bound is equal to "span's" lower bound, the last
+    span's upper bound is extended instead.
     """
 
-    def __init__(self):
-        self._bounds = []
-        self._forbidden = set()
+    if span in spanlist[-1]:
+        return
 
-    def __iter__(self):
-        for e in self._bounds:
-            yield e
-
-    def __getitem__(self, i):
-        return self._bounds[i]
-
-    def __len__(self):
-        return len(self._bounds)
-
-    def add_forbiddens_regex(self, regex, s):
-        for match in regex.finditer(s):
-            for index in range(match.start() + 1, match.end()):
-                self._forbidden.add(index)
-
-    def force_regex(self, regex, s):
-        """Applies a regex for elements that should be segmented in a certain
-        way and splits elements accordingly.
-        """
-
-        for match in regex.finditer(s):
-            self.add(Span(match.start(), match.start()))
-            self.add(Span(match.end(), match.end()))
-
-    def find(self, i):
-        """Locate an index "i" somewhere in self._bounds."""
-
-        for nth, span in enumerate(self._bounds):
-            if i < span.lb:
-                return (nth, False)
-            elif i > span.ub:
-                continue
-            elif i in span:
-                return (nth, True)
-        return (-1, False)
-
-    def append(self, span):
-        """Appends "span" at the end of bounds (Span list)."""
-
-        for index in range(span.lb, span.ub + 1):
-            if self.is_forbidden(index):
-                return
-
-        if len(self._bounds) > 0:
-            if span in self._bounds[-1] or span == self._bounds[-1]:
-                return
-            if len(span) == 0 and self._bounds[-1].ub >= span.lb:
-                return
-
-        self._bounds.append(span)
-
-    def add(self, span):
-        """Add "span" at the best index of self._bounds"""
-
-        for index in range(span.lb, span.ub):
-            if self.is_forbidden(index):
-                return
-
-        index, found = self.find(span.lb)
-        if found:
-            return
-        else:
-            if index > 0 and self[index - 1].lb == self[index].ub:
-                None
-            elif index == -1:
-                self._bounds.append(span)
-            else:
-                self._bounds.insert(index, span)
-
-    def add_last(self, span):
-        """Appends "span" at the end of bounds (Span list). If the last
-        span's upper bound is equal to "span's" lower bound, the last
-        span's upper bound is extended instead.
-        """
-
-        for index in range(span.lb, span.ub + 1):
-            if self.is_forbidden(index):
-                return
-        if span in self._bounds[-1]:
-            return
-
-        if self._bounds[-1].ub == span.lb:
-            self._bounds[-1].expand_ub(span.ub - self._bounds[-1].ub)
-        else:
-            self._bounds.append(span)
-
-    def is_forbidden(self, i):
-        return i in self._forbidden
+    if spanlist[-1].ub == span.lb:
+        spanlist[-1].ub = span.ub
+    else:
+        spanlist.append(span)
 
 
 class Tag:
-
-    __slots__ = ("_span", "_value", "levels", "ids")
+    __slots__ = ("_span", "_value", "levels")
 
     def __init__(self, value, lb, ub, length=-1):
         self._span = Span(lb, ub, length=length)
-        self._value = value
-        self.levels = value.strip(".").split(".")
-        self.ids = {}
+        self._value = value.strip().strip(".")
+        self.levels = self._value.split(".")
 
     def __len__(self):
         return len(self._span)
 
     def __eq__(self, tag):
-        return (
-            tag is not None and self.value == tag.value and self.lb == tag.lb and self.ub == tag.ub
-        )
+        return tag is not None and self.value == tag.value and self.span == tag.span
 
     def __str__(self):
         return "{0},{1}".format(self.value, self.span)
@@ -260,8 +155,8 @@ class Tag:
 
     @value.setter
     def value(self, value):
-        self._value = value.strip()
-        self.levels = value.strip(".").split(".")
+        self._value = value.strip().strip(".")
+        self.levels = self.value.split(".")
 
     @property
     def span(self):
@@ -619,7 +514,6 @@ class Entry:
 
 
 class Sentence:
-
     __slots__ = ("_features")
 
     def __init__(self, features=None):
@@ -894,108 +788,6 @@ class Document:
     def metadatas(self):
         return self._metadatas
 
-    @staticmethod
-    def from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator="."):
-        if isinstance(xml, str):
-            data = ET.parse(xml)
-        elif isinstance(xml, ET.ElementTree):
-            data = xml
-        elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
-            data = xml
-        else:
-            raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
-
-        if isinstance(data, ET.ElementTree):
-            root = data.getroot()
-        elif isinstance(data, type(ET.Element("a"))):
-            root = data
-
-        if root.tag == "sem":
-            root = list(root)[0]
-        elif root.tag != "document":
-            raise TypeError("Invalid XML document type for XML-SEM document: {0}".format(root.tag))
-
-        htmlparser = HTMLParser()
-        document = Document(root.attrib.get("name", "_DOCUMENT_"))
-        for element in list(root):
-            if element.tag == "metadata":
-                document._metadatas = element.attrib
-            elif element.tag == "content":
-                document.content = htmlparser.unescape(element.text)
-            elif element.tag == "segmentations":
-                for segmentation in list(element):
-                    spans = [
-                        Span(
-                            lb=int(span.attrib.get("start", span.attrib["s"])),
-                            ub=0,
-                            length=int(span.attrib.get("length", span.attrib["l"])),
-                        )
-                        for span in list(segmentation)
-                    ]
-                    reference = segmentation.get("reference", None)
-                    if reference:
-                        reference = document.segmentation(reference)
-                    document.add_segmentation(
-                        Segmentation(segmentation.attrib["name"], spans=spans, reference=reference)
-                    )
-            elif element.tag == "annotations":
-                for annotation in list(element):
-                    tags = []
-                    for tag in list(annotation):
-                        value = tag.attrib.get("value", tag.attrib["v"])
-                        if not load_subtypes:
-                            value = value.strip(type_separator).split(type_separator)[0]
-                        tags.append(
-                            Tag(
-                                value=value,
-                                lb=int(tag.attrib.get("start", tag.attrib["s"])),
-                                ub=0,
-                                length=int(tag.attrib.get("length", tag.attrib["l"])),
-                            )
-                        )
-                    reference = annotation.get("reference", None)
-                    if reference:
-                        reference = document.segmentation(reference)
-                    annotation = Annotation(annotation.attrib["name"], reference=reference)
-                    annotation.annotations = tags
-                    document.add_annotation(annotation)
-
-        if document.segmentation("tokens") and document.segmentation("sentences"):
-            document.corpus.from_segmentation(
-                document.content,
-                document.segmentation("tokens"),
-                document.segmentation("sentences"),
-            )
-
-            if chunks_to_load is not None:
-                for chunk_to_load in chunks_to_load:
-                    cur_annot = document.annotation(chunk_to_load)
-                    if cur_annot and cur_annot.reference is None:
-                        document.set_reference(cur_annot.name, "tokens")
-                    i = 0
-                    sent_iter = iter(document.corpus)
-                    shift = 0
-                    present = set([(a.lb, a.ub) for a in cur_annot])
-                    for sentence in document.segmentation("sentences"):
-                        sent = next(sent_iter)
-                        annots = []
-                        while i < len(cur_annot) and cur_annot[i].ub <= sentence.ub:
-                            annots.append(cur_annot[i])
-                            if tuple([cur_annot[i].lb, cur_annot[i].ub]) not in present:
-                                raise Exception
-                            i += 1
-                        l1 = ["O" for _ in range(len(sentence))]
-                        for annot in annots:
-                            l1[annot.lb - shift] = "B-{0}".format(annot.value)
-                            for j in range(annot.lb + 1 - shift, annot.ub - shift):
-                                l1[j] = "I-{}".format(annot.value)
-                        for j in range(len(l1)):
-                            sent[j]["NER"] = l1[j]
-                        shift += len(sentence)
-                    document.corpus.fields.append(chunk_to_load)
-
-        return document
-
     def escaped_name(self):
         name = pathlib.Path(self._name).name
         if sem.ON_WINDOWS:
@@ -1046,7 +838,7 @@ class Document:
         )
         depth += 1
         f.write("{}<metadata".format(depth * indent * " "))
-        for metakey, metavalue in sorted(self._metadatas.items()):
+        for metakey, metavalue in sorted(self.metadatas.items()):
             f.write(' {0}="{1}"'.format(metakey, metavalue))
         f.write(" />\n")
         f.write(
@@ -1279,25 +1071,6 @@ class SEMCorpus:
     def documents(self):
         return self._documents
 
-    @staticmethod
-    def from_xml(xml, chunks_to_load=None, load_subtypes=True, type_separator="."):
-        if isinstance(xml, str):
-            data = ET.parse(xml)
-        elif isinstance(xml, ET.ElementTree):
-            data = xml
-        elif isinstance(xml, type(ET.Element("a"))):  # did not ind a better way to do this
-            data = xml
-        else:
-            raise TypeError("Invalid type for loading XML-SEM document: {0}".format(type(xml)))
-
-        root = data.getroot()
-        if root.tag != "sem":
-            raise ValueError("Not sem xml file type: '{0}'".format(root.tag))
-        doc_list = []
-        for document in list(root):
-            doc_list.append(Document.from_xml(document))
-        return SEMCorpus(doc_list)
-
     def add_document(self, document):
         ok = not any([d.name == document.name for d in self.documents])
         if ok:
@@ -1317,7 +1090,7 @@ str2docfilter = {
 }
 
 
-class Trie(object):
+class Trie:
     """The Trie object.
 
     Attributes
@@ -1460,42 +1233,7 @@ class Trie(object):
             return None
 
 
-class Coder(object):
-    def __init__(self):
-        self._encoder = {}
-        self._decoder = []
-
-    def __len__(self):
-        return len(self._decoder)
-
-    def __iter__(self):
-        return iter(self._decoder[:])
-
-    def __contains__(self, element):
-        return element in self._encoder
-
-    def keys(self):
-        return self._decoder[:]
-
-    def add(self, element, strict=False):
-        if element not in self._encoder:
-            self._encoder[element] = len(self)
-            self._decoder.append(element)
-        elif strict:
-            raise KeyError("'{0}' already in coder".format(element))
-
-    def insert(self, index, element):
-        if element not in self._encoder:
-            self._decoder.insert(index, element)
-            self._encoder[element] = index
-            for nth in range(index + 1, len(self._encoder)):
-                self._encoder[self._decoder[nth]] = nth
-
-    def encode(self, element):
-        return self._encoder.get(element, -1)
-
-    def decode(self, integer):
-        try:
-            return self._decoder[integer]
-        except Exception:
-            return None
+def Coder():
+    import warnings
+    warnings.warn("sem.storage.Coder is deprecated, use sem.CRF.Quark instead", DeprecationWarning)
+    return Quark()

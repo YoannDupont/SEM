@@ -39,10 +39,7 @@ import pathlib
 from datetime import timedelta
 from functools import partial
 
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
+import configparser
 
 try:
     from xml.etree import cElementTree as ET

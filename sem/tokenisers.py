@@ -29,7 +29,7 @@ SOFTWARE.
 import re
 
 import sem.constants
-from sem.storage import Span, SpannedBounds
+from sem.storage import Span, add_last
 
 
 spaces = re.compile(r"\s+", re.U + re.M)
@@ -73,19 +73,21 @@ class Tokeniser:
 
         Returns
         -------
-        SpannedBounds
+        list[span]
             The spans of the sentence bounds.
         """
-        sent_bounds = SpannedBounds()
 
-        sent_bounds.add(Span(0, 0))
+        sent_bounds = [Span(0, 0)]
         for index, span in enumerate(token_spans):
             token = content[span.lb: span.ub]
             if token in "\r\n":
-                sent_bounds.add_last(Span(index, index + 1))
-        sent_bounds.add_last(Span(len(token_spans), len(token_spans)))
+                add_last(sent_bounds, Span(index, index + 1))
+        add_last(sent_bounds, Span(len(token_spans), len(token_spans)))
 
         return sent_bounds
+
+    def sentence_spans(self, content, token_spans):
+        return bounds2spans(self.sentence_bounds(content, token_spans))
 
     def paragraph_bounds(self, content, sentence_spans, token_spans):
         """Return a list of bounds matching paragraphs.
@@ -104,11 +106,9 @@ class Tokeniser:
         list[Span]
             The list of paragraph bounds in content.
         """
+
         s_spans = [Span(token_spans[e.lb].lb, token_spans[e.ub - 1].ub) for e in sentence_spans]
-
-        bounds = SpannedBounds()
-
-        bounds.add(Span(0, 0))
+        bounds = [Span(0, 0)]
         for index, sentence in enumerate(sentence_spans[1:], 1):
             substring = content[s_spans[index - 1].ub: s_spans[index].lb]
             if substring.count("\n") > 1:
@@ -116,6 +116,9 @@ class Tokeniser:
         bounds.append(Span(len(sentence_spans), len(sentence_spans)))
 
         return bounds
+
+    def paragraph_spans(self, content, sentence_spans, token_spans):
+        return bounds2spans(self.paragraph_bounds(content, sentence_spans, token_spans))
 
 
 class FrenchTokeniser(Tokeniser):
@@ -289,8 +292,7 @@ class FrenchTokeniser(Tokeniser):
 
 class EnglishTokeniser(Tokeniser):
     def word_spans(self, s):
-        bounds = SpannedBounds()
-        bounds.append(Span(0, 0))
+        bounds = [Span(0, 0)]
 
         atomic = set(';:«»()[]{}=+*$£€/\\"?!%€$£')
         apostrophe = set("'ʼ’")
@@ -299,13 +301,13 @@ class EnglishTokeniser(Tokeniser):
             is_first = index == 0
             is_last = index == len(s) - 1
             if c.isspace():
-                bounds.add_last(Span(index, index + 1))
+                add_last(bounds, Span(index, index + 1))
             elif c in atomic:
-                bounds.add_last(Span(index, index))
+                add_last(bounds, Span(index, index))
                 bounds.append(Span(index + 1, index + 1))
             elif c in apostrophe:
                 if is_first or is_last:
-                    bounds.add_last(Span(index, index))
+                    add_last(bounds, Span(index, index))
                     bounds.append(Span(index + 1, index + 1))
                 elif s[index + 1] == s[index]:
                     bounds.append(Span(index, index + 1))
@@ -317,15 +319,15 @@ class EnglishTokeniser(Tokeniser):
                         bounds.append(Span(index, index))
                         bounds.append(Span(index + 2, index + 2))
                     else:
-                        bounds.add_last(Span(index, index))
+                        add_last(bounds, Span(index, index))
             elif c in ".,":
                 if is_first or is_last:
-                    bounds.add_last(Span(index, index))
+                    add_last(bounds, Span(index, index))
                     bounds.append(Span(index + 1, index + 1))
                 elif (is_first or not s[index - 1].isdigit()) and (
                     is_last or not s[index - 1].isdigit()
                 ):
-                    bounds.add_last(Span(index, index))
+                    add_last(bounds, Span(index, index))
                     bounds.append(Span(index + 1, index + 1))
 
         bounds.append(Span(len(s), len(s)))
@@ -333,7 +335,7 @@ class EnglishTokeniser(Tokeniser):
         return bounds2spans(bounds)
 
     def sentence_bounds(self, content, token_spans):
-        sent_bounds = SpannedBounds()
+        sent_bounds = []
         tokens = [content[t.lb: t.ub] for t in token_spans]
         openings = set(["«", "(", "[", "``"])
         closings = set(["»", ")", "]", "''"])

@@ -37,7 +37,7 @@ from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
 from sem.misc import (strip_html, read_chunks)
-from sem.tokenisers import (get_tokeniser, bounds2spans)
+from sem.tokenisers import get_tokeniser
 from sem.storage import (Document, Segmentation, Span)
 import sem.logger
 
@@ -114,9 +114,9 @@ class SEMModule(RootModule):
         )
         if do_segmentation:
             token_spans = token_spans_buffered(current_tokeniser, document.content)
-            sentence_spans = bounds2spans(current_tokeniser.sentence_bounds(content, token_spans))
-            paragraph_spans = bounds2spans(
-                current_tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
+            sentence_spans = current_tokeniser.sentence_spans(content, token_spans)
+            paragraph_spans = current_tokeniser.paragraph_spans(
+                content, sentence_spans, token_spans
             )
         else:
             sem.logger.info(

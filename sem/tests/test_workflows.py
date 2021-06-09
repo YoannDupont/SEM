@@ -41,7 +41,7 @@ def launch(path_to_master):
     args = Holder(
         pipeline=pipeline, options=options, exporter=exporter, couples=couples, infiles=[document]
     )
-    sem.modules.tagger.main(args)
+    sem.modules.tagger.tagger(args)
 
 
 class TestWorkflows(unittest.TestCase):
