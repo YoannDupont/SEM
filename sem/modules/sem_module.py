@@ -41,7 +41,7 @@ DEFAULT_LICENSE = (
 
 class SEMModule:
     def __init__(self, pipeline_mode="all", license=None, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
+        # super(SEMModule, self).__init__(**kwargs)
 
         self._pipeline_mode = pipeline_mode
         self._license = license or DEFAULT_LICENSE
