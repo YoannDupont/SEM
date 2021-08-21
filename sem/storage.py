@@ -31,7 +31,7 @@ SOFTWARE.
 """
 
 import pathlib
-import cgi
+import html
 import re
 
 import sem
@@ -842,7 +842,7 @@ class Document:
             f.write(' {0}="{1}"'.format(metakey, metavalue))
         f.write(" />\n")
         f.write(
-            "{0}<content>{1}</content>\n".format(depth * indent * " ", cgi.escape(self.content))
+            "{0}<content>{1}</content>\n".format(depth * indent * " ", html.escape(self.content))
         )
 
         if len(self.segmentations) > 0:
@@ -961,7 +961,14 @@ class Document:
                 annotation.lb = begin
                 annotation.ub = i + 1
             else:
-                sem.logger.warning("cannot add annotation {0}".format(annotation))
+                mention = self.content[annotation.lb: annotation.ub].strip().replace("\n", " ")
+                if len(mention) > 32:
+                    mention = mention[:27] + "[...]"
+                sem.logger.warning(
+                    "document {0}, cannot add annotation {1}: {2}".format(
+                        self.name, annotation, mention
+                    )
+                )
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
@@ -994,8 +1001,16 @@ class Document:
             sentence.add(tags, annotation_name)
             if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
                 # annotation spans over at least two sentences
+                mention = self.content[cur_annot.lb: cur_annot.ub].strip().replace("\n", " ")
+                if len(mention) > 32:
+                    mention = mention[:27] + "[...]"
+                # sem.logger.warning(
+                #     "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
+                # )
                 sem.logger.warning(
-                    "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
+                    "document {}, annotation {} spans over multiple sentences, ignoring: {}".format(
+                        self.name, annotation, mention
+                    )
                 )
                 try:
                     annot_index += 1

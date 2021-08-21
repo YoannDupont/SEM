@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import cgi
+import html
 import json
 
 import sem.storage
@@ -349,18 +349,18 @@ class HTMLExporter(Exporter):
         for sentence in corpus:
             escaped.append([])
             for element in sentence:
-                escaped[-1].append(cgi.escape(element[token_entry]))
+                escaped[-1].append(html.escape(element[token_entry]))
         return escaped
 
     def make_escaped_content(self, document):
         content = document.content
         tokens = document.segmentation("tokens")
-        escaped_tokens = [cgi.escape(content[token.lb: token.ub]) for token in tokens]
+        escaped_tokens = [html.escape(content[token.lb: token.ub]) for token in tokens]
         escaped_nontokens = [
-            cgi.escape(content[tokens[i].ub: tokens[i + 1].lb]) for i in range(len(tokens) - 1)
+            html.escape(content[tokens[i].ub: tokens[i + 1].lb]) for i in range(len(tokens) - 1)
         ]
-        escaped_nontokens.insert(0, cgi.escape(content[0: tokens[0].lb]))
-        escaped_nontokens.append(cgi.escape(content[tokens[-1].ub: len(content)]))
+        escaped_nontokens.insert(0, html.escape(content[0: tokens[0].lb]))
+        escaped_nontokens.append(html.escape(content[tokens[-1].ub: len(content)]))
 
         return escaped_tokens, escaped_nontokens
 
@@ -393,20 +393,20 @@ class HTMLExporter(Exporter):
         last = len(content)
         for annotation in annotations:
             parts.append(
-                cgi.escape(content[annotation.ub: last])
+                html.escape(content[annotation.ub: last])
                 .replace("\n", "<br />\n")
                 .replace("\r<br />", "<br />\r")
             )
             parts.append("</span>")
             parts.append(
-                cgi.escape(content[annotation.lb: annotation.ub])
+                html.escape(content[annotation.lb: annotation.ub])
                 .replace("\n", "<br />\n")
                 .replace("\r<br />", "<br />\r")
             )
             parts.append('<span id="{0}" title="{0}">'.format(annotation.value))
             last = annotation.lb
         parts.append(
-            cgi.escape(content[0:last]).replace("\n", "<br />\n").replace("\r<br />", "<br />\r")
+            html.escape(content[0:last]).replace("\n", "<br />\n").replace("\r<br />", "<br />\r")
         )
 
         new_content = "".join(parts[::-1])
