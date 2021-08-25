@@ -1186,7 +1186,7 @@ class AnnotationTool(tkinter.Frame):
                             self.doc.annotation(self.annotation_name)[nth_annot].setLevel(
                                 0, annot.value
                             )
-        self.doc_is_modified = False
+            self.doc_is_modified = False
 
     def load_tagset(self, filename):
         if self.doc and self.doc_is_modified:
