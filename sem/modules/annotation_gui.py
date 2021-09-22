@@ -85,7 +85,8 @@ class AnnotationTool(tkinter.Frame):
     def __init__(self, parent, documents=None, tagset=None, *args, **kwargs):
         tkinter.Frame.__init__(self, parent, *args, **kwargs)
 
-        self.bind_all("<Alt-F4>", self.exit)
+        parent.protocol("WM_DELETE_WINDOW", self.exit)
+
         self.resource_dir = sem.SEM_RESOURCE_DIR
         self.parent = parent
         self.user = None
@@ -313,8 +314,18 @@ class AnnotationTool(tkinter.Frame):
         return bool(self._whole_word.get())
 
     def exit(self, event=None):
-        self.destroy()
-        self.parent.destroy()
+        do_quit = True
+
+        if self.doc_is_modified:
+            do_quit = tkinter.messagebox.askokcancel(
+                "Quit",
+                "The corpus has unsaved modifications, do you really want to quit?\n"
+                "All changes will be lost."
+            )
+
+        if do_quit:
+            self.destroy()
+            self.parent.destroy()
 
     def auth(self, event=None):
         authTop = tkinter.Toplevel()
@@ -629,6 +640,8 @@ class AnnotationTool(tkinter.Frame):
         with open(filename, "w", encoding="utf-8") as output_stream:
             corpus.write(output_stream)
 
+        self.doc_is_modified = False
+
     def save_as_format(self, output_directory, fmt):
         if not output_directory:
             return
@@ -650,6 +663,8 @@ class AnnotationTool(tkinter.Frame):
                 with open(output_path / name.name, "w", encoding="utf-8") as output_stream:
                     output_stream.write(document.content)
             exporter.document_to_file(document, couples, out_path, encoding="utf-8")
+
+        self.doc_is_modified = False
 
     def save_brat(self, event=None):
         output_directory = tkinter.filedialog.askdirectory(initialdir=sem.SEM_DATA_DIR)
