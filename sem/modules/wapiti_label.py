@@ -59,19 +59,15 @@ class SEMModule(RootModule):
         self._annotation_fields = annotation_fields
         if type(self._annotation_fields) == str:
             self._annotation_fields = self._annotation_fields.split(",")
+        self._mdl_str = None
+        self._wapiti_model = None
 
-        if self.pipeline_mode == "all" or self._expected_mode in ("all", self.pipeline_mode):
-            check_model_available(model)
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            with open(self._model, "rb") as input_stream:
-                self._mdl_str = input_stream.read()
-        else:
-            self._mdl_str = None
-            self._wapiti_model = None
+        self.load_model(model)
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['_wapiti_model']
+        state['_wapiti_model'] = None
         return state
 
     def __setstate__(self, newstate):
@@ -79,7 +75,17 @@ class SEMModule(RootModule):
         if self._mdl_str is not None:
             self._wapiti_model = from_string(self._mdl_str)
         elif self._model:
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            # loading a model through api will not raise an exception if file does not exist
+            try:
+                with open(self._model):
+                    pass
+                self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            except FileNotFoundError:
+                sem.logger.warning(
+                    "Model file {} does not exist, you will need to train one.".format(self._model)
+                )
+        else:
+            sem.logger.warning("No model in serialized file, you will need to train one.")
 
     @property
     def field(self):
@@ -90,11 +96,20 @@ class SEMModule(RootModule):
         return self._model
 
     def check_mode(self, expected_mode):
-        if (not self._wapiti_model) and self.pipeline_mode == expected_mode:
+        if (self._wapiti_model is None) and self.pipeline_mode == expected_mode:
             check_model_available(self._model)
             self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
             with open(self._model, "rb") as input_stream:
                 self._mdl_str = input_stream.read()
+
+    def load_model(self, model):
+        if self.pipeline_mode == "all" or self._expected_mode in ("all", self.pipeline_mode):
+            check_model_available(model)
+            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            with open(self._model, "rb") as input_stream:
+                self._mdl_str = input_stream.read()
+        else:
+            sem.logger.warning("Invalid mode for loading model: %s", self.pipeline_mode)
 
     def process_document(self, document, encoding="utf-8", **kwargs):
         """
