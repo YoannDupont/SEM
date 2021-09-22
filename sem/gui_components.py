@@ -218,7 +218,7 @@ class Adder2:
         self.current_hierarchy_level = 0
 
     def max_depth(self):
-        return max([len(l) for l in self.levels])
+        return max([len(lvl) for lvl in self.levels])
 
     def up_one_level(self):
         if self.current_annotation is None:
@@ -567,7 +567,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         CRF_nprocsValue.grid(row=crf_cur_row, column=1)
         crf_cur_row += 1
 
-        compact_btn = tkinter.ttk.Checkbutton(
+        tkinter.ttk.Checkbutton(
             algsFrame, text="compact model", variable=self.compact_var
         ).grid(row=crf_cur_row, column=0, sticky=tkinter.W)
         crf_cur_row += 1
@@ -648,9 +648,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
 
         train_file = output_dir / "train.conll"
         model_file = output_dir / "model.txt"
+        # files can be selected from GUI or already provided (list)
         try:
             files = self.file_selector.files()
-        except Exception:
+        except AttributeError:
             files = self.file_selector
         fields = []
         names = set()
@@ -827,9 +828,7 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
 
         notebook.pack()
 
-        crf_cur_row = 0
-
-        crf_train = SEMTkWapitiTrain(
+        SEMTkWapitiTrain(
             self.documents,
             self.master,
             None,
