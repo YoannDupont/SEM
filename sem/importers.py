@@ -260,9 +260,9 @@ def read_conll(name, encoding, fields=None, cleaner=str.strip, splitter=str.spli
     clean = cleaner or (lambda x: x)
     split = splitter or (lambda x: x)
     if fields:
-        to_data = lambda x, y: {key: val for key, val in zip(y, x)}
+        def to_data(x, y): return {key: val for key, val in zip(y, x)}
     else:
-        to_data = lambda x, y: {index: item for index, item in enumerate(x)}
+        def to_data(x, y): return {index: item for index, item in enumerate(x)}
 
     with open(name, "r", encoding=encoding, newline="") as input_stream:
         paragraph = []
