@@ -40,7 +40,7 @@ import tkinter.ttk
 
 import sem
 from sem.constants import NUL
-from sem.storage import Document, SEMCorpus
+from sem.storage import SEMCorpus
 from sem.storage import Tag, Annotation
 import sem.logger
 import sem.importers
@@ -755,6 +755,10 @@ class AnnotationTool(tkinter.Frame):
     def handle_char(self, event):
         if self.adder is None:
             return
+        # checks whether ctrl key is being pressed.
+        # this prevents annotating when using a ctrl+key event.
+        if event.state & 4:
+            return
         if not self.adder.current_annotation:
             try:
                 self.text.index("sel.first")
@@ -813,7 +817,6 @@ class AnnotationTool(tkinter.Frame):
                 first = self.text.index("sel.first")
             if last == "sel.last":
                 last = self.text.index("sel.last")
-
         except tkinter.TclError:  # no selection
             return
 
