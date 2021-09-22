@@ -46,6 +46,9 @@ class Pipeline(SEMModule):
     def __len__(self):
         return len(self._pipes)
 
+    def __getitem__(self, index):
+        return self._pipes[index]
+
     @property
     def pipes(self):
         return self._pipes
@@ -56,7 +59,7 @@ class Pipeline(SEMModule):
 
     @pipeline_mode.setter
     def pipeline_mode(self, mode):
-        self.pipeline_mode = mode
+        self._pipeline_mode = mode
         for pipe in self._pipes:
             pipe.check_mode(self.pipeline_mode)
 
