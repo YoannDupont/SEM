@@ -144,6 +144,10 @@ setup(
     maintainer="Yoann Dupont",
     maintainer_email="yoa.dupont@gmail.com",
     version=sem.version(),
+    extras_require={
+        "clipboard": ["pyperclip"],
+        "all": ["pyperclip"],
+    },
     keywords=[
         "natural language processing",
         "machine learning",

@@ -38,6 +38,11 @@ import tkinter.scrolledtext
 import tkinter.font
 import tkinter.ttk
 
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
 import sem
 from sem.constants import NUL
 from sem.storage import SEMCorpus
@@ -103,6 +108,7 @@ class AnnotationTool(tkinter.Frame):
             ["Ctrl+s", ["save", self.save], [[self, True]]],
             ["Ctrl+t", ["train", self.train], [[self, True]]],
             ["Ctrl+f", ["find", self.find_in_text], [[self, True]]],
+            ["Ctrl+c", ["copy text", self.clipboard], [[self, True]]],
         ]
 
         self.lines_lengths = []
@@ -191,6 +197,7 @@ class AnnotationTool(tkinter.Frame):
         self.bind_all("<Control-s>", self.save)
         self.bind_all("<Control-t>", self.train)
         self.bind_all("<Control-f>", self.find_in_text)
+        self.bind_all("<Control-c>", self.clipboard)
         self.focus_set()
 
         self.bind_all("<Tab>", self.tab)
@@ -1283,6 +1290,29 @@ class AnnotationTool(tkinter.Frame):
 
     def find_in_text(self, event=None):
         self.search.find_in_text(event=event)
+
+    def clipboard(self, event=None):
+        if pyperclip is None:
+            tkinter.messagebox.showwarning(
+                "Copy to clipboard: missing library",
+                "Cannot copy to clipboard: pyperclip library not installed."
+            )
+            return
+
+        try:
+            first = (
+                self.charindex2position(self.adder.current_annotation.lb)
+                if self.adder.current_annotation
+                else self.text.index("sel.first")
+            )
+            last = (
+                self.charindex2position(self.adder.current_annotation.ub)
+                if self.adder.current_annotation
+                else self.text.index("sel.last")
+            )
+            pyperclip.copy(self.text.get(first, last))
+        except tkinter.TclError:  # triggers when no text is selected
+            pass
 
     def load_pipeline(self, event=None):
         top = tkinter.Toplevel()
