@@ -245,9 +245,12 @@ def text_file(filename, encoding="utf-8"):
     """
     Read a text file.
     """
+    with open(filename, "r", encoding=encoding, newline="") as input_stream:
+        content = input_stream.read().replace("\r", "")
+
     return Document(
         pathlib.Path(filename).name,
-        content=open(filename, "r", encoding=encoding, newline="").read().replace("\r", ""),
+        content=content,
         encoding=encoding,
     )
 
