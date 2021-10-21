@@ -96,7 +96,12 @@ def load(
     no_ext = str(path.parent / path.stem)
     if (ext == ".ann") or (ext == ".txt" and pathlib.Path(no_ext + ".ann").exists()):
         sem.logger.info("detected format: BRAT")
-        return brat_file(filename, encoding=encoding, tagset_name=tagset_name)
+        return brat_file(
+            filename,
+            encoding=encoding,
+            tagset_name=tagset_name,
+            discontinuous=kwargs.get("discontinuous", "split")
+        )
 
     if fields is not None and word_field is not None:
         sem.logger.info("No specific format found, trying CoNLL")
@@ -430,7 +435,7 @@ def from_url(url, strip_html=False, wikinews_format=False, keep_offsets=True, **
     )
 
 
-def brat_file(filename, encoding="utf-8", tagset_name=None):
+def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split"):
     """
     Load a BRAT file couple. A BRAT file couple is a ".txt" and a ".ann" file.
     If no name is provided for the annotation set, NER is used instead.
@@ -460,11 +465,19 @@ def brat_file(filename, encoding="utf-8", tagset_name=None):
         if line != "" and line.startswith("T"):
             parts = line.split("\t")
             value, bounds = parts[1].split(" ", 1)
-            for bound in bounds.split(";"):
-                lb, ub = bound.split()
-                lb = int(lb)
-                ub = int(ub)
+            if discontinuous == "split":
+                for bound in bounds.split(";"):
+                    lb, ub = bound.split()
+                    lb = int(lb)
+                    ub = int(ub)
+                    annotations.append(Tag(value=value, lb=lb, ub=ub))
+            elif discontinuous == "merge":
+                parts = bounds.split()
+                lb = int(parts[0])
+                ub = int(parts[-1])
                 annotations.append(Tag(value=value, lb=lb, ub=ub))
+            else:
+                raise ValueError(f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)')
     annotations.sort()
     document.add_annotation(annotations)
 
