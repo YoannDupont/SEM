@@ -157,7 +157,7 @@ class CoNLLExporter(Exporter):
         if (
             not couples
             or (len(couples) == 0)
-            or (len(couples) == 1 and couples.keys()[0].lower() in ["word", "token"])
+            or (len(couples) == 1 and list(couples.keys())[0].lower() in ["word", "token"])
         ):
             return str(document.corpus)
         else:
