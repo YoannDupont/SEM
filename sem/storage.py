@@ -636,6 +636,7 @@ class Corpus:
             })
             for sentence in sentences
         ]
+        self.fields = [field_name]
 
     def write(self, fd, fields=None):
         for sentence in self:
