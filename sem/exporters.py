@@ -147,7 +147,7 @@ class CoNLLExporter(Exporter):
     extension = "conll"
 
     def __init__(self, *args, **kwargs):
-        pass
+        self.scheme = kwargs.get("scheme", "BIO")
 
     def document_to_unicode(self, document, couples, **kwargs):
         if len(document.corpus.fields) == 0:
@@ -189,7 +189,7 @@ class CoNLLExporter(Exporter):
             for field in fields:
                 if field not in document.corpus:
                     sem.logger.warning('field "%s" not in corpus, adding', field)
-                    document.add_to_corpus(field)
+                    document.add_to_corpus(field, scheme=self.scheme)
 
             return document.corpus.unicode(fields)
 

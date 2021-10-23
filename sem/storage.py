@@ -37,7 +37,7 @@ import re
 import sem
 import sem.misc
 import sem.logger
-from sem.constants import BEGIN, IN, LAST, SINGLE, OUT
+from sem.constants import BEGIN, IN, LAST, SINGLE, OUT, chunking_schemes
 from sem.constants import NUL
 from sem.CRF import Quark
 
@@ -940,7 +940,7 @@ class Document:
         if add_to_corpus:
             self.add_to_corpus(annotation_name, filter=filter)
 
-    def add_to_corpus(self, annotation_name, filter=get_top_level):
+    def add_to_corpus(self, annotation_name, filter=get_top_level, scheme="BIO"):
         base_annotations = self.annotation(annotation_name) or Annotation(annotation_name)
         annotations = base_annotations.get_reference_annotations()
 
@@ -973,41 +973,53 @@ class Document:
                 to_remove.append(j)
             i = max(begin, 0)
             begin = 0
+
         for i in to_remove[::-1]:
             del annotations[i]
 
         if filter:
             annotations = filter(annotations)
+
         sentence_spans = iter(self.segmentation("sentences"))
         annot_index = 0
+        shift = 0
         if len(annotations) == 0:
             annots = []
             cur_annot = None
         else:
             annots = annotations
             cur_annot = annots[annot_index]
-        shift = 0
+
+        flags = chunking_schemes[scheme.upper()]
+        BEGIN = flags["begin"]
+        IN = flags["in"]
+        LAST = flags["last"]
+        SINGLE = flags["single"]
+        OUT = flags["out"]
         for sentence in self.corpus.sentences:
             span = next(sentence_spans)
-            tags = ["O" for _ in range(len(sentence))]
+            tags = [OUT for _ in range(len(sentence))]
             while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
-                tags[cur_annot.lb - shift] = "B-{0}".format(cur_annot.value)
-                for k in range(cur_annot.lb + 1, cur_annot.ub):
-                    tags[k - shift] = "I-{0}".format(cur_annot.value)
+                if len(cur_annot) == 1:
+                    tags[cur_annot.lb - shift] = "{}-{}".format(SINGLE, cur_annot.value)
+                else:
+                    tags[cur_annot.lb - shift] = "{}-{}".format(BEGIN, cur_annot.value)
+                    for k in range(cur_annot.lb + 1, cur_annot.ub - 1):
+                        tags[k - shift] = "{}-{}".format(IN, cur_annot.value)
+                    tags[cur_annot.ub - 1 - shift] = "{}-{}".format(LAST, cur_annot.value)
+
                 try:
                     annot_index += 1
                     cur_annot = annots[annot_index]
                 except IndexError:
                     cur_annot = None
+
             sentence.add(tags, annotation_name)
             if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
                 # annotation spans over at least two sentences
                 mention = self.content[cur_annot.lb: cur_annot.ub].strip().replace("\n", " ")
                 if len(mention) > 32:
                     mention = mention[:27] + "[...]"
-                # sem.logger.warning(
-                #     "Annotation {0} spans over multiple sentences, ignoring".format(cur_annot)
-                # )
                 sem.logger.warning(
                     "document {}, annotation {} spans over multiple sentences, ignoring: {}".format(
                         self.name, annotation, mention

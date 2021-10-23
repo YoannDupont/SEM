@@ -43,6 +43,12 @@ LAST = "LE"  # end flags
 SINGLE = "US"  # single flags
 OUT = "O"
 
+chunking_schemes = {
+    "BIO": {"begin": "B", "in": "I", "last": "I", "single": "B", "out": "O"},
+    "BILOU": {"begin": "B", "in": "I", "last": "L", "single": "U", "out": "O"},
+    "BIOES": {"begin": "B", "in": "I", "last": "E", "single": "S", "out": "O"},
+}
+
 #
 # Some useful constants for tries.
 #
