@@ -216,7 +216,7 @@ def evaluate(args):
     counts = {}
     if input_format == "conll":
         if reference_file:
-            print("reference_file not handled for CoNLL files")
+            raise ValueError("reference_file not handled for CoNLL files")
         L = []
         R = []
         keys = None
@@ -337,14 +337,14 @@ def evaluate(args):
     d[FP].extend(R[:])
 
     entities = set()
-    for l in d.values():
-        for e in l:
+    for vals in d.values():
+        for val in vals:
             try:
-                l, r = e
-                entities.add(l.value)
-                entities.add(r.value)
-            except Exception:
-                entities.add(e.value)
+                left, right = val
+                entities.add(left.value)
+                entities.add(right.value)
+            except AttributeError:
+                entities.add(val.value)
 
     with open(dump, "w", encoding="utf-8") as output_stream:
         output_stream.write("error kind\treference entity\toutput entity\tdiff\n")
