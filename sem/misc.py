@@ -196,6 +196,11 @@ def load_pipeline(path, auto_download=True):
     return pipeline
 
 
+def save_pipeline(pipeline, path):
+    with open(path, "wb") as output_stream:
+        dill.dump(pipeline, output_stream)
+
+
 def strip_html(html, keep_offsets=False):
     """
     Take an str containing HTML data and strip the HTML markup.
