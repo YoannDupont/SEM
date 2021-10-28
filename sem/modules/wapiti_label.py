@@ -103,13 +103,14 @@ class SEMModule(RootModule):
                 self._mdl_str = input_stream.read()
 
     def load_model(self, model):
-        if self.pipeline_mode == "all" or self._expected_mode in ("all", self.pipeline_mode):
+        pipeline_mode = self.pipeline_mode
+        if pipeline_mode == "all" or self._expected_mode in ("all", "label", pipeline_mode):
             check_model_available(model)
             self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
             with open(self._model, "rb") as input_stream:
                 self._mdl_str = input_stream.read()
         else:
-            sem.logger.warning("Invalid mode for loading model: %s", self.pipeline_mode)
+            sem.logger.warning("Invalid mode for loading model: %s", pipeline_mode)
 
     def process_document(self, document, encoding="utf-8", **kwargs):
         """
