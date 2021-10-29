@@ -107,39 +107,28 @@ class SEMModule(RootModule):
         if document.metadata("MIME") == "text/html":
             content = strip_html(content, keep_offsets=True)
 
-        do_segmentation = (
-            document.segmentation("tokens") is None
-            or document.segmentation("sentences") is None
-            or document.segmentation("paragraphs") is None
-        )
-        if do_segmentation:
-            token_spans = token_spans_buffered(current_tokeniser, document.content)
-            sentence_spans = current_tokeniser.sentence_spans(content, token_spans)
-            paragraph_spans = current_tokeniser.paragraph_spans(
-                content, sentence_spans, token_spans
-            )
-        else:
-            sem.logger.info(
-                "{0} already has segmenation, not computing".format(document.name)
-            )
-            token_spans = document.segmentation("tokens").spans
-            sentence_spans = document.segmentation("sentences").spans
-            paragraph_spans = document.segmentation("paragraphs").spans
-        sem.logger.info(
-            '"{0}" segmented in {1} sentences, {2} tokens'.format(
-                document.name, len(sentence_spans), len(token_spans)
-            )
-        )
-
         if document.segmentation("tokens") is None:
+            token_spans = token_spans_buffered(current_tokeniser, document.content)
             document.add_segmentation(Segmentation("tokens", spans=token_spans))
+        else:
+            sem.logger.info("{} already has tokens".format(document.name))
+            token_spans = document.segmentation("tokens").spans
+
         if document.segmentation("sentences") is None:
+            sentence_spans = current_tokeniser.sentence_spans(content, token_spans)
             document.add_segmentation(
                 Segmentation(
                     "sentences", reference=document.segmentation("tokens"), spans=sentence_spans
                 )
             )
+        else:
+            sem.logger.info("{} already has sentences".format(document.name))
+            sentence_spans = document.segmentation("sentences").spans
+
         if document.segmentation("paragraphs") is None:
+            paragraph_spans = current_tokeniser.paragraph_spans(
+                content, sentence_spans, token_spans
+            )
             document.add_segmentation(
                 Segmentation(
                     "paragraphs",
@@ -147,12 +136,21 @@ class SEMModule(RootModule):
                     spans=paragraph_spans,
                 )
             )
+        else:
+            sem.logger.info("{} already has paragraphs".format(document.name))
+
         if len(document.corpus) == 0:
             document.corpus.from_segmentation(
                 document.content,
                 document.segmentation("tokens"),
                 document.segmentation("sentences"),
             )
+
+        sem.logger.info(
+            '"{0}" segmented in {1} sentences, {2} tokens'.format(
+                document.name, len(sentence_spans), len(token_spans)
+            )
+        )
 
         laps = time.time() - start
         sem.logger.info("in {0}".format(timedelta(seconds=laps)))
