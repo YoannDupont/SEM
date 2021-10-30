@@ -41,9 +41,9 @@ import sem.misc
 import sem.logger
 
 
-# __BASE_URL = (
-#     "https://raw.githubusercontent.com/YoannDupont/SEM-resources/{branch}/{kind}/{name}{extension}"
-# )
+# resources packs are a special case of resource as they represent multiple resources
+RESOURCE_PACK = "resource-pack"
+RESOURCE_PACKS = "resource-packs"
 
 __kind2name = {
     "dictionary": "dictionaries",
@@ -51,7 +51,21 @@ __kind2name = {
     "model": "models",
     "pipeline": "pipelines",
     "tagset": "tagsets",
+    RESOURCE_PACK: RESOURCE_PACKS,
 }
+
+
+def do_overwrite(path, conflict):
+    if conflict == "skip":
+        return False
+    if conflict == "overwrite":
+        return True
+
+    answer = input(f"{path} already exists, override? [y/N] ").lower()
+    try:
+        return sem.misc.str2bool(answer)
+    except ValueError:
+        return False
 
 
 def main(argv=None):
@@ -72,8 +86,22 @@ def download(args):
     output_dir = args.output_dir
     binary_or_text = args.binary_or_text
     extract = args.extract
+    clean = args.clean
+    conflict = args.conflict
 
-    relative_path = pathlib.Path(f"{kind}/{name}{extension}")
+    # resource packs are a special case, they contain multiple resources (folders) and can only be
+    # a compressed file (.tar.gz) that will be placed and uncompressed in base output folder.
+    if kind == RESOURCE_PACKS:
+        sem.logger.info("downloading a resource pack: using pre-made configuration...")
+        extension = ".tar.gz"
+        binary_or_text = "b"
+        extract = True
+        clean = True
+        actual_name = name.replace("/", "_")
+        relative_path = pathlib.Path(f"{actual_name}{extension}")
+    else:
+        relative_path = pathlib.Path(f"{kind}/{name}{extension}")
+
     outfile_path = pathlib.Path(output_dir) / relative_path
 
     if outfile_path.exists():
@@ -109,14 +137,28 @@ def download(args):
     if extract and extension == ".tar.gz":
         sem.logger.info("extracting %s...", outfile_path)
         with tarfile.open(outfile_path, "r:gz") as tar:
-            tar.extractall(outfile_path.parent)
+            for name in tar.getnames():
+                path = outfile_path.parent / name
+                do_skip = path.exists() and not do_overwrite(path, conflict)
+                if not do_skip:
+                    tar.extract(name, outfile_path.parent)
+        if clean:
+            sem.logger.info("deleting %s...", outfile_path)
+            outfile_path.unlink()
 
     sem.logger.setLevel(log_lvl)
 
 
-parser = argparse.ArgumentParser("Download a SEM resource from GitHub.")
+parser = argparse.ArgumentParser(
+    "Download a SEM resource from GitHub: https://github.com/YoannDupont/SEM-resources\n"
+    "A resource's name will first contain its lang. For example, base french resource pack's name"
+    " is 'fr/base'. Example commands for french resources that illustrate some options:\n"
+    "\n"
+    "sem download fr/base --kind resource-pack\n"
+    "sem download fr/FTB-POS_NER --extract --clean --conflict overwrite\n"
+)
 
-parser.add_argument("name", help="The name of the resource (example: fr/FTB-NER)")
+parser.add_argument("name", help="The name of the resource (example: fr/FTB-POS_NER)")
 parser.add_argument(
     "-k",
     "--kind",
@@ -157,5 +199,16 @@ parser.add_argument(
     "-x",
     "--extract",
     action="store_true",
-    help="If the resource is an archive, extract it (default: %(default)s)"
+    help="If the resource is an archive, extract it"
+)
+parser.add_argument(
+    "--clean",
+    action="store_true",
+    help="If the resource is an archive, delete the archive after extraction"
+)
+parser.add_argument(
+    "--conflict",
+    choices=("prompt", "overwrite", "skip"),
+    default="prompt",
+    help="The action to perform to solve conflicts when extracting file (default: %(default)s)"
 )
