@@ -38,27 +38,43 @@ import sem.modules.tagger
 def launch(path_to_master):
     document = Document("document", "Ceci est un test.")
     pipeline, options, exporter, couples = sem.modules.tagger.load_master(path_to_master)
-    args = Holder(
-        pipeline=pipeline, options=options, exporter=exporter, couples=couples, infiles=[document]
-    )
-    sem.modules.tagger.tagger(args)
+    # args = Holder(
+    #     pipeline=pipeline, options=options, exporter=exporter, couples=couples, infiles=[document]
+    # )
+    # sem.modules.tagger.tagger(args)
+    pipeline.process_document(document)
 
 
 class TestWorkflows(unittest.TestCase):
     def test_pos(self):
-        launch(SEM_RESOURCE_DIR / "master" / "fr" / "pos.xml")
+        path = SEM_RESOURCE_DIR / "master" / "fr" / "pos.xml"
+        if not path.exists():
+            self.skipTest(f"{path.name} workflow not found.")
+        launch(path)
 
     def test_pos_leff(self):
-        launch(SEM_RESOURCE_DIR / "master" / "fr" / "pos-lefff.xml")
+        path = SEM_RESOURCE_DIR / "master" / "fr" / "pos-lefff.xml"
+        if not path.exists():
+            self.skipTest(f"{path.name} workflow not found.")
+        launch(path)
 
     def test_chunking(self):
-        launch(SEM_RESOURCE_DIR / "master" / "fr" / "chunking.xml")
+        path = SEM_RESOURCE_DIR / "master" / "fr" / "chunking.xml"
+        if not path.exists():
+            self.skipTest(f"{path.name} workflow not found.")
+        launch(path)
 
     def test_np_chunking(self):
-        launch(SEM_RESOURCE_DIR / "master" / "fr" / "np_chunking.xml")
+        path = SEM_RESOURCE_DIR / "master" / "fr" / "np_chunking.xml"
+        if not path.exists():
+            self.skipTest(f"{path.name} workflow not found.")
+        launch(path)
 
     def test_ner(self):
-        launch(SEM_RESOURCE_DIR / "master" / "fr" / "NER.xml")
+        path = SEM_RESOURCE_DIR / "master" / "fr" / "NER.xml"
+        if not path.exists():
+            self.skipTest(f"{path.name} workflow not found.")
+        launch(path)
 
 
 if __name__ == "__main__":
