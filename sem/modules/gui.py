@@ -43,7 +43,7 @@ import sem.importers
 from sem.modules.tagger import load_master, tagger
 from sem.storage import Holder
 from sem.gui_components import (
-    SemTkMasterSelector,
+    SemTkResourceSelector,
     SemTkLangSelector,
     SemTkFileSelector,
     SemTkExportSelector,
@@ -77,9 +77,9 @@ class SemTkMainWindow(ttk.Frame):
         self.launch_zone = ttk.Frame(root)
         self.launch_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
-        self.lang_selector = SemTkLangSelector(self.master_zone, self.resource_dir)
-        self.master = SemTkMasterSelector(self.master_zone, self.resource_dir)
-        self.lang_selector.master_selector = self.master
+        self.lang_selector = SemTkLangSelector(self.master_zone, self.resource_dir / "master")
+        self.master = SemTkResourceSelector(self.master_zone, self.resource_dir / "master")
+        self.lang_selector.register(self.master)
         self.lang_selector.pack()
         self.master.pack()
 
@@ -114,7 +114,7 @@ class SemTkMainWindow(ttk.Frame):
             tkinter.messagebox.showwarning("launching SEM", "No files specified.")
             return
 
-        workflow = self.master.workflow()
+        workflow = self.master.resource()
         if not workflow:
             tkinter.messagebox.showwarning("launching SEM", "No workflow selected.")
             return
@@ -155,7 +155,6 @@ class SemTkMainWindow(ttk.Frame):
             # handling ExpatError from etree
             tkinter.messagebox.showerror("launching SEM", "Error: {}".format(e))
             raise
-            return
         sem.logger.info("files are located in: {}".format(output_dir))
         tkinter.messagebox.showinfo(
             "launching SEM", "Everything went ok! files are located in: {}".format(output_dir)
@@ -168,12 +167,7 @@ class SemTkMainWindow(ttk.Frame):
             tkinter.messagebox.showwarning("launching SEM", "No files specified.")
             return
 
-        workflow = self.master.workflow()
-        if not workflow:
-            tkinter.messagebox.showwarning("launching SEM", "No workflow selected.")
-            return
-
-        train_interface = SEMTkTrainInterface(self.file_selector, self.lang_selector, self.master)
+        SEMTkTrainInterface(self.file_selector, None, None)
 
 
 def main(argv=None):

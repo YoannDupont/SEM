@@ -52,14 +52,13 @@ import sem.importers
 from sem.gui_components import (
     find_potential_separator,
     find_occurrences,
-    random_color,
-    from_tagset
+    from_tagset,
 )
 from sem.gui_components import (
     SEMTkTrainInterface,
     SearchFrame,
-    SemTkMasterSelector,
-    SemTkLangSelector
+    SemTkLangSelector,
+    SemTkResourceSelector,
 )
 import sem.modules.tagger
 
@@ -93,6 +92,7 @@ class AnnotationTool(tkinter.Frame):
         parent.protocol("WM_DELETE_WINDOW", self.exit)
 
         self.resource_dir = sem.SEM_RESOURCE_DIR
+        self.resource_to_load = None
         self.parent = parent
         self.user = None
         self.doc = None
@@ -144,9 +144,12 @@ class AnnotationTool(tkinter.Frame):
         self.file_menu.entryconfig("Save as...", state=tkinter.DISABLED)
         self.file_menu.add_separator()
         self.file_menu.add_command(
-            label="load tagset...", underline=5, command=self.load_tagset_gui
+            label="Load tagset...", underline=5, command=self.load_tagset_gui
         )
-        self.file_menu.add_command(label="Load master...", underline=5, command=self.load_pipeline)
+        self.file_menu.add_command(label="Load master...", underline=5, command=self.load_master)
+        self.file_menu.add_command(
+            label="Load pipeline...", underline=5, command=self.load_pipeline
+        )
         # edit menu
         self.edit_menu = tkinter.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="Edit", underline=0, menu=self.edit_menu)
@@ -159,38 +162,6 @@ class AnnotationTool(tkinter.Frame):
         self.parent.config(menu=self.global_menu)
 
         self.new_type = tkinter.StringVar()
-        self.SPARE_COLORS_DEFAULT = []
-        self.SPARE_COLORS_DEFAULT = [
-            {"background": "#CCCCCC", "foreground": "#000000"},
-            {"foreground": "#374251", "background": "#9ca9bc"},
-            {"foreground": "#4b3054", "background": "#b28fbf"},
-            {"foreground": "#625e2d", "background": "#d0cb99"},
-            {"foreground": "#454331", "background": "#a7a383"},
-            {"foreground": "#79a602", "background": "#e7fea8"},
-            {"background": "#C8A9DC", "foreground": "#542D6E"},
-            {"background": "#C9B297", "foreground": "#5C4830"},
-            {"foreground": "#426722", "background": "#aad684"},
-            {"foreground": "#886c11", "background": "#f1da91"},
-            {"foreground": "#275a5f", "background": "#85c6cc"},
-            {"foreground": "#0a9b47", "background": "#a3fac8"},
-            {"foreground": "#729413", "background": "#e3f5af"},
-            {"foreground": "#a22800", "background": "#ffb299"},
-            {"foreground": "#254084", "background": "#bccaed"},
-            {"foreground": "#601194", "background": "#d7a8f6"},
-            {"foreground": "#6c4c45", "background": "#e6dad7"},
-            {"foreground": "#1461a1", "background": "#cce5f9"},
-            {"foreground": "#8a570d", "background": "#f4c888"},
-            {"foreground": "#813058", "background": "#eecfde"},
-        ]
-        self.SPARE_COLORS_DEFAULT.extend(
-            [
-                {"background": "#DDFFDD", "foreground": "#008800"},
-                {"background": "#CCCCFF", "foreground": "#0000FF"},
-                {"background": "#CCEEEE", "foreground": "#008888"},
-                {"background": "#FFCCCC", "foreground": "#FF0000"},
-            ]
-        )
-        self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
 
         self.bind_all("<Control-o>", self.openfile_gui)
         self.bind_all("<Control-O>", self.openurl)
@@ -1214,7 +1185,7 @@ class AnnotationTool(tkinter.Frame):
             self.doc_is_modified = False
 
     def load_tagset(self, filename):
-        if self.doc and self.doc_is_modified:
+        if self.doc and self.doc_is_modified and self.annotation_name:
             update_annotations(self.doc, self.annotation_name, self.current_annotations.annotations)
 
         tagset_name = pathlib.Path(filename).stem
@@ -1225,7 +1196,7 @@ class AnnotationTool(tkinter.Frame):
         tagset = [tag.split("#", 1)[0] for tag in tagset]
         tagset = [tag for tag in tagset if tag != ""]
 
-        self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
+        # self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         self.annotation_name = tagset_name
         self.tagset = set(tagset)
 
@@ -1268,11 +1239,7 @@ class AnnotationTool(tkinter.Frame):
                         tag
                     ]
                 if depth == 0:
-                    if len(self.spare_colors) > 0:
-                        self.color = self.spare_colors.pop()
-                    else:
-                        self.color = random_color()
-                    self.text.tag_configure(tag, **self.color)
+                    self.text.tag_configure(tag, **self.adder.color[tag])
         self.update_level()
         self.doc = None
         self.load_document()
@@ -1314,37 +1281,51 @@ class AnnotationTool(tkinter.Frame):
         except tkinter.TclError:  # triggers when no text is selected
             pass
 
-    def load_pipeline(self, event=None):
+    def load_resource(self, resource_kind, load):
+        # dependency inversion, facilitates using master files and pipelines
+        # in plans to remove master files later.
         top = tkinter.Toplevel()
-        master_selector = SemTkMasterSelector(top, sem.SEM_DATA_DIR / "resources")
-        lang_selector = SemTkLangSelector(top, sem.SEM_DATA_DIR / "resources")
-        lang_selector.master_selector = master_selector
+        directory = sem.SEM_DATA_DIR / "resources" / resource_kind
+        master_selector = SemTkResourceSelector(
+            top, directory, filter=lambda x: True
+        )
+        lang_selector = SemTkLangSelector(top, directory)
+        lang_selector.register(master_selector)
         vars_cur_row = 0
         vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
         vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
 
         def cancel(event=None):
-            if self.pipeline is not None:
-                self.tag_document_btn.configure(state=tkinter.NORMAL)
             top.destroy()
 
         def ok(event=None):
-            path = master_selector.workflow()
-            pipeline, _, _, _ = sem.modules.tagger.load_master(path)
-            self.pipeline = pipeline
-            cancel()
+            load(master_selector.resource())
+            top.destroy()
 
         ok_btn = tkinter.ttk.Button(top, text="load workflow", command=ok)
         ok_btn.grid(row=vars_cur_row, column=0)
         cancel_btn = tkinter.ttk.Button(top, text="cancel", command=cancel)
         cancel_btn.grid(row=vars_cur_row, column=1)
 
+    def load_master(self, event=None):
+        self.load_resource("master", self.load_masterfile)
+
+    def load_masterfile(self, path):
+        self.pipeline, _, _, _ = sem.modules.tagger.load_master(path)
+        self.tag_document_btn.configure(state=tkinter.NORMAL)
+
+    def load_pipeline(self, event=None):
+        self.load_resource("pipelines", self.load_pipelinefile)
+
+    def load_pipelinefile(self, path):
+        self.pipeline = sem.misc.load_pipeline(path)
+        self.tag_document_btn.configure(state=tkinter.NORMAL)
+
     def tag_document(self, event=None):
-        if self.pipeline is None:
+        if self.pipeline is None or self.doc is None:
             return
 
         self.pipeline.process_document(self.doc)
-        self.doc_is_modified = True
         for key in self.doc.annotations:
             annotation = self.doc.annotation(key)
             self.doc.add_annotation(
@@ -1352,10 +1333,7 @@ class AnnotationTool(tkinter.Frame):
             )
         self.current_annotations = self.doc.annotation(self.annotation_name)
         self.load_document(same_doc=True)
-
-
-def main(argv=None):
-    annotation_gui(parser.parse_args(argv))
+        self.doc_is_modified = True
 
 
 def annotation_gui(args):
@@ -1380,3 +1358,7 @@ parser.add_argument(
     default="WARNING",
     help="Increase log level (default: %(default)s)",
 )
+
+
+def main(argv=None):
+    annotation_gui(parser.parse_args(argv))

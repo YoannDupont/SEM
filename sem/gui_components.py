@@ -38,6 +38,7 @@ import os
 import multiprocessing
 import time
 import shutil
+import configparser
 
 import sem
 import sem.exporters
@@ -50,6 +51,34 @@ from sem.modules import EnrichModule, WapitiLabelModule
 from sem.modules.tagger import load_master, tagger
 
 from wapiti.api import Model as WapitiModel
+
+
+SPARE_COLORS_DEFAULT = [
+    {'background': '#FFCCCC', 'foreground': '#FF0000'},
+    {'background': '#CCEEEE', 'foreground': '#008888'},
+    {'background': '#CCCCFF', 'foreground': '#0000FF'},
+    {'background': '#DDFFDD', 'foreground': '#008800'},
+    {'foreground': '#6c4c45', 'background': '#e6dad7'},
+    {'foreground': '#813058', 'background': '#eecfde'},
+    {'foreground': '#8a570d', 'background': '#f4c888'},
+    {'foreground': '#1461a1', 'background': '#cce5f9'},
+    {'foreground': '#601194', 'background': '#d7a8f6'},
+    {'foreground': '#254084', 'background': '#bccaed'},
+    {'foreground': '#a22800', 'background': '#ffb299'},
+    {'foreground': '#729413', 'background': '#e3f5af'},
+    {'foreground': '#0a9b47', 'background': '#a3fac8'},
+    {'foreground': '#275a5f', 'background': '#85c6cc'},
+    {'foreground': '#886c11', 'background': '#f1da91'},
+    {'foreground': '#426722', 'background': '#aad684'},
+    {'background': '#C9B297', 'foreground': '#5C4830'},
+    {'background': '#C8A9DC', 'foreground': '#542D6E'},
+    {'foreground': '#79a602', 'background': '#e7fea8'},
+    {'foreground': '#454331', 'background': '#a7a383'},
+    {'foreground': '#625e2d', 'background': '#d0cb99'},
+    {'foreground': '#4b3054', 'background': '#b28fbf'},
+    {'foreground': '#374251', 'background': '#9ca9bc'},
+    {'background': '#CCCCCC', 'foreground': '#000000'},
+]
 
 
 def fill_with(t, value):
@@ -209,13 +238,23 @@ class Adder:
         self.frame.text.tag_remove("BOLD", "1.0", "end")
 
 
+def makemap(tagset, colors):
+    dct = {}
+    for tag in tagset:
+        val = tag.split(".", 1)[0]
+        color = (colors.pop(0) if colors else random_color())
+        dct[val] = color
+    return dct
+
+
 class Adder2:
-    def __init__(self, tagset, levels, shortcut_trie):
+    def __init__(self, tagset, levels, shortcut_trie, color=None):
         self.tagset = tagset
         self.levels = levels
         self.shortcut_trie = shortcut_trie
         self.current_annotation = None
         self.current_hierarchy_level = 0
+        self.color = color or makemap(self.tagset, SPARE_COLORS_DEFAULT[:])
 
     def max_depth(self):
         return max([len(lvl) for lvl in self.levels])
@@ -296,68 +335,13 @@ def from_tagset(tagset):
     return Adder2(tagset, levels, shortcut_trie)
 
 
-class SemTkMasterSelector(tkinter.ttk.Frame):
-    def __init__(self, root, resource_dir, lang="fr"):
-        tkinter.ttk.Frame.__init__(self, root)
-
-        self.resource_dir = resource_dir
-        self._lang = None
-        langs = [path.name for path in (self.resource_dir / "master").glob("*")]
-        if langs:
-            self._lang = lang if lang in langs else langs[0]
-
-        self.items = []
-        if self._lang:
-            self.items = [
-                item.name for item in (self.resource_dir / "master" / self._lang).glob("*")
-            ]
-        self.items.sort(key=lambda x: x.lower())
-        max_length = max([len(item) for item in self.items])
-
-        self.select_workflow_label = tkinter.ttk.Label(root, text="select workflow:")
-        self.masters = tkinter.Listbox(root, width=max_length + 1, height=len(self.items))
-
-        for item in self.items:
-            self.masters.insert(tkinter.END, item)
-
-    def pack(self):
-        self.select_workflow_label.pack()
-        self.masters.pack()
-
-    def grid(self, row=0, column=0):
-        x = row
-        y = column
-        self.select_workflow_label.grid(row=x, column=y)
-        x += 1
-        self.masters.grid(row=x, column=y)
-        x += 1
-        return (x, y)
-
-    def workflow(self):
-        wf = self.masters.get(tkinter.ACTIVE)
-        return self.resource_dir / "master" / self.lang() / wf or None
-
-    def lang(self):
-        return self._lang
-
-    def set_lang(self, language):
-        self._lang = language
-        self.items = [path.name for path in (self.resource_dir / "master" / self._lang).glob("*")]
-        self.items.sort(key=lambda x: x.lower())
-        self.masters["height"] = len(self.items)
-
-        self.masters.delete(0, tkinter.END)
-        for item in self.items:
-            self.masters.insert(tkinter.END, item)
-
-
 class SemTkLangSelector(tkinter.ttk.Frame):
     def __init__(self, root, resource_dir):
         tkinter.ttk.Frame.__init__(self, root)
 
-        self.master_selector = None
         self.resource_dir = resource_dir
-        self.items = [master.name for master in (self.resource_dir / "master").glob("*")]
+        self.observers = []
+        self.items = [resource.name for resource in self.resource_dir.glob("*")]
 
         self.cur_lang = tkinter.StringVar()
         self.select_lang_label = tkinter.ttk.Label(root, text="select language:")
@@ -388,8 +372,62 @@ class SemTkLangSelector(tkinter.ttk.Frame):
     def lang(self):
         return self.cur_lang.get()
 
+    def register(self, observer):
+        self.observers.append(observer)
+        observer.set_lang(self.lang())
+
     def select_lang(self, event):
-        self.master_selector.set_lang(self.lang())
+        for observer in self.observers:
+            observer.set_lang(self.lang())
+
+
+class SemTkResourceSelector(tkinter.ttk.Frame):
+    def __init__(self, root, resource_dir, filter=lambda x: True):
+        tkinter.ttk.Frame.__init__(self, root)
+
+        self.resource_dir = resource_dir
+        self._filter = filter
+        self._lang = None
+        self._items = []
+        self.select_resourse_label = tkinter.ttk.Label(
+            root, text=f"select {self.resource_dir.name}:"
+        )
+        self.resources = tkinter.Listbox(root)
+
+    def pack(self):
+        self.select_resourse_label.pack()
+        self.resources.pack()
+
+    def grid(self, row=0, column=0):
+        x = row
+        y = column
+        self.select_resourse_label.grid(row=x, column=y)
+        x += 1
+        self.resources.grid(row=x, column=y)
+        x += 1
+        return (x, y)
+
+    def resource(self):
+        resrc = self.resources.get(tkinter.ACTIVE)
+        return self.resource_dir / self.lang() / resrc or None
+
+    def lang(self):
+        return self._lang
+
+    def set_lang(self, language):
+        self._lang = language
+        self.items = [
+            path.name for path in (self.resource_dir / self._lang).glob("*") if self._filter(path)
+        ]
+        self.items.sort(key=lambda x: x.lower())
+        self.resources["width"] = max(
+            max(len(item) for item in self.items) + 1, self.resources["width"]
+        )
+        self.resources["height"] = len(self.items)
+
+        self.resources.delete(0, tkinter.END)
+        for item in self.items:
+            self.resources.insert(tkinter.END, item)
 
 
 class SemTkFileSelector(tkinter.ttk.Frame):
@@ -494,6 +532,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         file_selector,
         master,
         annotation_name,
+        lang,
         annotation_level=None,
         document_filter=None,
         top=None,
@@ -508,6 +547,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         self.file_selector = file_selector
         self.master = master
         self.annotation_name = annotation_name
+        self.lang = lang
         self.annotation_level = annotation_level or tkinter.StringVar(
             self.trainTop, value="top level"
         )
@@ -611,16 +651,20 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         pattern = self.pattern()
         nprocs = self.nprocs()
         compact = self.compact()
-        masterfile = self.master.workflow()
+        masterfile = self.master.resource()
         export_format = "conll"
         pipeline, workflow_options, exporter, couples = load_master(
             masterfile, force_format=export_format, pipeline_mode="train"
         )
+        workflow_options = configparser.RawConfigParser()
+        workflow_options.add_section("log")
+        workflow_options.set("log", "log_level", "INFO")
         annotation_level = str2filter[self.annotation_level.get()]
         document_filter = str2docfilter[self.document_filter.get()]
 
         target_model = None
         pipes = [pipe for pipe in pipeline]
+        trained_pipe = None
         for pipe in reversed(pipes):
             if isinstance(pipe, EnrichModule):
                 pipe.mode = "train"
@@ -630,6 +674,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             elif isinstance(pipe, WapitiLabelModule):
                 self.annotation_name = pipe.field
                 target_model = pathlib.Path(pipe.model)
+                trained_pipe = pipe
                 break
 
         out_dir = None
@@ -638,7 +683,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             name = target_model.name
             try:
                 os.makedirs(out_dir)
-            except FileExistsError:  # python3
+            except FileExistsError:
                 pass
 
         timestamp = time.strftime("%Y%m%d%H%M%S")
@@ -737,6 +782,11 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         model_update_message = (
             "\n\nNo candidate location found, model update has to be done manually"
         )
+        output_pipeline = sem.SEM_RESOURCE_DIR / "pipelines" / self.lang / masterfile.stem
+        try:
+            output_pipeline.parent.mkdir(parents=True)
+        except FileExistsError:
+            pass
         if target_model:
             if target_model.exists():
                 bname = pathlib.Path(name).stem
@@ -748,12 +798,17 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             sem.logger.info("trained model moved to: %s", str(out_dir))
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
             shutil.copy(model_file, target_model)
+            pipeline.pipeline_mode = "label"
+            trained_pipe.load_model(target_model)
+            sem.misc.save_pipeline(pipeline, output_pipeline)
+            pipeline.pipeline_mode = "train"
+            pipeline_update_message = "\n\nPipeline saved moved to: {0}".format(output_pipeline)
 
         sem.logger.info("files are located in: %s", str(output_dir))
         tkinter.messagebox.showinfo(
             "training SEM",
-            "Everything went ok! files are located in: {0}{1}".format(
-                output_dir, model_update_message
+            "Everything went ok!\n\nfiles are located in: {0}{1}{2}".format(
+                output_dir, model_update_message, pipeline_update_message
             ),
         )
 
@@ -791,11 +846,14 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
         annotation_level["values"] = sorted(str2filter.keys())
         annotation_level.current(sorted(str2filter.keys()).index("top level"))
 
+        directory = sem.SEM_DATA_DIR / "resources" / "master"
         if not self._master:
-            self.master_selector = SemTkMasterSelector(varsFrame, sem.SEM_DATA_DIR / "resources")
+            self.master_selector = SemTkResourceSelector(
+                varsFrame, directory, filter=lambda x: pathlib.Path(x).suffix == ".xml"
+            )
         if not self._lang:
-            self.lang_selector = SemTkLangSelector(varsFrame, sem.SEM_DATA_DIR / "resources")
-            self.lang_selector.master_selector = self.master_selector
+            self.lang_selector = SemTkLangSelector(varsFrame, directory)
+            self.lang_selector.register(self.master_selector)
 
         algsFrame = tkinter.ttk.LabelFrame(trainTop, text="Algorithm-specific variables")
 
@@ -832,6 +890,7 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
             self.documents,
             self.master,
             None,
+            lang=self.lang,
             annotation_level=annotation_level_var,
             document_filter=document_filter_var,
             top=frame1,
@@ -845,7 +904,7 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
 
     @property
     def lang(self):
-        return self._lang or self.lang_selector
+        return self._lang or self.lang_selector.lang()
 
 
 class SearchFrame(tkinter.ttk.Frame):
