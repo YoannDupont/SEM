@@ -139,7 +139,7 @@ def download(args):
         with tarfile.open(outfile_path, "r:gz") as tar:
             for name in tar.getnames():
                 path = outfile_path.parent / name
-                do_skip = path.exists() and not do_overwrite(path, conflict)
+                do_skip = path.exists() and not path.is_dir() and not do_overwrite(path, conflict)
                 if not do_skip:
                     tar.extract(name, outfile_path.parent)
         if clean:
