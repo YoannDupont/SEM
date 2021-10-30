@@ -53,7 +53,6 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word", "BOS", "EOS"])
 
-
     def test_clean(self):
         corpus = Corpus(
             fields=["word", "remove"],
@@ -73,8 +72,12 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word"])
 
-
     def test_wapiti_label(self):
+        path = SEM_DATA_DIR / "non-regression" / "models" / "model", "the_new_field"
+        if not path.exists():
+            self.skipTest(f"{path.name} model not found.")
+            return
+
         corpus = Corpus(
             fields=["word"], sentences=[Sentence({"word": ["Ceci", "est", "un", "test", "."]})]
         )
@@ -82,16 +85,13 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word"])
 
-        wapiti_label = WapitiLabelModule(
-            SEM_DATA_DIR / "non-regression" / "models" / "model", "the_new_field"
-        )
+        wapiti_label = WapitiLabelModule(path)
         wapiti_label.process_document(document)
 
         self.assertEquals(document._corpus.fields, ["word", "the_new_field"])
 
         sentence = document._corpus.sentences[0]
         self.assertEquals(sentence.feature("the_new_field"), ["A", "B", "B", "A", "O"])
-
 
     def test_label_consistency(self):
         corpus = Corpus(
