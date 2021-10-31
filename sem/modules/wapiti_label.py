@@ -42,27 +42,35 @@ from sem.modules.sem_module import SEMModule as RootModule
 from sem.misc import check_model_available
 
 
-def from_string(mdl_str):
+def model_from_string(mdl_str, encoding="utf-8"):
     with tempfile.NamedTemporaryFile() as fl:
-        fl.write(mdl_str)
+        fl.write(mdl_str.encode(encoding=encoding))
         fl.seek(0)
-        return WapitiModel(encoding="utf-8", model=fl.name)
+        return WapitiModel(encoding=encoding, model=fl.name)
 
 
 class SEMModule(RootModule):
-    def __init__(self, model, field, annotation_fields=None, **kwargs):
+    def __init__(
+        self, model, field, annotation_fields=None, model_str=None, model_encoding="utf-8", **kwargs
+    ):
         super(SEMModule, self).__init__(**kwargs)
         self._expected_mode = kwargs.get("expected_mode", self.pipeline_mode)
 
-        self._model = str(model)
+        if model is not None and model_str is not None:
+            raise ValueError("both 'model' and 'model_str' were provided, only one may be given.")
+
+        self._wapiti_model = None
+        self._mdl_str = model_str
+        self._model_encoding = model_encoding
+        self._model = model
+        if self._model is not None:
+            self._model = str(self._model)
         self._field = field
         self._annotation_fields = annotation_fields
         if type(self._annotation_fields) == str:
             self._annotation_fields = self._annotation_fields.split(",")
-        self._mdl_str = None
-        self._wapiti_model = None
 
-        self.load_model(model)
+        self.load_model()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -73,8 +81,8 @@ class SEMModule(RootModule):
     def __setstate__(self, newstate):
         self.__dict__.update(newstate)
         if self._mdl_str is not None:
-            self._wapiti_model = from_string(self._mdl_str)
-        elif self._model:
+            self._wapiti_model = model_from_string(self._mdl_str, self._model_encoding)
+        elif self._model is not None:
             # loading a model through api will not raise an exception if file does not exist
             try:
                 with open(self._model):
@@ -95,6 +103,21 @@ class SEMModule(RootModule):
     def model(self):
         return self._model
 
+    @model.setter
+    def model(self, model):
+        self._model = model
+        if self._model is not None:
+            self._model = str(self._model)
+
+        pipeline_mode = self.pipeline_mode
+        if pipeline_mode == "all" or self._expected_mode in ("all", "label", pipeline_mode):
+            check_model_available(self._model)
+            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            with open(self._model, "rb") as input_stream:
+                self._mdl_str = input_stream.read()
+        else:
+            sem.logger.warning("Invalid mode for loading model: %s", pipeline_mode)
+
     def check_mode(self, expected_mode):
         if (self._wapiti_model is None) and self.pipeline_mode == expected_mode:
             check_model_available(self._model)
@@ -102,15 +125,14 @@ class SEMModule(RootModule):
             with open(self._model, "rb") as input_stream:
                 self._mdl_str = input_stream.read()
 
-    def load_model(self, model):
-        pipeline_mode = self.pipeline_mode
-        if pipeline_mode == "all" or self._expected_mode in ("all", "label", pipeline_mode):
-            check_model_available(model)
+    def load_model(self):
+        if self._model is not None:
+            check_model_available(self._model)
             self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            with open(self._model, "rb") as input_stream:
-                self._mdl_str = input_stream.read()
+        elif self._mdl_str is not None:
+            self._wapiti_model = model_from_string(self._mdl_str, self._model_encoding)
         else:
-            sem.logger.warning("Invalid mode for loading model: %s", pipeline_mode)
+            sem.logger.warning("No available model to load.")
 
     def process_document(self, document, encoding="utf-8", **kwargs):
         """
@@ -148,7 +170,8 @@ class SEMModule(RootModule):
 
         document.add_annotation_from_tags(tags, self._field, self._field)
 
-    def _tag_as_wrapper(self, sequence, fields, encoding="utf-8"):
+    def _tag_as_wrapper(self, sequence, fields, encoding=None):
+        encoding = encoding or self._model_encoding
         seq_str = "\n".join(
             "\t".join(str(it) for it in item)
             for item in zip(*[sequence.feature(field) for field in fields])

@@ -799,7 +799,8 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
             shutil.copy(model_file, target_model)
             pipeline.pipeline_mode = "label"
-            trained_pipe.load_model(target_model)
+            # trained_pipe.load_model(target_model)
+            trained_pipe.model = target_model
             sem.misc.save_pipeline(pipeline, output_pipeline)
             pipeline.pipeline_mode = "train"
             pipeline_update_message = "\n\nPipeline saved moved to: {0}".format(output_pipeline)

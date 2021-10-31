@@ -31,7 +31,6 @@ SOFTWARE.
 import unittest
 
 import sem.importers
-from sem import SEM_DATA_DIR
 from sem.storage import Document, Corpus, Sentence
 from sem.modules import EnrichModule, CleanModule, WapitiLabelModule, LabelConsistencyModule
 from sem.modules.enrich import Entry
@@ -73,10 +72,26 @@ class TestModules(unittest.TestCase):
         self.assertEquals(document._corpus.fields, ["word"])
 
     def test_wapiti_label(self):
-        path = SEM_DATA_DIR / "non-regression" / "models" / "model", "the_new_field"
-        if not path.exists():
-            self.skipTest(f"{path.name} model not found.")
-            return
+        model_as_string = (
+            "#mdl#2#5\n"
+            "#rdr#1/0/0\n"
+            "14:u:word=%x[0,0],\n"
+            "#qrk#3\n"
+            "1:A,\n"
+            "1:B,\n"
+            "1:O,\n"
+            "#qrk#5\n"
+            "11:u:word=Ceci,\n"
+            "10:u:word=est,\n"
+            "9:u:word=un,\n"
+            "11:u:word=test,\n"
+            "8:u:word=.,\n"
+            "0=0x1.0000000000000p+3\n"
+            "4=0x1.0000000000000p+3\n"
+            "7=0x1.0000000000000p+3\n"
+            "9=0x1.0000000000000p+3\n"
+            "14=0x1.0000000000000p+3\n"
+        )
 
         corpus = Corpus(
             fields=["word"], sentences=[Sentence({"word": ["Ceci", "est", "un", "test", "."]})]
@@ -85,7 +100,7 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word"])
 
-        wapiti_label = WapitiLabelModule(path)
+        wapiti_label = WapitiLabelModule(None, "the_new_field", model_str=model_as_string)
         wapiti_label.process_document(document)
 
         self.assertEquals(document._corpus.fields, ["word", "the_new_field"])

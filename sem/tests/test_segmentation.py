@@ -29,69 +29,73 @@ SOFTWARE.
 """
 
 import unittest
+import re
 
-from sem import SEM_DATA_DIR
 import sem.tokenisers
+
+
+FR_TEXT = """18 mai j'ai en effet un p, porte-serviette qui est 1,2% plus cool que m. Trucmuche et mme. Machinchose.
+
+Test: un mot qui finit par m, zoom. Et on regarde s'il est bien segmenté!
+
+test2.
+
+I
+Vérification qu'une fin de ligne sans ponctuation est considérée comme une fin de phrase ou non.
+
+Des     espaces multiples d'   orgines nombreuses.
+
+Un test de ponctuation... Un autre test de ponctuation… Et une fin de ligne sans ponctuation
+
+St-Jean peut causer des soucis de segmentation.
+
+Vous pouvez m'écrire à yoa.dupont@gmail.com pour des questions au sujet de SEM, n'hésitez pas à visiter la page : http://www.lattice.cnrs.fr/sites/itellier/SEM.html!
+"""
+FR_TOKENS = [
+    "18", "mai", "j'", "ai", "en", "effet", "un", "p", ",", "porte-serviette", "qui", "est", "1,2",
+    "%", "plus", "cool", "que", "m.", "Trucmuche", "et", "mme.", "Machinchose", ".", "Test", ":",
+    "un", "mot", "qui", "finit", "par", "m", ",", "zoom", ".", "Et", "on", "regarde", "s'", "il",
+    "est", "bien", "segmenté", "!", "test", "2", ".", "I", "Vérification", "qu'", "une", "fin",
+    "de", "ligne", "sans", "ponctuation", "est", "considérée", "comme", "une", "fin", "de",
+    "phrase", "ou", "non", ".", "Des", "espaces", "multiples", "d'", "orgines", "nombreuses", ".",
+    "Un", "test", "de", "ponctuation", "...", "Un", "autre", "test", "de", "ponctuation", "…",
+    "Et", "une", "fin", "de", "ligne", "sans", "ponctuation", "St-Jean", "peut", "causer", "des",
+    "soucis", "de", "segmentation", ".", "Vous", "pouvez", "m'", "écrire", "à",
+    "yoa.dupont@gmail.com", "pour", "des", "questions", "au", "sujet", "de", "SEM", ",", "n'",
+    "hésitez", "pas", "à", "visiter", "la", "page", ":",
+    "http://www.lattice.cnrs.fr/sites/itellier/SEM.html", "!"
+]
+EN_TEXT = """I,  I've tried to improve Bob's coolness by 1.2%.
+Test
+
+test2.
+
+I am
+just checking if a newline is considered as an end of sentence or not.
+"""
 
 
 class TestSegmentation(unittest.TestCase):
     def test_get(self):
-        default = sem.tokenisers.get_tokeniser("default")()
-        fr = sem.tokenisers.get_tokeniser("fr")()
-        en = sem.tokenisers.get_tokeniser("en")()
+        default = sem.tokenisers.get_tokeniser("default")()  # noqa F841
+        fr = sem.tokenisers.get_tokeniser("fr")()  # noqa F841
+        en = sem.tokenisers.get_tokeniser("en")()  # noqa F841
 
     def test_fr(self):
-        content = open(
-            SEM_DATA_DIR / "non-regression" / "fr" / "in" / "segmentation.txt",
-            "r",
-            encoding="utf-8",
-        ).read()
-        conll = (
-            open(
-                SEM_DATA_DIR / "non-regression" / "fr" / "out" / "segmentation.txt",
-                "r",
-                encoding="utf-8",
-            )
-            .read()
-            .strip()
-        )
-
+        content = FR_TEXT
+        tokens_reference = FR_TOKENS[:]
         tokeniser = sem.tokenisers.FrenchTokeniser()
         token_spans = tokeniser.word_spans(content)
-        sentence_spans = sem.tokenisers.bounds2spans(
-            tokeniser.sentence_bounds(content, token_spans)
-        )
-        paragraph_spans = sem.tokenisers.bounds2spans(
-            tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
-        )
+        tokens_guess = [content[s.lb: s.ub] for s in token_spans]
 
-        tokens = [content[s.lb: s.ub] for s in token_spans]
-        sentences = [tokens[s.lb: s.ub] for s in sentence_spans]
-        token_content = "".join(tokens)
-        token_conll = "\n\n".join(["\n".join(tokens) for tokens in sentences])
-        spaceless_content = content.replace("\r", "").replace("\n", "").replace(" ", "")
-
-        self.assertEquals(token_content, spaceless_content)  # no lost content
-        self.assertEquals(token_conll, conll)  # same segmentation
+        self.assertEquals(tokens_guess, tokens_reference)
 
     def test_en(self):
-        content = open(
-            SEM_DATA_DIR / "non-regression" / "en" / "in" / "segmentation.txt",
-            "r",
-            encoding="utf-8",
-        ).read()
-
+        content = EN_TEXT
         tokeniser = sem.tokenisers.EnglishTokeniser()
         token_spans = tokeniser.word_spans(content)
-        sentence_spans = sem.tokenisers.bounds2spans(
-            tokeniser.sentence_bounds(content, token_spans)
-        )
-        paragraph_spans = sem.tokenisers.bounds2spans(
-            tokeniser.paragraph_bounds(content, sentence_spans, token_spans)
-        )
-
         token_content = "".join([content[s.lb: s.ub] for s in token_spans])
-        spaceless_content = content.replace("\r", "").replace("\n", "").replace(" ", "")
+        spaceless_content = re.sub(r"\s+", "", content)
 
         self.assertEquals(token_content, spaceless_content)  # no lost content
 
