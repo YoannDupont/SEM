@@ -53,7 +53,7 @@ import sem.modules.pipeline
 import sem.modules.export
 import sem.exporters
 import sem.importers
-import sem.misc
+import sem.util
 
 if sem.ON_WINDOWS:
     sem.logger.warning(
@@ -133,7 +133,7 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         for key, val in xmloption.attrib.items():
             key = key.replace("-", "_")
             try:
-                attribs[key] = sem.misc.str2bool(val)
+                attribs[key] = sem.util.str2bool(val)
             except ValueError:
                 attribs[key] = val
         for key, val in attribs.items():

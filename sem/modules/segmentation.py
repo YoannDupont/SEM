@@ -36,7 +36,7 @@ import pathlib
 from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
-from sem.misc import (strip_html, read_chunks)
+from sem.util import (strip_html, read_chunks)
 from sem.tokenisers import get_tokeniser
 from sem.storage import (Document, Segmentation, Span)
 import sem.logger

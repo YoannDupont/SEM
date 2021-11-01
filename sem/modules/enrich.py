@@ -42,8 +42,9 @@ except ImportError:
 
 from sem.modules.sem_module import SEMModule as RootModule
 
-from sem.features import xml2feat
+import sem.util
 import sem.logger
+from sem.features import xml2feat
 from sem.importers import conll_file
 from sem.storage import Entry
 
@@ -134,7 +135,7 @@ class SEMModule(RootModule):
 
         start = time.time()
 
-        missing_fields = set([I.name for I in self.bentries + self.aentries]) - set(
+        missing_fields = set([entry.name for entry in self.bentries + self.aentries]) - set(
             document.corpus.fields
         )
 
@@ -218,7 +219,7 @@ class SEMModule(RootModule):
         del self._features[:]
         for feature in features:
             feature_name = feature.attrib.get("name")
-            if not sem.misc.str2bool(feature.attrib.get("display", "yes")):
+            if not sem.util.str2bool(feature.attrib.get("display", "yes")):
                 self._temporary.add(feature_name)
             self._features.append((xml2feat(feature, path=filename), feature_name))
             if not feature_name:

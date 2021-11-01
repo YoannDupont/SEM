@@ -35,7 +35,7 @@ import html
 import re
 
 import sem
-import sem.misc
+import sem.util
 import sem.logger
 from sem.constants import BEGIN, IN, LAST, SINGLE, OUT, chunking_schemes
 from sem.constants import NUL
@@ -1048,7 +1048,7 @@ class Document:
         nth_token = 0
         annotation = []
 
-        for nth_sentence, tags in enumerate(sem.misc.correct_pos_tags(sentence_tags)):
+        for nth_sentence, tags in enumerate(sem.util.correct_pos_tags(sentence_tags)):
             index = len(annotation)
             i = len(tags) - 1
             n = 0

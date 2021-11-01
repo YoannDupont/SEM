@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-file: misc.py
+file: util.py
 
-Description: a file for miscellaneous operations. This should maybe be renamed
-util, as it is just functions that do not fit anywhere else.
+Description: a file for utilitarian functionalities.
 
 author: Yoann Dupont
 

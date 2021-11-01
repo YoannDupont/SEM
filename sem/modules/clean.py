@@ -37,7 +37,7 @@ from datetime import timedelta
 
 from sem.modules.sem_module import SEMModule as RootModule
 
-from sem.misc import ranges_to_set
+from sem.util import ranges_to_set
 import sem.logger
 from sem.storage import Sentence
 

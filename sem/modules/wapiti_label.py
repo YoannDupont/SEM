@@ -39,7 +39,7 @@ import sem.importers
 import sem.logger
 from sem.exporters import CoNLLExporter
 from sem.modules.sem_module import SEMModule as RootModule
-from sem.misc import check_model_available
+from sem.util import check_model_available
 
 
 def model_from_string(mdl_str, encoding="utf-8"):

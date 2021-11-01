@@ -36,7 +36,7 @@ from sem.storage import Tag, Trie, Span
 from sem.storage import (chunk_annotation_from_sentence, compile_multiword)
 from sem.importers import read_conll
 from sem.features import NUL
-from sem.misc import longest_common_substring
+from sem.util import longest_common_substring
 
 
 def normalize(token):

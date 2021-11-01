@@ -37,7 +37,7 @@ import tarfile
 import urllib.request
 
 import sem
-import sem.misc
+from sem.util import str2bool
 import sem.logger
 
 
@@ -63,7 +63,7 @@ def do_overwrite(path, conflict):
 
     answer = input(f"{path} already exists, override? [y/N] ").lower()
     try:
-        return sem.misc.str2bool(answer)
+        return str2bool(answer)
     except ValueError:
         return False
 
@@ -107,7 +107,7 @@ def download(args):
     if outfile_path.exists():
         answer = input(f"{outfile_path} already exists, overwrite? [y/N] ").lower()
         try:
-            overwrite = sem.misc.str2bool(answer)
+            overwrite = str2bool(answer)
         except ValueError:
             overwrite = False
         if not overwrite:

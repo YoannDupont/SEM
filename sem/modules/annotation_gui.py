@@ -44,6 +44,7 @@ except ImportError:
     pyperclip = None
 
 import sem
+import sem.util
 from sem.constants import NUL
 from sem.storage import SEMCorpus
 from sem.storage import Tag, Annotation
@@ -1318,7 +1319,7 @@ class AnnotationTool(tkinter.Frame):
         self.load_resource("pipelines", self.load_pipelinefile)
 
     def load_pipelinefile(self, path):
-        self.pipeline = sem.misc.load_pipeline(path)
+        self.pipeline = sem.util.load_pipeline(path)
         self.tag_document_btn.configure(state=tkinter.NORMAL)
 
     def tag_document(self, event=None):

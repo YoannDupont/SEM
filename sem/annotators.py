@@ -35,7 +35,7 @@ import functools
 
 from sem.features import (directory_feature, xml2feat)
 from sem.CRF import Model as WapitiModel
-from sem.misc import check_model_available
+from sem.util import check_model_available
 
 
 class LexicaAnnotator:

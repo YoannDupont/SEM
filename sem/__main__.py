@@ -38,7 +38,7 @@ import sys
 import sem
 import sem.modules
 
-from sem.misc import find_suggestions
+from sem.util import find_suggestions
 
 
 def valid_module(m):

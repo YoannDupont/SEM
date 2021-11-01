@@ -44,6 +44,7 @@ import sem
 import sem.exporters
 import sem.importers
 import sem.logger
+import sem.util
 
 from sem.constants import NUL
 from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
@@ -801,7 +802,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             pipeline.pipeline_mode = "label"
             # trained_pipe.load_model(target_model)
             trained_pipe.model = target_model
-            sem.misc.save_pipeline(pipeline, output_pipeline)
+            sem.util.save_pipeline(pipeline, output_pipeline)
             pipeline.pipeline_mode = "train"
             pipeline_update_message = "\n\nPipeline saved moved to: {0}".format(output_pipeline)
 

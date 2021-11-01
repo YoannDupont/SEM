@@ -45,7 +45,7 @@ except ImportError:
 from html.parser import HTMLParser
 
 import sem.logger
-import sem.misc
+import sem.util
 from sem.storage import Document, SEMCorpus, Corpus, Sentence
 from sem.storage import Tag, Annotation
 from sem.storage import Segmentation
@@ -405,7 +405,7 @@ def from_url(url, strip_html=False, wikinews_format=False, keep_offsets=True, **
     content = content.replace("</p>", "</p>\n\n")
 
     if strip_html:
-        new_content = sem.misc.strip_html(content, keep_offsets=keep_offsets)
+        new_content = sem.util.strip_html(content, keep_offsets=keep_offsets)
     else:
         new_content = content
 
