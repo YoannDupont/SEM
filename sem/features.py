@@ -36,10 +36,9 @@ import functools
 
 from sem.constants import NUL
 from sem.storage import (
+    Annotation,
     compile_token,
     compile_multiword,
-    # compile_map,
-    Annotation,
     get_top_level,
     chunks_to_annotation
 )

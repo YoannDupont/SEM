@@ -646,21 +646,13 @@ class WapitiLabelProcessor(Processor):
 
 
 def normalize(token):
-    apostrophes = re.compile("[\u2019]", re.U)
-    lower_a = re.compile("[àáâãäåæ]", re.U)
-    upper_a = re.compile("[ÀÁÂÃÄÅÆ]", re.U)
-    lower_e = re.compile("[éèêë]", re.U)
-    upper_e = re.compile("[ÉÈÊË]", re.U)
-    lower_i = re.compile("[ìíîï]", re.U)
-    upper_i = re.compile("[ÌÍÎÏ]", re.U)
-
-    normalized = apostrophes.sub("'", token)
-    normalized = lower_a.sub("a", normalized)
-    normalized = upper_a.sub("A", normalized)
-    normalized = lower_e.sub("e", normalized)
-    normalized = upper_e.sub("E", normalized)
-    normalized = lower_i.sub("i", normalized)
-    normalized = upper_i.sub("I", normalized)
+    normalized = re.sub("[\u2019]", "'", token, flags=re.U)
+    normalized = re.sub("[àáâãäåæ]", "a", normalized, flags=re.U)
+    normalized = re.sub("[ÀÁÂÃÄÅÆ]", "A", normalized, flags=re.U)
+    normalized = re.sub("[éèêë]", "e", normalized, flags=re.U)
+    normalized = re.sub("[ÉÈÊË]", "E", normalized, flags=re.U)
+    normalized = re.sub("[ìíîï]", "i", normalized, flags=re.U)
+    normalized = re.sub("[ÌÍÎÏ]", "I", normalized, flags=re.U)
     return normalized
 
 
@@ -1009,7 +1001,6 @@ class LabelConsistencyProcessor(Processor):
                 value.add(entry.split())
 
         for p in corpus:
-            # p[field] = self._feature(p, entities, value.data, token_field, field)
             p.add(self._feature(p, entities, value.data, token_field, field), field)
 
         tags = [sentence.feature(field) for sentence in corpus]
