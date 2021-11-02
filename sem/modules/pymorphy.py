@@ -31,39 +31,8 @@ SOFTWARE.
 """
 
 import argparse
-import time
-import pymorphy2
 
-import sem.logger
-from sem.modules.sem_module import SEMModule as RootModule
-from sem.storage import Tag, Annotation
-
-
-class SEMModule(RootModule):
-    def __init__(self, token_field="word", *args, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
-
-        self._token_field = token_field
-        self._morph = pymorphy2.MorphAnalyzer()
-
-    def process_document(self, document, **kwargs):
-        start = time.time()
-        annotations = Annotation("POS", reference=document.segmentation("tokens"))
-        current = 0
-        for sentence in document.corpus:
-            lemma = []
-            pos = []
-            for token in sentence.feature(self._token_field):
-                analyzed = self._morph.parse(token)
-                lemma.append(analyzed[0].normal_form)
-                pos.append(str(analyzed[0].tag.POS or analyzed[0].tag).split(',')[0])
-                annotations.append(Tag(pos[-1], current, current+1))
-                current += 1
-            sentence.add(lemma[:], "lemma")
-            sentence.add(pos[:], "POS")
-        document.add_annotation(annotations)
-        laps = time.time() - start
-        sem.logger.info(u'done in %fs' % laps)
+from sem.processors import PymorphyProcessor
 
 
 def main(argv=None):
@@ -74,7 +43,7 @@ def pymorphy(args):
     infile = args.infile
     outfile = args.outfile
     token_field = int(args.token_field or 0)
-    processor = SEMModule()
+    processor = PymorphyProcessor()
 
     with open(infile) as input_stream:
         with open(outfile, "w") as output_stream:

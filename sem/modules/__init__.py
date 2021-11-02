@@ -26,14 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from sem.modules.enrich import SEMModule as EnrichModule
-from sem.modules.label_consistency import SEMModule as LabelConsistencyModule
-from sem.modules.segmentation import SEMModule as SegmentationModule
-from sem.modules.annotate import SEMModule as AnnotateModule
-from sem.modules.wapiti_label import SEMModule as WapitiLabelModule
-from sem.modules.clean import SEMModule as CleanModule
-from sem.modules.map_annotations import SEMModule as MapAnnotationsModule
-
 try:
     from importlib import import_module
 except ImportError:  # backward compatibility for python < 2.7
@@ -45,8 +37,3 @@ except ImportError:  # backward compatibility for python < 2.7
 def get_package(name):
     module = import_module("sem.modules.{0}".format(name))
     return module
-
-
-def get_module(name):
-    module = import_module("sem.modules.{0}".format(name))
-    return module.SEMModule

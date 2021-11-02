@@ -35,24 +35,11 @@ import time
 from datetime import timedelta
 
 import sem.annotators
-from sem.modules.sem_module import SEMModule as RootModule
 import sem.logger
 from sem.importers import read_conll
 from sem.importers import conll_file
 from sem.exporters import CoNLLExporter
-
-
-class SEMModule(RootModule):
-    def __init__(self, annotator, field, *args, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
-
-        self._annotator = sem.annotators.get_annotator(annotator).load(field, *args, **kwargs)
-
-    def process_document(self, document, **kwargs):
-        start = time.time()
-        self._annotator.process_document(document)
-        laps = time.time() - start
-        sem.logger.info("done in {}".format(timedelta(seconds=laps)))
+from sem.processors import AnnotateProcessor
 
 
 def main(argv=None):
@@ -89,7 +76,7 @@ def annotate(args):
     outfile = args.outfile
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
-    annotator = SEMModule(**vars(args))
+    annotator = AnnotateProcessor(**vars(args))
 
     length = -1
     fields = None

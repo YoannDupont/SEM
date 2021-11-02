@@ -31,20 +31,21 @@ SOFTWARE.
 import unittest
 
 import sem.importers
-from sem.storage import Document, Corpus, Sentence
-from sem.modules import EnrichModule, CleanModule, WapitiLabelModule, LabelConsistencyModule
-from sem.modules.enrich import Entry
+from sem.storage import Document, Corpus, Sentence, Entry
+from sem.processors import (
+    EnrichProcessor, CleanProcessor, WapitiLabelProcessor, LabelConsistencyProcessor
+)
 from sem.features import bos, eos
 
 
-class TestModules(unittest.TestCase):
+class TestProcessors(unittest.TestCase):
     def test_enrich(self):
         corpus = Corpus(
             fields=["word"], sentences=[Sentence({"word": ["Ceci", "est", "un", "test", "."]})]
         )
         document = Document("document", "Ceci est un test.", corpus=corpus)
 
-        enrich = EnrichModule(bentries=[Entry("word")], features=[(bos, "BOS"), (eos, "EOS")])
+        enrich = EnrichProcessor(bentries=[Entry("word")], features=[(bos, "BOS"), (eos, "EOS")])
 
         self.assertEquals(document._corpus.fields, ["word"])
 
@@ -66,7 +67,7 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word", "remove"])
 
-        clean = CleanModule(to_keep=["word"])
+        clean = CleanProcessor(to_keep=["word"])
         clean.process_document(document)
 
         self.assertEquals(document._corpus.fields, ["word"])
@@ -100,7 +101,7 @@ class TestModules(unittest.TestCase):
 
         self.assertEquals(document._corpus.fields, ["word"])
 
-        wapiti_label = WapitiLabelModule(None, "the_new_field", model_str=model_as_string)
+        wapiti_label = WapitiLabelProcessor(None, "the_new_field", model_str=model_as_string)
         wapiti_label.process_document(document)
 
         self.assertEquals(document._corpus.fields, ["word", "the_new_field"])
@@ -137,7 +138,7 @@ class TestModules(unittest.TestCase):
         self.assertEquals(document._corpus.sentences[1].feature("tag")[0], "O")
         self.assertEquals(document._corpus.sentences[2].feature("tag")[0], "O")
 
-        label_consistency = LabelConsistencyModule("tag", token_field="word")
+        label_consistency = LabelConsistencyProcessor("tag", token_field="word")
         label_consistency.process_document(document)
 
         self.assertEquals(document._corpus.sentences[0].feature("tag")[0], "B-tag")

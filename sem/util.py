@@ -148,7 +148,7 @@ def load_pipeline(path, auto_download=True):
 
     Returns
     -------
-    sem.modules.pipeline.Pipeline
+    sem.processor.Pipeline
         A SEM pipeline ready to process some documents.
     """
     def download_pipeline(path):

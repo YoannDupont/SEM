@@ -48,8 +48,8 @@ except ImportError:
 
 import sem
 import sem.logger
-from sem.modules import get_module
-import sem.modules.pipeline
+from sem.processors import build_processor
+from sem.processors import Pipeline
 import sem.modules.export
 import sem.exporters
 import sem.importers
@@ -146,16 +146,11 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 export_format = force_format
             exporter = sem.exporters.get_exporter(export_format)(**couples)
 
-    classes = {}
     pipes = []
     for xmlpipe in xmlpipes:
         if xmlpipe.tag == "export":
             continue
 
-        Class = classes.get(xmlpipe.tag, None)
-        if Class is None:
-            Class = get_module(xmlpipe.tag)
-            classes[xmlpipe.tag] = Class
         arguments = {}
         arguments["expected_mode"] = pipeline_mode
         for key, value in xmlpipe.attrib.items():
@@ -184,8 +179,8 @@ def load_master(master, force_format="default", pipeline_mode="all"):
                 else:
                     sem.logger.warning("Not adding already existing option: {0}".format(key))
         sem.logger.info("loading {0}".format(xmlpipe.tag))
-        pipes.append(Class(**arguments))
-    pipeline = sem.modules.pipeline.Pipeline(pipes, pipeline_mode=pipeline_mode)
+        pipes.append(build_processor(xmlpipe.tag, **arguments))
+    pipeline = Pipeline(pipes, pipeline_mode=pipeline_mode)
 
     return pipeline, options, exporter, couples
 
@@ -297,15 +292,6 @@ def tagger(args):
     return documents
 
 
-# import sem
-#
-# _subparsers = sem.argument_subparsers
-#
-# parser = _subparsers.add_parser(
-#     pathlib.Path(__file__).stem,
-#     description="Performs various operations given in a master configuration file"
-#     " that defines a pipeline.",
-# )
 parser = argparse.ArgumentParser(
     "Performs various operations given in a master configuration file that defines a pipeline."
 )

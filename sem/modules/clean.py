@@ -32,67 +32,8 @@ SOFTWARE.
 
 import argparse
 
-import time
-from datetime import timedelta
-
-from sem.modules.sem_module import SEMModule as RootModule
-
 from sem.util import ranges_to_set
 import sem.logger
-from sem.storage import Sentence
-
-
-class SEMModule(RootModule):
-    def __init__(self, to_keep, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
-
-        if isinstance(to_keep, str):
-            self._allowed = to_keep.split(",")  # comma-separated named fields
-        else:
-            self._allowed = to_keep
-
-        if len(self._allowed) == 0:
-            raise ValueError("No more data after cleaning !")
-
-    def process_document(self, document, **kwargs):
-        """
-        Cleans the sem.storage.corpus of a document, removing unwanted fields.
-
-        Parameters
-        ----------
-        document : sem.storage.Document
-            the document containing the corpus to clean.
-        ranges : str or list of int or list of str
-            if str: fields to remove will be induced
-            if list of int: each element in the list is the index of a field
-            to remove in corpus.fields
-            if list of string: the list of fields to remove
-        """
-
-        start = time.time()
-
-        sem.logger.info("cleaning document")
-
-        allowed = set(self._allowed)
-        fields = set(field for field in document.corpus.fields)
-
-        if len(allowed - fields) > 0:
-            sem.logger.warning(
-                "the following fields are not present in document,"
-                " this might cause an error sometime later: {}".format(", ".join(allowed - fields))
-            )
-
-        for sentence in document.corpus.sentences:
-            sentence = Sentence({key: sentence.feature(key) for key in allowed})
-        # for i in range(len(document.corpus.sentences)):
-        #     for j in range(len(document.corpus.sentences[i])):
-        #         document.corpus.sentences[i][j] = {
-        #             a: document.corpus.sentences[i][j][a] for a in allowed
-        #         }
-        document._corpus.fields = self._allowed[:]
-
-        laps = time.time() - start
-        sem.logger.info("done in {0}".format(timedelta(seconds=laps)))
 
 
 def main(argv=None):

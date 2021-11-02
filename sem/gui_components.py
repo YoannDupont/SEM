@@ -48,7 +48,8 @@ import sem.util
 
 from sem.constants import NUL
 from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
-from sem.modules import EnrichModule, WapitiLabelModule
+# from sem.modules import EnrichModule, WapitiLabelModule
+from sem.processors import EnrichProcessor, WapitiLabelProcessor
 from sem.modules.tagger import load_master, tagger
 
 from wapiti.api import Model as WapitiModel
@@ -667,12 +668,12 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         pipes = [pipe for pipe in pipeline]
         trained_pipe = None
         for pipe in reversed(pipes):
-            if isinstance(pipe, EnrichModule):
+            if isinstance(pipe, EnrichProcessor):
                 pipe.mode = "train"
                 self.annotation_name = pipe.informations.aentries[-1].name
                 pipe.mode = "label"
                 break
-            elif isinstance(pipe, WapitiLabelModule):
+            elif isinstance(pipe, WapitiLabelProcessor):
                 self.annotation_name = pipe.field
                 target_model = pathlib.Path(pipe.model)
                 trained_pipe = pipe

@@ -31,129 +31,11 @@ SOFTWARE.
 """
 
 import argparse
-import time
 import pathlib
-from datetime import timedelta
 
-from sem.modules.sem_module import SEMModule as RootModule
-from sem.util import (strip_html, read_chunks)
-from sem.tokenisers import get_tokeniser
-from sem.storage import (Document, Segmentation, Span)
+from sem.storage import Document
 import sem.logger
-
-
-def token_spans_buffered(tokeniser, content):
-    """Return the token spans of content.
-    This does the same as tokeniser.word_spans, but this method buffers
-    the input to allow a quicker processing of large content.
-    """
-    rem = ""  # remainder of unsegmented tokens
-    shift = 0
-    token_spans = []
-    for chunk in read_chunks(content):
-        chnk = rem + chunk
-        spans = tokeniser.word_spans(chnk)
-        if not spans:
-            rem = chnk
-            continue
-        elif spans[-1].ub < len(chnk):
-            rem = chnk[spans[-1].ub:]
-        elif spans[-1].ub == len(chnk):
-            rem = chnk[spans[-1].lb:]
-            del spans[-1]
-        else:
-            rem = ""
-        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
-        shift += len(chnk) - len(rem)
-        del spans[:]
-
-    if rem:
-        spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
-        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
-    if not content[token_spans[-1].lb: token_spans[-1].ub].strip():
-        del token_spans[-1]
-
-    return token_spans
-
-
-class SEMModule(RootModule):
-    def __init__(self, tokeniser, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
-
-        if isinstance(tokeniser, str):
-            sem.logger.info('Getting tokeniser "{0}"'.format(tokeniser))
-            self._tokeniser = get_tokeniser(tokeniser)()
-        else:
-            self._tokeniser = tokeniser
-
-    def process_document(self, document, **kwargs):
-        """
-        Updates a document with various segmentations and creates
-        an sem.corpus (CoNLL-formatted data) using field argument as index.
-
-        Parameters
-        ----------
-        document : sem.storage.Document
-            the input data. It is a document with only a content
-        """
-
-        start = time.time()
-
-        current_tokeniser = self._tokeniser
-
-        sem.logger.debug('segmenting "%s" content', document.name)
-
-        content = document.content
-        if document.metadata("MIME") == "text/html":
-            content = strip_html(content, keep_offsets=True)
-
-        if document.segmentation("tokens") is None:
-            token_spans = token_spans_buffered(current_tokeniser, document.content)
-            document.add_segmentation(Segmentation("tokens", spans=token_spans))
-        else:
-            sem.logger.info("{} already has tokens".format(document.name))
-            token_spans = document.segmentation("tokens").spans
-
-        if document.segmentation("sentences") is None:
-            sentence_spans = current_tokeniser.sentence_spans(content, token_spans)
-            document.add_segmentation(
-                Segmentation(
-                    "sentences", reference=document.segmentation("tokens"), spans=sentence_spans
-                )
-            )
-        else:
-            sem.logger.info("{} already has sentences".format(document.name))
-            sentence_spans = document.segmentation("sentences").spans
-
-        if document.segmentation("paragraphs") is None:
-            paragraph_spans = current_tokeniser.paragraph_spans(
-                content, sentence_spans, token_spans
-            )
-            document.add_segmentation(
-                Segmentation(
-                    "paragraphs",
-                    reference=document.segmentation("sentences"),
-                    spans=paragraph_spans,
-                )
-            )
-        else:
-            sem.logger.info("{} already has paragraphs".format(document.name))
-
-        if len(document.corpus) == 0:
-            document.corpus.from_segmentation(
-                document.content,
-                document.segmentation("tokens"),
-                document.segmentation("sentences"),
-            )
-
-        sem.logger.info(
-            '"{0}" segmented in {1} sentences, {2} tokens'.format(
-                document.name, len(sentence_spans), len(token_spans)
-            )
-        )
-
-        laps = time.time() - start
-        sem.logger.info("in {0}".format(timedelta(seconds=laps)))
+from sem.processors import SegmentationProcessor
 
 
 def main(argv=None):
@@ -167,7 +49,7 @@ def segmentation(args):
 
     ienc = args.ienc or args.enc
     oenc = args.oenc or args.enc
-    segmenter = SEMModule(args.tokeniser_name)
+    segmenter = SegmentationProcessor(args.tokeniser_name)
     document = Document(
         pathlib.Path(args.infile).name,
         content=open(args.infile, "rU", encoding=ienc).read().replace("\r", ""),

@@ -32,58 +32,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import time
 import argparse
-from datetime import timedelta
-
-from sem.modules.sem_module import SEMModule as RootModule
-from sem.storage import Annotation, Tag
-import sem.logger
-from sem.storage import compile_map
-
-
-class SEMModule(RootModule):
-    def __init__(self, mapping, annotation_name, **kwargs):
-        super(SEMModule, self).__init__(**kwargs)
-
-        if isinstance(mapping, str):
-            with open(mapping, 'r', encoding="utf-8") as input_stream:
-                self._mapping = compile_map(input_stream)
-        else:
-            self._mapping = mapping
-
-        self._annotation_name = annotation_name
-
-    def process_document(self, document, **kwargs):
-        """Updates a document with various segmentations and creates
-        an sem.corpus (CoNLL-formatted data) using field argument as index.
-
-        Parameters
-        ----------
-        document : sem.storage.Document
-            the input data. It is a document with only a content
-        """
-
-        start = time.time()
-
-        ref_annotation = document.annotation(self._annotation_name)
-        ref_annotations = ref_annotation.annotations
-        new_annotations = [
-            Tag(self._mapping.get(annotation.value, annotation.value), annotation.lb, annotation.ub)
-            for annotation in ref_annotations
-            if self._mapping.get(annotation.value, None) != ""
-        ]
-
-        document.add_annotation(
-            Annotation(
-                self._annotation_name,
-                reference=ref_annotation.reference,
-                annotations=new_annotations,
-            )
-        )
-
-        laps = time.time() - start
-        sem.logger.info("in %s", timedelta(seconds=laps))
 
 
 parser = argparse.ArgumentParser(

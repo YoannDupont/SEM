@@ -31,78 +31,17 @@ SOFTWARE.
 """
 
 import argparse
-import sys
 
 # measuring time laps
 import time
 from datetime import timedelta
 
 import sem.importers
+from sem.processors import ExportProcessor
 from sem.util import str2bool
-from .sem_module import SEMModule as RootModule
 
 from sem.storage import SEMCorpus
-from sem.exporters import get_exporter
 import sem.logger
-
-
-class SEMModule(RootModule):
-    def __init__(
-        self,
-        exporter,
-        lang="fr",
-        lang_style="default.css",
-        pos_column=None,
-        chunk_column=None,
-        ner_column=None,
-        **kwargs,
-    ):
-        super(SEMModule, self).__init__(**kwargs)
-
-        self._lang = lang
-        self._lang_style = lang_style
-        self._pos_column = pos_column
-        self._chunk_column = chunk_column
-        self._ner_column = ner_column
-        if isinstance(exporter, str):
-            sem.logger.info("getting exporter {0}".format(exporter))
-            Exporter = get_exporter(exporter)
-            self._exporter = Exporter(lang=self._lang, lang_style=self._lang_style)
-        else:
-            sem.logger.info("using loaded exporter")
-            self._exporter = exporter
-
-    def process_document(self, document, outfile=sys.stdout, output_encoding="utf-8", **kwargs):
-        start = time.time()
-
-        sem.logger.debug("setting name/column couples for exportation")
-
-        pos_column = self._pos_column
-        chunk_column = self._chunk_column
-        ner_column = self._ner_column
-
-        couples = {}
-        if "word" in document.corpus.fields:
-            couples["token"] = "word"
-        elif "token" in document.corpus.fields:
-            couples["token"] = "token"
-
-        if pos_column:
-            couples["pos"] = pos_column
-            sem.logger.debug("POS column is {0}".format(pos_column))
-        if chunk_column:
-            couples["chunking"] = chunk_column
-            sem.logger.debug("chunking column is {0}".format(chunk_column))
-        if ner_column:
-            couples["ner"] = ner_column
-            sem.logger.debug("NER column is {0}".format(ner_column))
-
-        sem.logger.debug("exporting document to {0} format".format(self._exporter.extension))
-
-        self._exporter.document_to_file(document, couples, outfile, encoding=output_encoding)
-
-        laps = time.time() - start
-        sem.logger.info("done in %s", timedelta(seconds=laps))
 
 
 def main(argv=None):
@@ -125,7 +64,7 @@ def export(args):
     chunk_column = args.chunk_column
     ner_column = args.ner_column
 
-    exporter = SEMModule(
+    exporter = ExportProcessor(
         exporter_name,
         lang=lang,
         lang_style=lang_style,
