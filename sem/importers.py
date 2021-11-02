@@ -477,7 +477,9 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
                 ub = int(parts[-1])
                 annotations.append(Tag(value=value, lb=lb, ub=ub))
             else:
-                raise ValueError(f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)')
+                raise ValueError(
+                    f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)'
+                )
     annotations.sort()
     document.add_annotation(annotations)
 

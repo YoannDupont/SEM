@@ -1133,8 +1133,8 @@ class Trie:
 
         if filename:
             encoding = encoding or "UTF-8"
-            for l in open(filename, "rU", encoding=encoding):
-                seq = l.strip().split()
+            for line in open(filename, "rU", encoding=encoding):
+                seq = line.strip().split()
 
                 self.add(seq)
 
