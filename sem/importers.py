@@ -47,7 +47,7 @@ from html.parser import HTMLParser
 import sem.logger
 import sem.util
 from sem.storage import Document, SEMCorpus, Corpus, Sentence
-from sem.storage import Tag, Annotation
+from sem.storage import Tag, AnnotationSet
 from sem.storage import Segmentation
 from sem.storage import Span
 from sem.storage import tag_annotation_from_corpus, chunk_annotation_from_corpus
@@ -180,9 +180,9 @@ def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_sep
                 reference = annotation.get("reference", None)
                 if reference:
                     reference = document.segmentation(reference)
-                annotation = Annotation(annotation.attrib["name"], reference=reference)
+                annotation = AnnotationSet(annotation.attrib["name"], reference=reference)
                 annotation.annotations = tags
-                document.add_annotation(annotation)
+                document.add_annotationset(annotation)
 
     if document.segmentation("tokens") and document.segmentation("sentences"):
         document.corpus.from_segmentation(
@@ -193,7 +193,7 @@ def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_sep
 
         if chunks_to_load is not None:
             for chunk_to_load in chunks_to_load:
-                cur_annot = document.annotation(chunk_to_load)
+                cur_annot = document.annotationset(chunk_to_load)
                 if cur_annot and cur_annot.reference is None:
                     document.set_reference(cur_annot.name, "tokens")
                 i = 0
@@ -332,7 +332,7 @@ def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunki
         )
     )
     for tagging in taggings or []:
-        document.add_annotation(
+        document.add_annotationset(
             tag_annotation_from_corpus(
                 document._corpus,
                 tagging,
@@ -342,7 +342,7 @@ def conll_data(name, corpus, word_field, encoding="utf-8", taggings=None, chunki
             )
         )
     for chunking in chunkings or []:
-        document.add_annotation(
+        document.add_annotationset(
             chunk_annotation_from_corpus(
                 document._corpus,
                 chunking,
@@ -459,7 +459,7 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
 
     document = Document(pathlib.Path(txt_file).name, encoding=encoding, mime_type="text/plain")
     document.content = open(txt_file, "r", encoding=encoding).read().replace("\r", "\n")
-    annotations = Annotation(tagset_name)
+    annotations = AnnotationSet(tagset_name)
     for line in open(ann_file, "r", encoding=encoding, newline=""):
         line = line.strip()
         if line != "" and line.startswith("T"):
@@ -481,7 +481,7 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
                     f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)'
                 )
     annotations.sort()
-    document.add_annotation(annotations)
+    document.add_annotationset(annotations)
 
     return document
 
@@ -526,12 +526,12 @@ def gate_data(data, name=None):
 
     for annotation_set in annotation_sets:
         annotation_name = annotation_set.attrib["Name"]
-        sem_annotation = Annotation(annotation_name)
+        sem_annotation = AnnotationSet(annotation_name)
         for annotation in annotation_set:
             lb = nodes[int(annotation.attrib["StartNode"])]
             ub = nodes[int(annotation.attrib["EndNode"])]
             sem_annotation.append(Tag(annotation.attrib["Type"], lb, ub))
-        document.add_annotation(sem_annotation)
+        document.add_annotationset(sem_annotation)
 
     return document
 
@@ -567,12 +567,12 @@ def json_data(data):
             Tag(value=annotation["v"], lb=annotation["s"], ub=0, length=annotation["l"])
             for annotation in d["annotations"]
         ]
-        annotation = Annotation(
+        annotation = AnnotationSet(
             annotation_name,
             reference=document.segmentation(d["reference"]),
             annotations=annotations,
         )
-        document.add_annotation(annotation)
+        document.add_annotationset(annotation)
 
 
 def documents_from_list(name_list, file_format, **opts):

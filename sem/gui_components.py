@@ -208,7 +208,7 @@ class Adder:
             first = "sel.first"
             last = "sel.last"
         self.frame.wish_to_add = [self.type, first, last]
-        self.frame.add_annotation(None, remove_focus)
+        self.frame.add_annotationset(None, remove_focus)
 
     def add_all(self, event):
         if self.frame.current_selection is not None:
@@ -229,7 +229,7 @@ class Adder:
                 cur_end = self.frame.charindex2position(match.end())
                 if Tag(self.type, match.start(), match.end()) not in self.frame.current_annotations:
                     self.frame.wish_to_add = [self.type, cur_start, cur_end]
-                    self.frame.add_annotation(None, remove_focus=False)
+                    self.frame.add_annotationset(None, remove_focus=False)
         except tkinter.TclError:
             raise
         self.frame.type_combos[self.level].current(0)

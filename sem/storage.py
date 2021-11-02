@@ -212,7 +212,7 @@ class Tag:
         return ".".join(values)
 
 
-class Annotation:
+class AnnotationSet:
     def __init__(self, name, reference=None, annotations=None):
         self._name = name
         self._reference = reference
@@ -330,7 +330,7 @@ str2filter = {"top level": get_top_level, "bottom level": get_bottom_level}
 
 
 def chunks_to_annotation(lst, shift=0, strict=False):
-    annotation = Annotation("")
+    annotation = AnnotationSet("")
     start = 0
     length = 0
     value = ""
@@ -385,7 +385,7 @@ def chunk_annotation_from_corpus(corpus, column, name, reference=None, strict=Fa
     we define a general approach to handle the three at the same time.
     """
 
-    annotation = Annotation(name, reference=reference)
+    annotation = AnnotationSet(name, reference=reference)
     shift = 0
     for sentence in corpus:
         annotation.extend(
@@ -399,7 +399,7 @@ def tag_annotation_from_sentence(sentence, column, shift=0, strict=False):
     def is_begin(tag):
         return tag[0] != "_" or tag.startswith("__")
 
-    annotation = Annotation("")
+    annotation = AnnotationSet("")
     start = 0
     length = 0
     value = ""
@@ -434,7 +434,7 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
         the previous tag. It is the same as BIO, "B-" is replaced by None
         and "I-" by "_".
     """
-    annotation = Annotation(name, reference=reference)
+    annotation = AnnotationSet(name, reference=reference)
     shift = 0
     for sentence in corpus:
         annotation.extend(
@@ -445,7 +445,7 @@ def tag_annotation_from_corpus(corpus, column, name, reference=None, strict=Fals
 
 
 def annotation_from_sentence(sentence, column, shift=0, strict=False):
-    """Return an Annotation object for sentence. Checks sentence before
+    """Return an AnnotationSet object for sentence. Checks sentence before
     calling either tag_annotation_from_sentence
     or chunk_annotation_from_sentence
     """
@@ -751,7 +751,7 @@ class Document:
         self._content = content
         self.original_content = original_content
         self._segmentations = {}
-        self._annotations = {}
+        self._annotationsets = {}
         self._corpus = corpus or Corpus()
         self._metadatas = {}
         if encoding is not None:
@@ -782,8 +782,8 @@ class Document:
         return self._segmentations
 
     @property
-    def annotations(self):
-        return self._annotations
+    def annotationsets(self):
+        return self._annotationsets
 
     @property
     def metadatas(self):
@@ -813,12 +813,12 @@ class Document:
     def segmentation(self, name):
         return self._segmentations.get(name, None)
 
-    def add_annotation(self, annotation):
-        self._annotations[annotation.name] = annotation
-        self._annotations[annotation.name]._document = self
+    def add_annotationset(self, annotationset):
+        self._annotationsets[annotationset.name] = annotationset
+        self._annotationsets[annotationset.name]._document = self
 
-    def annotation(self, name):
-        return self._annotations.get(name, None)
+    def annotationset(self, name):
+        return self._annotationsets.get(name, None)
 
     def add_metadata(self, key, value):
         self._metadatas[key] = value
@@ -879,9 +879,9 @@ class Document:
                 depth -= 1
             f.write("{0}</segmentations>\n".format(depth * indent * " "))
 
-        if len(self.annotations) > 0:
+        if len(self.annotationsets) > 0:
             f.write("{0}<annotations>\n".format(depth * indent * " "))
-            for annotation in self.annotations.values():
+            for annotation in self.annotationsets.values():
                 depth += 1
                 reference = (
                     ""
@@ -915,7 +915,7 @@ class Document:
     def set_reference(
         self, annotation_name, reference_name, add_to_corpus=False, filter=get_top_level
     ):
-        annot = self.annotation(annotation_name)
+        annot = self.annotationset(annotation_name)
 
         if annot is not None and (
             annot.reference is None or annot.reference.name != reference_name
@@ -941,7 +941,7 @@ class Document:
             self.add_to_corpus(annotation_name, filter=filter)
 
     def add_to_corpus(self, annotation_name, filter=get_top_level, scheme="BIO"):
-        base_annotations = self.annotation(annotation_name) or Annotation(annotation_name)
+        base_annotations = self.annotationset(annotation_name) or AnnotationSet(annotation_name)
         annotations = base_annotations.get_reference_annotations()
 
         spans = self.segmentation("tokens").get_reference_spans()
@@ -1035,8 +1035,8 @@ class Document:
 
     def add_annotation_from_tags(self, tags, field, annotation_name):
         BIO = all([tag[0] in "BIO" for tag in tags[0]])
-        if self._annotations.get(annotation_name, None):
-            del self._annotations[annotation_name]._annotations[:]
+        if self._annotationsets.get(annotation_name, None):
+            del self._annotationsets[annotation_name]._annotations[:]
         if BIO:
             self.add_chunking(tags, field, annotation_name)
         else:
@@ -1066,15 +1066,15 @@ class Document:
                 i -= 1
             self.corpus.sentences[nth_sentence].add(tags, field)
             nth_token += len(tags)
-        self._annotations[annotation_name] = Annotation(
+        self._annotationsets[annotation_name] = AnnotationSet(
             annotation_name, reference=self.segmentation("tokens")
         )
-        self._annotations[annotation_name].annotations = annotation[:]
+        self._annotationsets[annotation_name].annotations = annotation[:]
 
     def add_chunking(self, sentence_tags, field, annotation_name):
         for nth_sentence, tags in enumerate(sentence_tags):
             self.corpus.sentences[nth_sentence].add(tags, field)
-        self._annotations[annotation_name] = chunk_annotation_from_corpus(
+        self._annotationsets[annotation_name] = chunk_annotation_from_corpus(
             self.corpus, field, annotation_name, reference=self.segmentation("tokens")
         )
 
@@ -1114,7 +1114,7 @@ class SEMCorpus:
 
 str2docfilter = {
     "all documents": lambda x, y: True,
-    "only documents with annotations": lambda d, a: len(d.annotation(a) or []) > 0,
+    "only documents with annotations": lambda d, a: len(d.annotationset(a) or []) > 0,
 }
 
 

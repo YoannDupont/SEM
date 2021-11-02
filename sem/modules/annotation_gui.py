@@ -47,7 +47,7 @@ import sem
 import sem.util
 from sem.constants import NUL
 from sem.storage import SEMCorpus
-from sem.storage import Tag, Annotation
+from sem.storage import Tag, AnnotationSet
 import sem.logger
 import sem.importers
 from sem.gui_components import (
@@ -65,13 +65,13 @@ import sem.modules.tagger
 
 
 def update_annotations(document, annotation_name, annotations):
-    annots = Annotation(annotation_name)
+    annots = AnnotationSet(annotation_name)
     annots.annotations = annotations
     try:
-        reference = document.annotation(annotation_name).reference
+        reference = document.annotationset(annotation_name).reference
     except Exception:
         reference = None
-    document.add_annotation(annots)
+    document.add_annotationset(annots)
     if reference:
         document.set_reference(annotation_name, reference.name)
 
@@ -181,7 +181,7 @@ class AnnotationTool(tkinter.Frame):
         self.SELECT_TYPE = "-- select type --"
         self.wish_to_add = []
 
-        self.current_annotations = Annotation("CurrentAnnotations")
+        self.current_annotations = AnnotationSet("CurrentAnnotations")
         self.adder = None
 
         self.toolbar = tkinter.ttk.Frame(self)
@@ -468,12 +468,12 @@ class AnnotationTool(tkinter.Frame):
                         filename, chunks_to_load=chunks_to_load, load_subtypes=True
                     ).documents
                     for doc in docs:  # using reference annotations
-                        for annotation_name in doc.annotations.keys():
-                            doc.add_annotation(
-                                Annotation(
+                        for annotation_name in doc.annotationsets.keys():
+                            doc.add_annotationset(
+                                AnnotationSet(
                                     annotation_name,
                                     reference=None,
-                                    annotations=doc.annotation(
+                                    annotations=doc.annotationset(
                                         annotation_name
                                     ).get_reference_annotations(),
                                 )
@@ -488,13 +488,13 @@ class AnnotationTool(tkinter.Frame):
                     if doc.name not in names:
                         names.add(doc.name)
                         documents.append(doc)
-                        for annotation_name in documents[-1].annotations.keys():
-                            documents[-1].add_annotation(
-                                Annotation(
+                        for annotation_name in documents[-1].annotationsets.keys():
+                            documents[-1].add_annotationset(
+                                AnnotationSet(
                                     annotation_name,
                                     reference=None,
                                     annotations=documents[-1]
-                                    .annotation(annotation_name)
+                                    .annotationset(annotation_name)
                                     .get_reference_annotations(),
                                 )
                             )
@@ -1142,7 +1142,7 @@ class AnnotationTool(tkinter.Frame):
             self.annot2treeitems["history"] = {}
             self.treeitem2annot = {}
             self.position2annots = {}
-            self.current_annotations = Annotation("CurrentAnnotations")
+            self.current_annotations = AnnotationSet("CurrentAnnotations")
             if self.adder is not None:
                 self.adder.current_annotation = None
             self.wish_to_add = None
@@ -1156,8 +1156,8 @@ class AnnotationTool(tkinter.Frame):
             self.text.tag_remove("SELECTION", "1.0", "end")
             self.text.configure(state="disabled")
 
-            if self.doc.annotation(self.annotation_name):
-                annots = self.doc.annotation(self.annotation_name).get_reference_annotations()
+            if self.doc.annotationset(self.annotation_name):
+                annots = self.doc.annotationset(self.annotation_name).get_reference_annotations()
                 for nth_annot, annot in enumerate(annots):
                     annot.levels = annot.value.split(".")
                     self.add_tag(annot.levels[0], annot.lb, annot.ub)
@@ -1176,11 +1176,11 @@ class AnnotationTool(tkinter.Frame):
                         if separator is not None:
                             splitted = annot.value.split(separator)
                             for depth, type_to_add in enumerate(splitted, 0):
-                                self.doc.annotation(self.annotation_name)[nth_annot].setLevel(
+                                self.doc.annotationset(self.annotation_name)[nth_annot].setLevel(
                                     depth, type_to_add
                                 )
                         else:
-                            self.doc.annotation(self.annotation_name)[nth_annot].setLevel(
+                            self.doc.annotationset(self.annotation_name)[nth_annot].setLevel(
                                 0, annot.value
                             )
             self.doc_is_modified = False
@@ -1327,12 +1327,12 @@ class AnnotationTool(tkinter.Frame):
             return
 
         self.pipeline.process_document(self.doc)
-        for key in self.doc.annotations:
-            annotation = self.doc.annotation(key)
-            self.doc.add_annotation(
-                Annotation(annotation.name, annotations=annotation.get_reference_annotations())
+        for key in self.doc.annotationsets:
+            annotation = self.doc.annotationset(key)
+            self.doc.add_annotationset(
+                AnnotationSet(annotation.name, annotations=annotation.get_reference_annotations())
             )
-        self.current_annotations = self.doc.annotation(self.annotation_name)
+        self.current_annotations = self.doc.annotationset(self.annotation_name)
         self.load_document(same_doc=True)
         self.doc_is_modified = True
 

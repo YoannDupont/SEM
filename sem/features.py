@@ -36,7 +36,7 @@ import functools
 
 from sem.constants import NUL
 from sem.storage import (
-    Annotation,
+    AnnotationSet,
     compile_token,
     compile_multiword,
     get_top_level,
@@ -240,7 +240,7 @@ def multiword_dictionary(s, trie, y, appendice=''):
 
 def directory_feature(s, features):
     data = ["O" for _ in range(len(s))]
-    annotation = Annotation("")
+    annotation = AnnotationSet("")
     for feat in features:
         for annot in chunks_to_annotation(feat(s)):
             annotation.add(annot)

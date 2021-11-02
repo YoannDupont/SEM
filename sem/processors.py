@@ -56,7 +56,7 @@ import sem.annotators
 from sem.util import (strip_html, read_chunks, check_model_available, longest_common_substring)
 from sem.tokenisers import get_tokeniser
 from sem.storage import (
-    Annotation, Entry, Segmentation, Sentence, Span, Tag, Trie,
+    AnnotationSet, Entry, Segmentation, Sentence, Span, Tag, Trie,
     chunk_annotation_from_sentence, compile_map
 )
 from sem.features import (xml2feat, NUL)
@@ -691,7 +691,7 @@ def detect_abbreviations(document, field):
     else:
         sentence_spans_ref = [Span(0, len(document.content))]
     tokens = [content[span.lb: span.ub] for span in word_spans]
-    annotations = document.annotation(field).get_reference_annotations()
+    annotations = document.annotationset(field).get_reference_annotations()
 
     counts = {}
     positions = {}
@@ -808,13 +808,13 @@ def detect_abbreviations(document, field):
         to_remove_tags.extend(
             [
                 ann
-                for ann in document.annotation(field)
+                for ann in document.annotationset(field)
                 if new_tag.lb <= ann.lb and ann.ub <= new_tag.ub and ann.value == new_tag.value
             ]
         )
     for to_remove_tag in to_remove_tags:
         try:
-            document.annotation(field)._annotations.remove(to_remove_tag)
+            document.annotationset(field)._annotations.remove(to_remove_tag)
         except ValueError:
             pass
 
@@ -1034,7 +1034,7 @@ class MapAnnotationsProcessor(Processor):
 
         start = time.time()
 
-        ref_annotation = document.annotation(self._annotation_name)
+        ref_annotation = document.annotationset(self._annotation_name)
         ref_annotations = ref_annotation.annotations
         new_annotations = [
             Tag(self._mapping.get(annotation.value, annotation.value), annotation.lb, annotation.ub)
@@ -1042,8 +1042,8 @@ class MapAnnotationsProcessor(Processor):
             if self._mapping.get(annotation.value, None) != ""
         ]
 
-        document.add_annotation(
-            Annotation(
+        document.add_annotationset(
+            AnnotationSet(
                 self._annotation_name,
                 reference=ref_annotation.reference,
                 annotations=new_annotations,
@@ -1122,7 +1122,7 @@ class PymorphyProcessor(Processor):
 
     def process_document(self, document, **kwargs):
         start = time.time()
-        annotations = Annotation("POS", reference=document.segmentation("tokens"))
+        annotations = AnnotationSet("POS", reference=document.segmentation("tokens"))
         current = 0
         for sentence in document.corpus:
             lemma = []
@@ -1135,7 +1135,7 @@ class PymorphyProcessor(Processor):
                 current += 1
             sentence.add(lemma[:], "lemma")
             sentence.add(pos[:], "POS")
-        document.add_annotation(annotations)
+        document.add_annotationset(annotations)
         laps = time.time() - start
         sem.logger.info(u'done in %fs' % laps)
 

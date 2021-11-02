@@ -33,7 +33,7 @@ import os
 import collections
 
 from sem.importers import read_conll
-from sem.storage import Annotation
+from sem.storage import AnnotationSet
 from sem.storage import annotation_from_sentence
 
 import sem.importers
@@ -229,26 +229,26 @@ def evaluate(args):
             R.extend(annotation_from_sentence(p, column=keys[tagging_column], shift=n_line - nth))
             n_line += len(p) + 1
         document = sem.importers.conll_file(infile, keys, keys[0], encoding=ienc)
-        L = Annotation(
+        L = AnnotationSet(
             "", annotations=L, reference=document.segmentation("tokens")
         ).get_reference_annotations()
-        R = Annotation(
+        R = AnnotationSet(
             "", annotations=R, reference=document.segmentation("tokens")
         ).get_reference_annotations()
     elif input_format == "brat":
         document = sem.importers.brat_file(reference_file)
-        L = document.annotation("NER").get_reference_annotations()
-        R = sem.importers.brat_file(infile).annotation("NER").get_reference_annotations()
+        L = document.annotationset("NER").get_reference_annotations()
+        R = sem.importers.brat_file(infile).annotationset("NER").get_reference_annotations()
     elif input_format in ("sem", "SEM"):
         document = sem.importers.sem_document_from_xml(reference_file)
         system = sem.importers.sem_document_from_xml(infile)
-        common_annotations = set(document.annotations.keys()) & set(system.annotations.keys())
+        common_annotations = set(document.annotationsets.keys()) & set(system.annotationsets.keys())
         if len(common_annotations) == 1 and annotation_name is None:
             annotation_name = list(common_annotations)[0]
         if annotation_name is None:
             raise RuntimeError("Could not find an annotation set to evaluate: please provide one")
-        L = document.annotation(annotation_name).get_reference_annotations()
-        R = system.annotation(annotation_name).get_reference_annotations()
+        L = document.annotationset(annotation_name).get_reference_annotations()
+        R = system.annotationset(annotation_name).get_reference_annotations()
     else:
         raise RuntimeError("format not handled: {0}".format(input_format))
 

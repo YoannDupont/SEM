@@ -122,16 +122,16 @@ class BratExporter(Exporter):
 
     def document_to_unicode(self, document, couples, **kwargs):
         lowers = dict([(x.lower(), y) for (x, y) in couples.items()])
-        if "ner" not in lowers and "NER" in document.annotations:
+        if "ner" not in lowers and "NER" in document.annotationsets:
             lowers["ner"] = "NER"
         if "ner" not in lowers:
             sem.logger.exception("No NER annotation specified for BRAT exporter")
-        if not document.annotation(lowers["ner"]):
+        if not document.annotationset(lowers["ner"]):
             sem.logger.exception("No annotation %s in document", lowers["ner"])
         content = document.content
         parts = []
         for id, annotation in enumerate(
-            document.annotation(lowers["ner"]).get_reference_annotations(), 1
+            document.annotationset(lowers["ner"]).get_reference_annotations(), 1
         ):
             parts.append(
                 "T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(
@@ -242,10 +242,10 @@ class GateExporter(Exporter):
         # The text with anchors
         textWithNodes = ET.SubElement(gateDocument, "TextWithNodes")
         content = document.content
-        if "ner" not in couples and "NER" in document.annotations:
+        if "ner" not in couples and "NER" in document.annotationsets:
             couples["ner"] = "NER"
         if "ner" in couples:
-            annotationset = document.annotation(couples["ner"])
+            annotationset = document.annotationset(couples["ner"])
             annotations = annotationset.get_reference_annotations()
             boundaries = set()
             for annotation in annotations:
@@ -297,17 +297,17 @@ class HTMLInlineExporter(Exporter):
             entry_names[entry.lower()] = couples[entry]
 
         key = entry_names.get("ner", None)
-        if key is None or document.annotation(key) is None:
+        if key is None or document.annotationset(key) is None:
             key = entry_names.get("chunking", None)
-        if key is None or document.annotation(key) is None:
+        if key is None or document.annotationset(key) is None:
             key = entry_names.get("pos", None)
-        if key is None or document.annotation(key) is None:
+        if key is None or document.annotationset(key) is None:
             raise KeyError("Cannot find any annotation for export.")
 
         content = document.original_content[:]
 
         position2html = {}
-        annotations = document.annotation(key).get_reference_annotations()
+        annotations = document.annotationset(key).get_reference_annotations()
         for annotation in reversed(annotations):
             lb = annotation.lb
             ub = annotation.ub
@@ -374,19 +374,19 @@ class HTMLExporter(Exporter):
         ner_html = []
 
         current_key = entry_names.get("pos", "POS")
-        if current_key and current_key in document.annotations:
+        if current_key and current_key in document.annotationsets:
             pos_html = self.add_annotation_document(document, current_key)
         current_key = entry_names.get("chunking", entry_names.get("chunk", "chunking"))
-        if current_key and current_key in document.annotations:
+        if current_key and current_key in document.annotationsets:
             chunk_html = self.add_annotation_document(document, current_key)
         current_key = entry_names.get("ner", "NER")
-        if current_key and current_key in document.annotations:
+        if current_key and current_key in document.annotationsets:
             ner_html = self.add_annotation_document(document, current_key)
 
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
 
     def add_annotation_document(self, document, column):
-        annotations = document.annotation(column).get_reference_annotations()[::-1]
+        annotations = document.annotationset(column).get_reference_annotations()[::-1]
         content = document.content
 
         parts = []
@@ -564,7 +564,7 @@ class JSONExporter(Exporter):
             ]
 
         json_dict["annotations"] = {}
-        for annotation in document.annotations.values():
+        for annotation in document.annotationsets.values():
             json_dict["annotations"][annotation.name] = {}
             reference = (
                 ""
@@ -657,7 +657,7 @@ class AnalecTEIExporter(Exporter):
         lower = {}
         for field in couples:
             lower[field.lower()] = couples[field]
-        annotations = set(document.annotations.keys())
+        annotations = set(document.annotationsets.keys())
         field = None
         if len(couples) == 1:
             field = lower[sorted(lower.keys())[0]]
@@ -678,7 +678,7 @@ class AnalecTEIExporter(Exporter):
             if document.segmentation("paragraphs") is not None
             else [Span(0, len(content))]
         )
-        NEs = document.annotation(field).get_reference_annotations()
+        NEs = document.annotationset(field).get_reference_annotations()
         values = set([entity.value for entity in NEs])
 
         nth = dict([(value, 0) for value in values])
@@ -828,10 +828,10 @@ class TEINPExporter(Exporter):
         )
         np_chunks = [
             annotation
-            for annotation in document.annotation(chunking_field)
+            for annotation in document.annotationset(chunking_field)
             if annotation.value == "NP"
         ]
-        pos_tags = document.annotation(lower["pos"])[:]
+        pos_tags = document.annotationset(lower["pos"])[:]
         pos = []
         for i in range(len(np_chunks)):
             chunk = np_chunks[i]
@@ -973,7 +973,7 @@ class REDENTEIExporter(Exporter):
         lower = {}
         for field in couples:
             lower[field.lower()] = couples[field]
-        annotations = set(document.annotations.keys())
+        annotations = set(document.annotationsets.keys())
         field = None
         if len(couples) == 1:
             field = lower[sorted(lower.keys())[0]]
@@ -994,7 +994,7 @@ class REDENTEIExporter(Exporter):
             if document.segmentation("paragraphs") is not None
             else [Span(0, len(content))]
         )
-        NEs = document.annotation(field).get_reference_annotations()
+        NEs = document.annotationset(field).get_reference_annotations()
 
         for paragraph in paragraphs:
             entities = [
