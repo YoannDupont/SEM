@@ -41,7 +41,6 @@ import argparse
 import sem
 import sem.importers
 from sem.modules.tagger import tagger
-from sem.storage import Holder
 from sem.gui_components import (
     SemTkResourceSelector,
     SemTkLangSelector,
@@ -127,20 +126,13 @@ class SemTkMainWindow(ttk.Frame):
 
         try:
             export_format = self.export_format_selector.export_format()
-            pipeline, workflow_options, exporter, couples = sem.pipelines.load_master(
-                masterfile, force_format=export_format
-            )
-            args = Holder(
-                **{
-                    "infiles": [],
-                    "output_directory": output_dir,
-                    "pipeline": pipeline,
-                    "options": workflow_options,
-                    "exporter": exporter,
-                    "couples": couples,
-                    "n_procs": 0,
-                }
-            )
+            args = {
+                "master": masterfile,
+                "infiles": [],
+                "output_directory": output_dir,
+                "force_format": export_format,
+                "n_procs": 0,
+            }
             for current_file in current_files:
                 corpus = None
                 try:
@@ -148,10 +140,10 @@ class SemTkMainWindow(ttk.Frame):
                 except Exception:
                     pass
                 if corpus is not None:
-                    args.infiles.extend(corpus.documents)
+                    args["infiles"].extend(corpus.documents)
                 else:
-                    args.infiles.append(current_file)
-            tagger(args)
+                    args["infiles"].append(current_file)
+            tagger(**args)
         except Exception as e:
             # handling ExpatError from etree
             tkinter.messagebox.showerror("launching SEM", "Error: {}".format(e))
@@ -172,16 +164,16 @@ class SemTkMainWindow(ttk.Frame):
 
 
 def main(argv=None):
-    gui(parser.parse_args(argv))
+    gui(**vars(parser.parse_args(argv)))
 
 
-def gui(args):
+def gui(resources=sem.SEM_RESOURCE_DIR, log_level="INFO"):
     root = tkinter.Tk()
     root.title("SEM")
     root.minsize(width=380, height=200)
-    sem.logger.setLevel(args.log_level)
+    sem.logger.setLevel(log_level)
 
-    SemTkMainWindow(root, args.resources).pack()
+    SemTkMainWindow(root, resources).pack()
 
     root.mainloop()
 

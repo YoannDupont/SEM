@@ -43,10 +43,20 @@ from sem.importers import conll_file
 
 
 def main(argv=None):
-    enrich(parser.parse_args(argv))
+    enrich(**vars(parser.parse_args(argv)))
 
 
-def enrich(args):
+def enrich(
+    infile,
+    infofile,
+    outfile,
+    mode="train",
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+    log_level="WARNING",
+    log_file=None
+):
     """
     Takes a CoNLL-formatted file and write another CoNLL-formatted file
     with additional features in it.
@@ -70,24 +80,24 @@ def enrich(args):
 
     start = time.time()
 
-    if args.log_file is not None:
-        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
-    sem.logger.setLevel(args.log_level)
-    sem.logger.info('parsing enrichment file "%s"', args.infofile)
+    if log_file is not None:
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
+    sem.logger.info('parsing enrichment file "%s"', infofile)
 
-    processor = EnrichProcessor(path=args.infofile, mode=args.mode)
+    processor = EnrichProcessor(path=infofile, mode=mode)
 
-    sem.logger.debug('enriching file "%s"', args.infile)
+    sem.logger.debug('enriching file "%s"', infile)
 
     bentries = [entry.name for entry in processor.bentries]
     aentries = [entry.name for entry in processor.aentries]
     document = conll_file(
-        args.infile, bentries + aentries, (bentries + aentries)[0], encoding=args.ienc or args.enc
+        infile, bentries + aentries, (bentries + aentries)[0], encoding=ienc or enc
     )
 
     processor.process_document(document)
     fields = processor.fields()
-    with open(args.outfile, "w", encoding=args.oenc or args.enc) as output_stream:
+    with open(outfile, "w", encoding=oenc or enc) as output_stream:
         for sentence in document.corpus:
             output_stream.write(sentence.conll(fields))
             output_stream.write("\n\n")

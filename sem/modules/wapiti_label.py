@@ -40,19 +40,19 @@ def main(argv=None):
     wapiti_label(parser.parse_args(argv))
 
 
-def wapiti_label(args):
-    for sentence in sem.importers.read_conll(args.infile, "utf-8"):
+def wapiti_label(infile, model, outfile):
+    for sentence in sem.importers.read_conll(infile, "utf-8"):
         fields = ["field-{}".format(i) for i in range(len(sentence[0]))]
         word_field = fields[0]
         break
 
-    document = sem.importers.conll_file(args.infile, fields, word_field)
-    labeler = WapitiLabelProcessor(args.model, fields)
+    document = sem.importers.conll_file(infile, fields, word_field)
+    labeler = WapitiLabelProcessor(model, fields)
     exporter = CoNLLExporter()
 
     labeler.process_document(document)
 
-    exporter.document_to_file(document, None, args.outfile)
+    exporter.document_to_file(document, None, outfile)
 
 
 parser = argparse.ArgumentParser("Label some file with wapiti.")

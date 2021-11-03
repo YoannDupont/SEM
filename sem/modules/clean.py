@@ -37,62 +37,64 @@ import sem.logger
 
 
 def main(argv=None):
-    clean(parser.parse_args(argv))
+    clean(**vars(parser.parse_args(argv)))
 
 
-def clean(args):
+def clean(
+    infile, outfile, ranges, ienc=None, oenc=None, enc="utf-8", log_level="WARNING", log_file=None
+):
     """
     Cleans a CoNLL-formatted file, removing fields at given indices.
 
     Parameters
     ----------
-    args.infile : str
+    infile : str
         the name of the file to clean.
-    args.outfile : str
+    outfile : str
         the name of the output file, where some columns have been removed.
-    args.ranges : str
+    ranges : str
         the fields to remove. Fields is a coma-separated list of indices
         or ranges of indices using a python format (ie: "lo:hi").
     """
 
-    if args.log_file is not None:
-        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
-    sem.logger.setLevel(args.log_level)
+    if log_file is not None:
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
 
-    ienc = args.ienc or args.enc
-    oenc = args.oenc or args.enc
+    ienc = ienc or enc
+    oenc = oenc or enc
 
     allowed = ranges_to_set(
-        args.ranges,
-        len(open(args.infile, "rU", encoding=ienc).readline().strip().split()),
+        ranges,
+        len(open(infile, "rU", encoding=ienc).readline().strip().split()),
         include_zero=True,
     )
     max_abs = 0
     for element in allowed:
         element = abs(element) + (1 if element > 0 else 0)
         max_abs = max(max_abs, element)
-    nelts = len(open(args.infile, "rU", encoding=ienc).readline().strip().split())
+    nelts = len(open(infile, "rU", encoding=ienc).readline().strip().split())
 
     if nelts < max_abs:
         sem.logger.error(
             'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(
-                max_abs, nelts, args.infile
+                max_abs, nelts, infile
             )
         )
         raise RuntimeError(
             'asked to keep up to {0} field(s), yet only {1} are present in the "{2}"'.format(
-                max_abs, nelts, args.infile
+                max_abs, nelts, infile
             )
         )
 
-    sem.logger.info('cleaning "{0}"'.format(args.infile))
+    sem.logger.info('cleaning "{0}"'.format(infile))
     sem.logger.info(
         "keeping columns: {0}".format(", ".join([str(s) for s in sorted(allowed)]))
     )
-    sem.logger.info('writing "{0}"'.format(args.outfile))
+    sem.logger.info('writing "{0}"'.format(outfile))
 
-    with open(args.outfile, "w", encoding=oenc) as output_stream:
-        for line in open(args.infile, "rU", encoding=ienc):
+    with open(outfile, "w", encoding=oenc) as output_stream:
+        for line in open(infile, "rU", encoding=ienc):
             line = line.strip().split()
             if line != []:
                 tokens = [line[i] for i in range(len(line)) if i in allowed]

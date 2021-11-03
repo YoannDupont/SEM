@@ -293,6 +293,9 @@ def conll_file(filename, fields, word_field, encoding="utf-8", taggings=None, ch
     """
     name = pathlib.Path(filename).name
     sents = [sent for sent in read_conll(filename, encoding, fields)]
+    fields = fields or sorted(sents[0].keys())  # no fields = we infer a "list" (dict with 0-index)
+    if word_field is None:
+        word_field = fields[0]
     return conll_data(
         name,
         Corpus(fields=fields, sentences=sents),

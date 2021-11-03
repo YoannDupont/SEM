@@ -39,32 +39,43 @@ from sem.processors import SegmentationProcessor
 
 
 def main(argv=None):
-    segmentation(parser.parse_args(argv))
+    segmentation(**vars(parser.parse_args(argv)))
 
 
-def segmentation(args):
-    if args.log_file is not None:
-        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
-    sem.logger.setLevel(args.log_level)
+def segmentation(
+    infile,
+    tokeniser_name,
+    outfile,
+    output_format,
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+    log_level="WARNING",
+    log_file=None,
+):
+    if log_file is not None:
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
 
-    ienc = args.ienc or args.enc
-    oenc = args.oenc or args.enc
-    segmenter = SegmentationProcessor(args.tokeniser_name)
-    document = Document(
-        pathlib.Path(args.infile).name,
-        content=open(args.infile, "rU", encoding=ienc).read().replace("\r", ""),
-    )
+    ienc = ienc or enc
+    oenc = oenc or enc
+    segmenter = SegmentationProcessor(tokeniser_name)
+    with open(infile, "r", encoding=ienc) as input_stream:
+        document = Document(
+            pathlib.Path(infile).name,
+            content=input_stream.read().replace("\r", ""),
+        )
     segmenter.process_document(document)
     tokens_spans = document.segmentation("tokens")
     sentence_spans = document.segmentation("sentences")
-    joiner = "\n" if args.output_format == "vector" else " "
+    joiner = "\n" if output_format == "vector" else " "
     content = document.content
-    with open(args.outfile, "w", encoding=oenc) as output_stream:
+    with open(outfile, "w", encoding=oenc) as output_stream:
         for sentence in sentence_spans:
             sentence_token_spans = tokens_spans[sentence.lb: sentence.ub]
             sentence_tokens = [content[s.lb: s.ub] for s in sentence_token_spans]
             output_stream.write(joiner.join(sentence_tokens))
-            if args.output_format == "vector":
+            if output_format == "vector":
                 output_stream.write("\n")
             output_stream.write("\n")
 
@@ -79,7 +90,6 @@ parser.add_argument("tokeniser_name", help="The name of the tokeniser to import"
 parser.add_argument("outfile", help="The output file")
 parser.add_argument(
     "--output-format",
-    dest="output_format",
     choices=("line", "vector"),
     default="vector",
     help="The output format (default: %(default)s)",

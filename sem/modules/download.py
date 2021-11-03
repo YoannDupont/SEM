@@ -69,25 +69,27 @@ def do_overwrite(path, conflict):
 
 
 def main(argv=None):
-    download(parser.parse_args(argv))
+    download(**vars(parser.parse_args(argv)))
 
 
-def download(args):
+def download(
+    name,
+    kind="pipeline",
+    branch="main",
+    extension=".tar.gz",
+    output_dir=sem.SEM_RESOURCE_DIR,
+    encoding="utf-8",
+    binary_or_text="guess",
+    extract=False,
+    clean=False,
+    conflict="prompt",
+):
     """Download a SEM resource from GitHub."""
 
     log_lvl = sem.logger.level
     sem.logger.setLevel("INFO")
 
-    name = args.name
-    kind = __kind2name[args.kind]
-    extension = args.extension
-    branch = args.branch
-    encoding = args.encoding
-    output_dir = args.output_dir
-    binary_or_text = args.binary_or_text
-    extract = args.extract
-    clean = args.clean
-    conflict = args.conflict
+    kind = __kind2name[kind]
 
     # resource packs are a special case, they contain multiple resources (folders) and can only be
     # a compressed file (.tar.gz) that will be placed and uncompressed in base output folder.

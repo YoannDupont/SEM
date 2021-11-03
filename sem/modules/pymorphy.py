@@ -39,14 +39,21 @@ def main(argv=None):
     pymorphy(parser.parse_args(argv))
 
 
-def pymorphy(args):
-    infile = args.infile
-    outfile = args.outfile
-    token_field = int(args.token_field or 0)
+def pymorphy(
+    infile,
+    outfile,
+    token_field,
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+    log_level="WARNING",
+    log_file=None,
+):
+    token_field = int(token_field or 0)
     processor = PymorphyProcessor()
 
-    with open(infile) as input_stream:
-        with open(outfile, "w") as output_stream:
+    with open(infile, encoding=ienc or enc) as input_stream:
+        with open(outfile, "w", encoding=oenc or enc) as output_stream:
             for line in input_stream:
                 parts = line.strip().split()
                 if parts:
@@ -74,6 +81,6 @@ parser.add_argument("--encoding", dest="enc", default="UTF-8",
                     help="Encoding of both the input and the output (default: UTF-8)")
 parser.add_argument("-l", "--log", dest="log_level",
                     choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"), default="WARNING",
-                    help="Increase log level (default: critical)")
+                    help="Increase log level (default: %(default)s)")
 parser.add_argument("--log-file", dest="log_file",
                     help="The name of the log file")

@@ -34,6 +34,46 @@ SOFTWARE.
 
 import argparse
 
+from sem.importers import read_conll
+from sem.storage import compile_map
+
+
+def main(argv=None):
+    map_annotations(**vars(parser.parse_args(argv)))
+
+
+def map_annotations(
+    infile,
+    mapping,
+    outfile,
+    column=-1,
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+    log_level="WARNING",
+    log_file=None
+):
+    with open(mapping, encoding=ienc or enc) as input_stream:
+        mapping = compile_map(input_stream)
+
+    # here we do not simply go through the processor because of the non-fixed
+    # columns that make using the processor a little bit awkward.
+    # We instead emulate its behaviour here.
+    with open(outfile, "w", encoding=oenc or enc) as output_stream:
+        for sentence in read_conll(infile, encoding=ienc or enc):
+            columns = sorted(sentence.keys())
+            index = columns[column]
+            tags = sentence.feature(index)
+            prefixes = [
+                ("_" if tag[0] == "_" else (tag[:2] if len(tag) > 2 and tag[1] == "-" else tag))
+                for tag in tags
+            ]
+            values = [tags[i][len(prefixes[i]):] for i in range(len(tags))]
+            values = [mapping.get(value, value) for value in values]
+            values = [prefixes[i]+values[i] for i in range(len(tags))]
+            sentence.add(values, index)
+            output_stream.write(sentence.conll(columns) + "\n\n")
+
 
 parser = argparse.ArgumentParser(
     "Map annotations according to a mapping."

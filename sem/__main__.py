@@ -41,10 +41,6 @@ from sem.util import find_suggestions
 from sem.tests import (test_features, test_processors, test_segmentation, test_workflows)
 
 
-def valid_module(m):
-    return not (m.startswith("_") or m in ["sem_module.py", "pipeline.py"])
-
-
 def main(argv=None):
     def banter():
         def username():

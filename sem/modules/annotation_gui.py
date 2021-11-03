@@ -1337,29 +1337,27 @@ class AnnotationTool(tkinter.Frame):
         self.doc_is_modified = True
 
 
-def annotation_gui(args):
+def main(argv=None):
+    annotation_gui(**vars(parser.parse_args(argv)))
+
+
+def annotation_gui(documents=None, tagset=None, log_level="WARNING"):
     root = tkinter.Tk()
     root.title("SEM")
-    sem.logger.setLevel(args.log_level)
-    AnnotationTool(root, documents=args.documents, tagset=args.tagset).pack(
-        expand=1, fill="both"
-    )
+    sem.logger.setLevel(log_level)
+    AnnotationTool(root, documents=documents, tagset=tagset).pack(expand=1, fill="both")
     root.mainloop()
 
 
 parser = argparse.ArgumentParser("An annotation tool for SEM.")
 
 parser.add_argument("-d", "--documents", nargs="*", help="Documents to load at startup.")
-parser.add_argument("-t", "--tagset", help="The tagser to load at startup.")
+parser.add_argument("-t", "--tagset", help="The tagset to load at startup.")
 parser.add_argument(
     "-l",
     "--log",
     dest="log_level",
     choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
     default="WARNING",
-    help="Increase log level (default: %(default)s)",
+    help="Set the log level (default: %(default)s)",
 )
-
-
-def main(argv=None):
-    annotation_gui(parser.parse_args(argv))

@@ -45,24 +45,27 @@ import sem.logger
 
 
 def main(argv=None):
-    export(parser.parse_args(argv))
+    export(**vars(parser.parse_args(argv)))
 
 
-def export(args):
+def export(
+    infile,
+    exporter_name,
+    outfile,
+    pos_column=None,
+    chunk_column=None,
+    ner_column=None,
+    lang="fr",
+    lang_style="default.css",
+    import_options=None,
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+):
     start = time.time()
 
-    infile = args.infile
-    outfile = args.outfile
-    exporter_name = args.exporter_name
-    lang = args.lang
-    lang_style = args.lang_style
-    import_options = args.import_options or {}
-    ienc = args.ienc or args.enc
-    oenc = args.oenc or args.enc
-
-    pos_column = args.pos_column
-    chunk_column = args.chunk_column
-    ner_column = args.ner_column
+    ienc = ienc or enc
+    oenc = oenc or enc
 
     exporter = ExportProcessor(
         exporter_name,

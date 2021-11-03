@@ -36,21 +36,30 @@ from sem.processors import (overriding_label_consistency, non_overriding_label_c
 
 
 def main(argv=None):
-    label_consistency(parser.parse_args(argv))
+    label_consistency(**vars(parser.parse_args(argv)))
 
 
-def label_consistency(args):
-    ienc = args.ienc or args.enc
-    oenc = args.oenc or args.enc
+def label_consistency(
+    infile,
+    outfile,
+    token_column=0,
+    tag_column=-1,
+    label_consistency="overriding",
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+):
+    ienc = ienc or enc
+    oenc = oenc or enc
 
     entities = {}
     counts = {}
-    for p in read_conll(args.infile, ienc):
-        G = chunk_annotation_from_sentence(p, column=args.tag_column)
+    for p in read_conll(infile, ienc):
+        G = chunk_annotation_from_sentence(p, column=tag_column)
         for entity in G:
             id = entity.value
             form = " ".join(
-                [p.feature(args.token_column)[index] for index in range(entity.lb, entity.ub)]
+                [p.feature(token_column)[index] for index in range(entity.lb, entity.ub)]
             )
             if form not in counts:
                 counts[form] = {}
@@ -65,18 +74,15 @@ def label_consistency(args):
             best = sorted(count.keys(), key=lambda x: -count[x])[0]
             entities[form] = best
 
-    if args.label_consistency == "non-overriding":
+    if label_consistency == "non-overriding":
         feature = non_overriding_label_consistency
     else:
         feature = overriding_label_consistency
 
     trie = compile_multiword(entities)
-    with open(args.outfile, "w", encoding=oenc) as output_stream:
-        for p in read_conll(args.infile, ienc):
-            p.add(
-                feature(p, entities, trie.data, args.token_column, args.tag_column),
-                args.tag_column
-            )
+    with open(outfile, "w", encoding=oenc) as output_stream:
+        for p in read_conll(infile, ienc):
+            p.add(feature(p, entities, trie.data, token_column, tag_column), tag_column)
             for token in zip(*[p.feature(key) for key in p.keys()]):
                 output_stream.write(("\t".join(token)) + "\n")
             output_stream.write("\n")
@@ -87,14 +93,13 @@ parser = argparse.ArgumentParser("Broadcasts annotations based on form.")
 parser.add_argument("infile", help="The input file (CoNLL format)")
 parser.add_argument("outfile", help="The output file")
 parser.add_argument(
-    "-t", "--token-column", dest="token_column", type=int, default=0, help="Token column"
+    "-t", "--token-column", type=int, default=0, help="Token column"
 )
 parser.add_argument(
-    "-c", "--tag-column", dest="tag_column", type=int, default=-1, help="Tagging column"
+    "-c", "--tag-column", type=int, default=-1, help="Tagging column"
 )
 parser.add_argument(
     "--label-consistency",
-    dest="label_consistency",
     choices=("non-overriding", "overriding"),
     default="overriding",
     help="Non-overriding leaves CRF's annotation as they are,"

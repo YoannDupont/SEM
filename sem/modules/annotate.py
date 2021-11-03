@@ -43,10 +43,21 @@ from sem.processors import AnnotateProcessor
 
 
 def main(argv=None):
-    annotate(parser.parse_args(argv))
+    annotate(**vars(parser.parse_args(argv)))
 
 
-def annotate(args):
+def annotate(
+    infile,
+    outfile,
+    annotator,
+    token_field,
+    field,
+    ienc=None,
+    oenc=None,
+    enc="utf-8",
+    log_level="WARNING",
+    log_file=None,
+):
     """
     Takes a CoNLL-formatted file and write another CoNLL-formatted file
     with additional features in it.
@@ -68,15 +79,24 @@ def annotate(args):
 
     start = time.time()
 
-    if args.log_file is not None:
-        sem.logger.addHandler(sem.logger.file_handler(args.log_file))
-    sem.logger.setLevel(args.log_level)
+    if log_file is not None:
+        sem.logger.addHandler(sem.logger.file_handler(log_file))
+    sem.logger.setLevel(log_level)
 
-    infile = args.infile
-    outfile = args.outfile
-    ienc = args.ienc or args.enc
-    oenc = args.oenc or args.enc
-    annotator = AnnotateProcessor(**vars(args))
+    ienc = ienc or enc
+    oenc = oenc or enc
+    annotator = AnnotateProcessor(
+        infile=infile,
+        outfile=outfile,
+        annotator=annotator,
+        token_field=token_field,
+        field=field,
+        ienc=ienc,
+        oenc=oenc,
+        enc=enc,
+        log_level=log_level,
+        log_file=log_file
+    )
 
     length = -1
     fields = None

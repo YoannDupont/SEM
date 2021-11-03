@@ -47,7 +47,7 @@ import sem.logger
 import sem.pipelines
 
 from sem.constants import NUL
-from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
+from sem.storage import SEMCorpus, str2filter, str2docfilter, Tag, Trie
 from sem.processors import EnrichProcessor, WapitiLabelProcessor
 from sem.modules.tagger import tagger
 
@@ -706,15 +706,14 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                 document = sem.importers.load(
                     filename, encoding="utf-8", tagset_name=self.annotation_name
                 )
-                args = Holder(
-                    **{
-                        "infiles": [document],
-                        "pipeline": pipeline,
-                        "options": workflow_options,
-                        "exporter": None,
-                        "couples": None,
-                    }
-                )
+                args = {
+                    "master": None,
+                    "infiles": [document],
+                    "pipeline": pipeline,
+                    "options": workflow_options,
+                    "exporter": None,
+                    "couples": None,
+                }
                 if isinstance(document, SEMCorpus):
                     for doc in document:
                         if doc.name in names:
@@ -723,8 +722,8 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                         elif not document_filter(doc, self.annotation_name):
                             sem.logger.warning("document %s has no annotations, skipping", doc.name)
                             continue
-                        args.infiles = [doc]
-                        doc = tagger(args)[0]
+                        args["infiles"] = [doc]
+                        doc = tagger(**args)[0]
 
                         if self.annotation_name is not None:
                             doc.add_to_corpus(self.annotation_name, filter=annotation_level)
@@ -741,7 +740,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                         )
                         continue
 
-                    document = tagger(args)[0]
+                    document = tagger(**args)[0]
 
                     if self.annotation_name is not None:
                         document.add_to_corpus(self.annotation_name, filter=annotation_level)

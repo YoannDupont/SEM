@@ -97,10 +97,20 @@ def get_section(cfg, section):
 
 def main(argv=None):
     args = parser.parse_args(argv)
-    tagger(args)
+    tagger(**vars(args))
 
 
-def tagger(args):
+def tagger(
+    master,
+    infiles,
+    output_directory=".",
+    force_format="default",
+    n_procs=1,
+    pipeline=None,
+    options=None,
+    exporter=None,
+    couples=None
+):
     """Return a document after it passed through a pipeline.
 
     Parameters
@@ -124,22 +134,10 @@ def tagger(args):
 
     global __pipeline
 
-    try:
-        output_directory = pathlib.Path(args.output_directory)
-    except AttributeError:
-        output_directory = pathlib.Path()
-    try:
-        force_format = args.force_format
-    except AttributeError:
-        force_format = "default"
+    output_directory = pathlib.Path(output_directory)
 
-    try:
-        pipeline = args.pipeline
-        options = args.options
-        exporter = args.exporter
-        couples = args.couples
-    except AttributeError:
-        master = pathlib.Path(args.master)
+    if pipeline is None or options is None:
+        master = pathlib.Path(master)
         pipeline, options, exporter, couples = sem.pipelines.load_master(master, force_format)
     __pipeline = pipeline
 
@@ -162,9 +160,9 @@ def tagger(args):
             chunking for chunking in opts.get("chunkings", "").split(",") if chunking
         ]
 
-    documents = sem.importers.documents_from_list(args.infiles, file_format, **opts)
+    documents = sem.importers.documents_from_list(infiles, file_format, **opts)
 
-    n_procs = getattr(args, "n_procs", 1)
+    n_procs = int(n_procs)
     if n_procs == 0:
         n_procs = multiprocessing.cpu_count()
         sem.logger.info("no processors given, using %s", n_procs)
@@ -222,7 +220,6 @@ parser.add_argument(
 parser.add_argument(
     "-f",
     "--force-format",
-    dest="force_format",
     default="default",
     help='Force the output format given in "master" (default: "%(default)s").',
 )

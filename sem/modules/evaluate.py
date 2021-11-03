@@ -199,20 +199,20 @@ def get_diff(content, gold, guess, error_kind, context_size=20):
 
 
 def main(argv=None):
-    evaluate(parser.parse_args(argv))
+    evaluate(**vars(parser.parse_args(argv)))
 
 
-def evaluate(args):
-    infile = args.infile
-    reference_column = args.reference_column
-    tagging_column = args.tagging_column
-    ienc = args.ienc or args.enc
-    input_format = args.input_format
-    reference_file = args.reference_file
-    annotation_name = args.annotation_name
-    dump = args.dump
-    context_size = args.context_size
-
+def evaluate(
+    infile=None,
+    reference_column=None,
+    tagging_column=None,
+    ienc=None,
+    input_format=None,
+    reference_file=None,
+    annotation_name=None,
+    dump=os.devnull,
+    context_size=30,
+):
     counts = {}
     if input_format == "conll":
         if reference_file:
@@ -343,7 +343,7 @@ def evaluate(args):
                 left, right = val
                 entities.add(left.value)
                 entities.add(right.value)
-            except AttributeError:
+            except (AttributeError, TypeError):
                 entities.add(val.value)
 
     with open(dump, "w", encoding="utf-8") as output_stream:
@@ -488,14 +488,6 @@ parser.add_argument(
 )
 parser.add_argument("-c", "--reference-file", dest="reference_file", help="The comparing file")
 parser.add_argument("--input-encoding", dest="ienc", help="Encoding of the input (default: utf-8)")
-parser.add_argument("--output-encoding", dest="oenc", help="Encoding of the input (default: utf-8)")
-parser.add_argument(
-    "-e",
-    "--encoding",
-    dest="enc",
-    default="utf-8",
-    help="Encoding of both the input and the output (default: utf-8)",
-)
 parser.add_argument(
     "-d",
     "--dump",
@@ -510,11 +502,4 @@ parser.add_argument(
     type=int,
     default=30,
     help="context size (default: %(default)s)",
-)
-parser.add_argument(
-    "-v",
-    "--verbose",
-    dest="verbose",
-    action="store_true",
-    help="Writes feedback during process (default: no output)",
 )
