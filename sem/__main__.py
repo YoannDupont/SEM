@@ -37,7 +37,6 @@ import sys
 
 import sem
 import sem.modules
-
 from sem.util import find_suggestions
 
 

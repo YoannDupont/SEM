@@ -61,7 +61,7 @@ from sem.gui_components import (
     SemTkLangSelector,
     SemTkResourceSelector,
 )
-import sem.modules.tagger
+import sem.pipelines
 
 
 def update_annotations(document, annotation_name, annotations):
@@ -1312,14 +1312,14 @@ class AnnotationTool(tkinter.Frame):
         self.load_resource("master", self.load_masterfile)
 
     def load_masterfile(self, path):
-        self.pipeline, _, _, _ = sem.modules.tagger.load_master(path)
+        self.pipeline, _, _, _ = sem.pipelines.load_master(path)
         self.tag_document_btn.configure(state=tkinter.NORMAL)
 
     def load_pipeline(self, event=None):
         self.load_resource("pipelines", self.load_pipelinefile)
 
     def load_pipelinefile(self, path):
-        self.pipeline = sem.util.load_pipeline(path)
+        self.pipeline = sem.pipelines.load(path)
         self.tag_document_btn.configure(state=tkinter.NORMAL)
 
     def tag_document(self, event=None):

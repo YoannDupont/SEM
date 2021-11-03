@@ -41,19 +41,10 @@ from functools import partial
 
 import configparser
 
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    from xml.etree import ElementTree as ET
-
 import sem
 import sem.logger
-from sem.processors import build_processor
-from sem.processors import Pipeline
-import sem.modules.export
-import sem.exporters
 import sem.importers
-import sem.util
+import sem.pipelines
 
 if sem.ON_WINDOWS:
     sem.logger.warning(
@@ -104,87 +95,6 @@ def get_section(cfg, section):
         return {}
 
 
-def load_master(master, force_format="default", pipeline_mode="all"):
-    """Load a SEM workflow from a file.
-
-    Parameters
-    ----------
-    master : str
-        the path to the file.
-    force_format : str ["default"]
-        if "default", use the normal format defined in master file. Otherwise,
-        use force_format.
-    """
-
-    try:
-        tree = ET.parse(str(master.resolve()))
-        root = tree.getroot()
-    except IOError:
-        root = ET.fromstring(master)
-    xmlpipes, xmloptions = list(root)
-
-    options = configparser.RawConfigParser()
-    exporter = None
-    couples = {}
-    for xmloption in xmloptions:
-        section = xmloption.tag
-        options.add_section(section)
-        attribs = {}
-        for key, val in xmloption.attrib.items():
-            key = key.replace("-", "_")
-            try:
-                attribs[key] = sem.util.str2bool(val)
-            except ValueError:
-                attribs[key] = val
-        for key, val in attribs.items():
-            options.set(section, key, val)
-        if xmloption.tag == "export":
-            couples = dict(options.items("export"))
-            export_format = couples["format"]
-            if force_format is not None and force_format != "default":
-                sem.logger.info("using forced format: {0}".format(force_format))
-                export_format = force_format
-            exporter = sem.exporters.get_exporter(export_format)(**couples)
-
-    pipes = []
-    for xmlpipe in xmlpipes:
-        if xmlpipe.tag == "export":
-            continue
-
-        arguments = {}
-        arguments["expected_mode"] = pipeline_mode
-        for key, value in xmlpipe.attrib.items():
-            path = pathlib.Path(value)
-            user_path = path.expanduser()
-            if path != user_path:  # path startswith "~"
-                value = str(user_path)
-            elif str(path).startswith("../") or str(path).startswith("./"):
-                value = str((pathlib.Path(master).parent / path).resolve())
-            arguments[key.replace("-", "_")] = value
-        if list(xmlpipe):
-            subpipes = list(xmlpipe)
-            for pipe in subpipes:
-                path = pipe.attrib.get("path")
-                if path and path.startswith("../") or path.startswith("./"):
-                    pipe.attrib["path"] = str((pathlib.Path(master).parent / path).resolve())
-                if pipe.attrib.get("priority", "top-down") == "top-down":
-                    subpipes = subpipes[::-1]
-            arguments["xmllist"] = subpipes
-        for section in options.sections():
-            if section == "export":
-                continue
-            for key, value in options.items(section):
-                if key not in arguments:
-                    arguments[key] = value
-                else:
-                    sem.logger.warning("Not adding already existing option: {0}".format(key))
-        sem.logger.info("loading {0}".format(xmlpipe.tag))
-        pipes.append(build_processor(xmlpipe.tag, **arguments))
-    pipeline = Pipeline(pipes, pipeline_mode=pipeline_mode)
-
-    return pipeline, options, exporter, couples
-
-
 def main(argv=None):
     args = parser.parse_args(argv)
     tagger(args)
@@ -230,7 +140,7 @@ def tagger(args):
         couples = args.couples
     except AttributeError:
         master = pathlib.Path(args.master)
-        pipeline, options, exporter, couples = load_master(master, force_format)
+        pipeline, options, exporter, couples = sem.pipelines.load_master(master, force_format)
     __pipeline = pipeline
 
     if get_option(options, "log", "log_file") is not None:

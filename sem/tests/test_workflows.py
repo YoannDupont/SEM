@@ -31,17 +31,13 @@ SOFTWARE.
 import unittest
 
 from sem import SEM_RESOURCE_DIR
-from sem.storage import Document, Holder
-import sem.modules.tagger
+from sem.storage import Document
+import sem.pipelines
 
 
 def launch(path_to_master):
     document = Document("document", "Ceci est un test.")
-    pipeline, options, exporter, couples = sem.modules.tagger.load_master(path_to_master)
-    # args = Holder(
-    #     pipeline=pipeline, options=options, exporter=exporter, couples=couples, infiles=[document]
-    # )
-    # sem.modules.tagger.tagger(args)
+    pipeline, options, exporter, couples = sem.pipelines.load_master(path_to_master)
     pipeline.process_document(document)
 
 

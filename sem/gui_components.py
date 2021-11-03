@@ -44,13 +44,12 @@ import sem
 import sem.exporters
 import sem.importers
 import sem.logger
-import sem.util
+import sem.pipelines
 
 from sem.constants import NUL
 from sem.storage import Holder, SEMCorpus, str2filter, str2docfilter, Tag, Trie
-# from sem.modules import EnrichModule, WapitiLabelModule
 from sem.processors import EnrichProcessor, WapitiLabelProcessor
-from sem.modules.tagger import load_master, tagger
+from sem.modules.tagger import tagger
 
 from wapiti.api import Model as WapitiModel
 
@@ -655,7 +654,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         compact = self.compact()
         masterfile = self.master.resource()
         export_format = "conll"
-        pipeline, workflow_options, exporter, couples = load_master(
+        pipeline, workflow_options, exporter, couples = sem.pipelines.load_master(
             masterfile, force_format=export_format, pipeline_mode="train"
         )
         workflow_options = configparser.RawConfigParser()
@@ -801,11 +800,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             model_update_message = "\n\nTrained model moved to: {0}".format(out_dir)
             shutil.copy(model_file, target_model)
             pipeline.pipeline_mode = "label"
-            # trained_pipe.load_model(target_model)
             trained_pipe.model = target_model
-            sem.util.save_pipeline(pipeline, output_pipeline)
+            sem.pipelines.save(pipeline, output_pipeline)
             pipeline.pipeline_mode = "train"
-            pipeline_update_message = "\n\nPipeline saved moved to: {0}".format(output_pipeline)
+            pipeline_update_message = "\n\nPipeline saved to: {0}".format(output_pipeline)
 
         sem.logger.info("files are located in: %s", str(output_dir))
         tkinter.messagebox.showinfo(

@@ -40,7 +40,7 @@ import argparse
 
 import sem
 import sem.importers
-from sem.modules.tagger import load_master, tagger
+from sem.modules.tagger import tagger
 from sem.storage import Holder
 from sem.gui_components import (
     SemTkResourceSelector,
@@ -50,6 +50,7 @@ from sem.gui_components import (
     SEMTkTrainInterface,
 )
 import sem.logger
+import sem.pipelines
 
 
 class SemTkMainWindow(ttk.Frame):
@@ -126,7 +127,7 @@ class SemTkMainWindow(ttk.Frame):
 
         try:
             export_format = self.export_format_selector.export_format()
-            pipeline, workflow_options, exporter, couples = load_master(
+            pipeline, workflow_options, exporter, couples = sem.pipelines.load_master(
                 masterfile, force_format=export_format
             )
             args = Holder(

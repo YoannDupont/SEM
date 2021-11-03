@@ -99,57 +99,6 @@ class Processor:
         )
 
 
-class Pipeline(Processor):
-    """A pipeline. It will basically chain processors. We will consider that a
-    pipeline is a kind of processor since it will do basically the same job.
-    It will make everything more pluggable.
-    """
-
-    def __init__(self, pipes, pipeline_mode="all", **kwargs):
-        super(Pipeline, self).__init__(**kwargs)
-
-        self._pipes = pipes
-        self._pipeline_mode = pipeline_mode
-
-    def __iter__(self):
-        for pipe in self._pipes:
-            yield pipe
-
-    def __len__(self):
-        return len(self._pipes)
-
-    def __getitem__(self, index):
-        return self._pipes[index]
-
-    @property
-    def pipes(self):
-        return self._pipes
-
-    @property
-    def pipeline_mode(self):
-        return self._pipeline_mode
-
-    @pipeline_mode.setter
-    def pipeline_mode(self, mode):
-        self._pipeline_mode = mode
-        for pipe in self._pipes:
-            pipe.check_mode(self.pipeline_mode)
-
-    def append(self, pipe):
-        self._pipes.append(pipe)
-
-    def remove(self, pipe):
-        self._pipes.remove(pipe)
-
-    def process_document(self, document, **kwargs):
-        for pipe in self._pipes:
-            if self.pipeline_mode == "all" or pipe.pipeline_mode in ("all", self.pipeline_mode):
-                pipe.process_document(document, **kwargs)
-            else:
-                sem.logger.info("pipe %s not executed", pipe)
-        return document  # allows multiprocessing
-
-
 class AnnotateProcessor(Processor):
     def __init__(self, annotator, field, *args, **kwargs):
         super(AnnotateProcessor, self).__init__(**kwargs)
