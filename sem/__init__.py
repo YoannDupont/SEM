@@ -28,23 +28,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-# import argparse
-import pathlib
 import platform
+
+from sem.constants import (  # noqa: F401
+    SEM_DATA_DIR, SEM_RESOURCE_DIR, SEM_PIPELINE_DIR, SEM_HOMEPAGE, SEM_RESOURCE_BASE_URL
+)
 
 SYSTEM = platform.system().lower()
 ON_WINDOWS = SYSTEM == "windows"
-
-SEM_HOME = pathlib.Path(__file__).resolve().parent
-SEM_DATA_DIR = pathlib.Path.home() / "sem_data"
-SEM_RESOURCE_DIR = pathlib.Path(SEM_DATA_DIR) / "resources"
-SEM_PIPELINE_DIR = SEM_RESOURCE_DIR / "pipelines"
-SEM_HOMEPAGE = "http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
-# argument_parser = argparse.ArgumentParser()
-# argument_subparsers = argument_parser.add_subparsers()
-SEM_RESOURCE_BASE_URL = (
-    "https://raw.githubusercontent.com/YoannDupont/SEM-resources/{branch}/{kind}/{name}{extension}"
-)
 
 _name = "SEM"
 

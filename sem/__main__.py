@@ -38,6 +38,7 @@ import sys
 import sem
 import sem.modules
 from sem.util import find_suggestions
+from sem.tests import (test_features, test_processors, test_segmentation, test_workflows)
 
 
 def valid_module(m):
@@ -63,12 +64,10 @@ def main(argv=None):
         return random.choice(banters)
 
     modules = {}
-    for element in (sem.SEM_HOME / "modules").glob("*.py"):
-        m = element.stem
-        if valid_module(element.name):
-            pkg = sem.modules.get_package(m)
-            if hasattr(pkg, "main"):
-                modules[m] = pkg
+    for modulename in sem.modules.names():
+        module = sem.modules.get_module(modulename)
+        if hasattr(module, "main"):
+            modules[modulename] = module
     name = pathlib.Path(sys.argv[0]).name
     operation = sys.argv[1] if len(sys.argv) > 1 else "-h"
 
@@ -87,7 +86,11 @@ def main(argv=None):
     elif operation in ["-v", "--version"]:
         print(sem.full_name())
     elif operation == "--test":
-        testsuite = unittest.TestLoader().discover(pathlib.Path(sem.SEM_HOME) / "tests")
+        loader = unittest.TestLoader()
+        testsuite = loader.loadTestsFromModule(test_features)
+        testsuite.addTests(loader.loadTestsFromModule(test_processors))
+        testsuite.addTests(loader.loadTestsFromModule(test_segmentation))
+        testsuite.addTests(loader.loadTestsFromModule(test_workflows))
         unittest.TextTestRunner(verbosity=2).run(testsuite)
     else:
         print("Module not found: {}".format(operation))

@@ -50,7 +50,7 @@ Un test de ponctuation... Un autre test de ponctuation… Et une fin de ligne sa
 St-Jean peut causer des soucis de segmentation.
 
 Vous pouvez m'écrire à yoa.dupont@gmail.com pour des questions au sujet de SEM, n'hésitez pas à visiter la page : http://www.lattice.cnrs.fr/sites/itellier/SEM.html!
-"""
+"""  # noqa: E501
 FR_TOKENS = [
     "18", "mai", "j'", "ai", "en", "effet", "un", "p", ",", "porte-serviette", "qui", "est", "1,2",
     "%", "plus", "cool", "que", "m.", "Trucmuche", "et", "mme.", "Machinchose", ".", "Test", ":",
@@ -77,9 +77,9 @@ just checking if a newline is considered as an end of sentence or not.
 
 class TestSegmentation(unittest.TestCase):
     def test_get(self):
-        default = sem.tokenisers.get_tokeniser("default")()  # noqa F841
-        fr = sem.tokenisers.get_tokeniser("fr")()  # noqa F841
-        en = sem.tokenisers.get_tokeniser("en")()  # noqa F841
+        default = sem.tokenisers.get_tokeniser("default")()  # noqa: F841
+        fr = sem.tokenisers.get_tokeniser("fr")()  # noqa: F841
+        en = sem.tokenisers.get_tokeniser("en")()  # noqa: F841
 
     def test_fr(self):
         content = FR_TEXT

@@ -32,6 +32,19 @@ SOFTWARE.
 """
 
 import re
+import pathlib
+
+#
+# SEM related constants
+#
+
+SEM_DATA_DIR = pathlib.Path.home() / "sem_data"
+SEM_RESOURCE_DIR = pathlib.Path(SEM_DATA_DIR) / "resources"
+SEM_PIPELINE_DIR = SEM_RESOURCE_DIR / "pipelines"
+SEM_HOMEPAGE = "http://www.lattice.cnrs.fr/sites/itellier/SEM.html"
+SEM_RESOURCE_BASE_URL = (
+    "https://raw.githubusercontent.com/YoannDupont/SEM-resources/{branch}/{kind}/{name}{extension}"
+)
 
 #
 # Chunking flags.

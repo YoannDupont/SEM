@@ -26,14 +26,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-try:
-    from importlib import import_module
-except ImportError:  # backward compatibility for python < 2.7
+from importlib import import_module as _import_module
+import warnings as _warnings
 
-    def import_module(module_name):
-        return __import__(module_name, fromlist=module_name.rsplit(".", 1)[0])
+
+__all__ = [
+    "annotate", "annotation_gui", "clean", "download", "enrich", "evaluate", "export", "gui",
+    "label_consistency", "map_annotations", "pymorphy", "segmentation", "tagger", "wapiti_label",
+]
+
+
+def names():
+    return __all__[:]
+
+
+def get_module(name):
+    module = _import_module("sem.modules.{0}".format(name))
+    return module
 
 
 def get_package(name):
-    module = import_module("sem.modules.{0}".format(name))
-    return module
+    _warnings.filterwarnings("always", category=DeprecationWarning)
+    _warnings.warn("'get_package' is deprecated, use 'get_module' instead", DeprecationWarning)
+    _warnings.filterwarnings("default", category=DeprecationWarning)
+    return get_module(name)
