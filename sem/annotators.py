@@ -33,15 +33,18 @@ SOFTWARE.
 import pathlib
 import functools
 
-from sem.features import (directory_feature, xml2feat)
+from sem.features import (directory_feature, xml2feat, multiword_dictionary)
 from sem.CRF import Model as WapitiModel
 from sem.util import check_model_available
+from sem.storage import (compile_multiword, chunks_to_annotation, get_top_level)
 
 
 class LexicaAnnotator:
     """An annotator that uses lexica to provide annotations."""
 
-    def __init__(self, field, lexica, *args, **kwargs):
+    __strategies = ("replace", "overriding", "non-overriding")
+
+    def __init__(self, field, lexica, strategy="replace", *args, **kwargs):
         """The initialisation method of LexicaAnnotator.
 
         Parameters
@@ -55,20 +58,45 @@ class LexicaAnnotator:
         """
         self._field = field
         self._feature = lexica
+        self._strategy = strategy
+        if self._strategy not in LexicaAnnotator.__strategies:
+            raise ValueError(f"Unsupported strategy: '{strategy}' {LexicaAnnotator.__strategies}")
 
     @classmethod
-    def load(cls, field, features=None, xmllist=(), path=None, token_field="word", **kwargs):
-        lexica = None
+    def load(
+        cls,
+        field,
+        features=None,
+        xmllist=(),
+        path=None,
+        lexica=None,
+        token_field="word",
+        strategy="replace",
+        **kwargs
+    ):
+        lexica = lexica or {}
+        dirfeat = None  # directory_feature
         features = features or []
         if features:
-            lexica = functools.partial(directory_feature, features=features)
-            return LexicaAnnotator(field, lexica)
+            dirfeat = functools.partial(directory_feature, features=features)
+            return LexicaAnnotator(field, dirfeat)
         elif xmllist:
             path = path or pathlib.Path(".")
             for child in xmllist:
                 features.append(xml2feat(child, default_entry=token_field, path=path))
-            lexica = functools.partial(directory_feature, features=features)
-            return LexicaAnnotator(field, lexica)
+            dirfeat = functools.partial(directory_feature, features=features)
+            return LexicaAnnotator(field, dirfeat)
+        elif lexica:
+            feats = []
+            for tag_value, entries in lexica.items():
+                appendice = f"-{tag_value}"
+                trie = compile_multiword(entries)
+                feat = functools.partial(
+                    multiword_dictionary, trie=trie, y=token_field, appendice=appendice
+                )
+                feats.append(feat)
+            dirfeat = functools.partial(directory_feature, features=feats)
+            return LexicaAnnotator(field, dirfeat, strategy=strategy)
         else:
             raise ValueError(f"No data provided for loading {cls.__name__}.")
 
@@ -76,10 +104,40 @@ class LexicaAnnotator:
         tags = []
         for sequence in document.corpus:
             tagging = self._feature(sequence)
+            try:
+                existing = sequence.feature(self._field)
+            except KeyError:
+                existing = []
+            tagging = self.merge(tagging, existing)
             sequence.add(tagging[:], self._field)
             tags.append(tagging[:])
 
         document.add_annotation_from_tags(tags, self._field, self._field)
+
+    def merge(self, new, old):
+        strategy = self._strategy
+        if strategy == "replace":
+            return new
+        elif strategy == "overriding":
+            source = chunks_to_annotation(new)
+            candidates = chunks_to_annotation(old)
+        elif strategy == "non-overriding":
+            source = chunks_to_annotation(old)
+            candidates = chunks_to_annotation(new)
+
+        indices_new = [set(range(ann.lb, ann.ub)) for ann in source]
+        for candidate in candidates:
+            indices = set(range(candidate.lb, candidate.ub))
+            if not any(indices & idxs for idxs in indices_new):
+                source.add(candidate)
+        source = get_top_level(source)
+        tags = ["O" for _ in new]
+        for tag in source:
+            val = tag.value
+            tags[tag.lb] = f"B-{val}"
+            for i in range(tag.lb+1, tag.ub):
+                tags[i] = f"I-{val}"
+        return tags
 
 
 class WapitiAnnotator:

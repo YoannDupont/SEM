@@ -33,6 +33,7 @@ import platform
 from sem.constants import (  # noqa: F401
     SEM_DATA_DIR, SEM_RESOURCE_DIR, SEM_PIPELINE_DIR, SEM_HOMEPAGE, SEM_RESOURCE_BASE_URL
 )
+from sem.pipelines import (load, save, load_master)  # noqa: F401
 
 SYSTEM = platform.system().lower()
 ON_WINDOWS = SYSTEM == "windows"

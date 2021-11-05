@@ -101,10 +101,10 @@ def annotate(
     length = -1
     fields = None
     for sentence in read_conll(infile, ienc):
-        fields = fields or [str(i) for i in range(len(sentence[0]))]
+        fields = fields or [str(i) for i in range(len(sentence.keys()))]
         if length == -1:
             length = len(fields)
-        if length != len(sentence[0]):
+        if length != len(sentence.keys()):
             raise ValueError(
                 "{} has inconsistent number of columns, found {} and {}".format(
                     infile, length, len(sentence[0])

@@ -101,6 +101,8 @@ class AnnotationTool(tkinter.Frame):
         self.annotation_name = None
         self.annotations = []
         self.annotations_tick = 0
+        self._pipeline_loaded = False
+        self._tagset_loaded = False
 
         # True = bind_all
         self.shortcuts = [
@@ -287,6 +289,30 @@ class AnnotationTool(tkinter.Frame):
             self.corpus_tree.see(ident)
             self.load_document()
         # skip_auth=> self.auth()
+
+    @property
+    def pipeline_loaded(self):
+        return self._pipeline_loaded
+
+    @pipeline_loaded.setter
+    def pipeline_loaded(self, value):
+        self._pipeline_loaded = value
+        if self.pipeline_loaded and self.tagset_loaded:
+            self.tag_document_btn.configure(state=tkinter.NORMAL)
+        else:
+            self.tag_document_btn.configure(state=tkinter.DISABLED)
+
+    @property
+    def tagset_loaded(self):
+        return self._tagset_loaded
+
+    @tagset_loaded.setter
+    def tagset_loaded(self, value):
+        self._tagset_loaded = value
+        if self.pipeline_loaded and self.tagset_loaded:
+            self.tag_document_btn.configure(state=tkinter.NORMAL)
+        else:
+            self.tag_document_btn.configure(state=tkinter.DISABLED)
 
     @property
     def whole_word(self):
@@ -1197,9 +1223,9 @@ class AnnotationTool(tkinter.Frame):
         tagset = [tag.split("#", 1)[0] for tag in tagset]
         tagset = [tag for tag in tagset if tag != ""]
 
-        # self.spare_colors = self.SPARE_COLORS_DEFAULT[:]
         self.annotation_name = tagset_name
         self.tagset = set(tagset)
+        self.tagset_loaded = True
 
         for combo in self.type_combos:
             combo.destroy()
@@ -1313,14 +1339,16 @@ class AnnotationTool(tkinter.Frame):
 
     def load_masterfile(self, path):
         self.pipeline, _, _, _ = sem.pipelines.load_master(path)
-        self.tag_document_btn.configure(state=tkinter.NORMAL)
+        # self.tag_document_btn.configure(state=tkinter.NORMAL)
+        self.pipeline_loaded = True
 
     def load_pipeline(self, event=None):
         self.load_resource("pipelines", self.load_pipelinefile)
 
     def load_pipelinefile(self, path):
         self.pipeline = sem.pipelines.load(path)
-        self.tag_document_btn.configure(state=tkinter.NORMAL)
+        # self.tag_document_btn.configure(state=tkinter.NORMAL)
+        self.pipeline_loaded = True
 
     def tag_document(self, event=None):
         if self.pipeline is None or self.doc is None:

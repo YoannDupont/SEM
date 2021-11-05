@@ -110,7 +110,7 @@ def load_master(master, force_format="default", pipeline_mode="all"):
         use force_format.
     """
 
-    tree = ET.parse(str(master.resolve()))
+    tree = ET.parse(str(pathlib.Path(master).resolve()))
     root = tree.getroot()
     xmlpipes, xmloptions = list(root)
 
@@ -247,8 +247,8 @@ def load(path, auto_download=True):
     return pipeline
 
 
-def save(pipeline, path):
-    with open(path, "wb") as output_stream:
+def save(pipeline, path, mode="w"):
+    with open(path, f"{mode}b") as output_stream:
         dill.dump(pipeline, output_stream)
 
 
