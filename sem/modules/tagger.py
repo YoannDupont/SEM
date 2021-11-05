@@ -101,7 +101,7 @@ def main(argv=None):
 
 
 def tagger(
-    master,
+    workflow,
     infiles,
     output_directory=".",
     force_format="default",
@@ -115,7 +115,7 @@ def tagger(
 
     Parameters
     ----------
-    masterfile : str
+    workflowfile : str
         the file containing the pipeline and global options
     infiles : list
         the input for the upcoming pipe. Its base value is the list of files to
@@ -137,8 +137,8 @@ def tagger(
     output_directory = pathlib.Path(output_directory)
 
     if pipeline is None or options is None:
-        master = pathlib.Path(master)
-        pipeline, options, exporter, couples = sem.pipelines.load_master(master, force_format)
+        workflow = pathlib.Path(workflow)
+        pipeline, options, exporter, couples = sem.pipelines.load_workflow(workflow, force_format)
     __pipeline = pipeline
 
     if get_option(options, "log", "log_file") is not None:
@@ -201,12 +201,12 @@ def tagger(
 
 
 parser = argparse.ArgumentParser(
-    "Performs various operations given in a master configuration file that defines a pipeline."
+    "Performs various operations given in a workflow configuration file that defines a pipeline."
 )
 
 parser.add_argument(
-    "master",
-    help="The master configuration file."
+    "workflow",
+    help="The workflow configuration file."
     " Defines at least the pipeline and may provide some options.",
 )
 parser.add_argument("infiles", nargs="+", help="The input file(s) for the tagger.")
@@ -221,7 +221,7 @@ parser.add_argument(
     "-f",
     "--force-format",
     default="default",
-    help='Force the output format given in "master" (default: "%(default)s").',
+    help='Force the output format given in "workflow" (default: "%(default)s").',
 )
 parser.add_argument(
     "-p",

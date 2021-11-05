@@ -47,7 +47,7 @@ RESOURCE_PACKS = "resource-packs"
 
 __kind2name = {
     "dictionary": "dictionaries",
-    "master": "master",
+    "workflow": "workflow",
     "model": "models",
     "pipeline": "pipelines",
     "tagset": "tagsets",

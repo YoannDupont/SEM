@@ -149,7 +149,7 @@ class AnnotationTool(tkinter.Frame):
         self.file_menu.add_command(
             label="Load tagset...", underline=5, command=self.load_tagset_gui
         )
-        self.file_menu.add_command(label="Load master...", underline=5, command=self.load_master)
+        self.file_menu.add_command(label="Load workflow...", underline=5, command=self.load_workflow)
         self.file_menu.add_command(
             label="Load pipeline...", underline=5, command=self.load_pipeline
         )
@@ -1309,24 +1309,24 @@ class AnnotationTool(tkinter.Frame):
             pass
 
     def load_resource(self, resource_kind, load):
-        # dependency inversion, facilitates using master files and pipelines
-        # in plans to remove master files later.
+        # dependency inversion, facilitates using workflow files and pipelines
+        # in plans to remove workflow files later.
         top = tkinter.Toplevel()
         directory = sem.SEM_DATA_DIR / "resources" / resource_kind
-        master_selector = SemTkResourceSelector(
+        workflow_selector = SemTkResourceSelector(
             top, directory, filter=lambda x: True
         )
         lang_selector = SemTkLangSelector(top, directory)
-        lang_selector.register(master_selector)
+        lang_selector.register(workflow_selector)
         vars_cur_row = 0
         vars_cur_row, _ = lang_selector.grid(row=vars_cur_row, column=0)
-        vars_cur_row, _ = master_selector.grid(row=vars_cur_row, column=0)
+        vars_cur_row, _ = workflow_selector.grid(row=vars_cur_row, column=0)
 
         def cancel(event=None):
             top.destroy()
 
         def ok(event=None):
-            load(master_selector.resource())
+            load(workflow_selector.resource())
             top.destroy()
 
         ok_btn = tkinter.ttk.Button(top, text="load workflow", command=ok)
@@ -1334,11 +1334,11 @@ class AnnotationTool(tkinter.Frame):
         cancel_btn = tkinter.ttk.Button(top, text="cancel", command=cancel)
         cancel_btn.grid(row=vars_cur_row, column=1)
 
-    def load_master(self, event=None):
-        self.load_resource("master", self.load_masterfile)
+    def load_workflow(self, event=None):
+        self.load_resource("workflow", self.load_workflowfile)
 
-    def load_masterfile(self, path):
-        self.pipeline, _, _, _ = sem.pipelines.load_master(path)
+    def load_workflowfile(self, path):
+        self.pipeline, _, _, _ = sem.pipelines.load_workflow(path)
         # self.tag_document_btn.configure(state=tkinter.NORMAL)
         self.pipeline_loaded = True
 

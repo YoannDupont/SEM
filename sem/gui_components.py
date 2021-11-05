@@ -531,7 +531,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
     def __init__(
         self,
         file_selector,
-        master,
+        workflow,
         annotation_name,
         lang,
         annotation_level=None,
@@ -546,7 +546,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
             self.trainTop = tkinter.Toplevel()
 
         self.file_selector = file_selector
-        self.master = master
+        self.workflow = workflow
         self.annotation_name = annotation_name
         self.lang = lang
         self.annotation_level = annotation_level or tkinter.StringVar(
@@ -652,10 +652,10 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         pattern = self.pattern()
         nprocs = self.nprocs()
         compact = self.compact()
-        masterfile = self.master.resource()
+        workflowfile = self.workflow.resource()
         export_format = "conll"
-        pipeline, workflow_options, exporter, couples = sem.pipelines.load_master(
-            masterfile, force_format=export_format, pipeline_mode="train"
+        pipeline, workflow_options, exporter, couples = sem.pipelines.load_workflow(
+            workflowfile, force_format=export_format, pipeline_mode="train"
         )
         workflow_options = configparser.RawConfigParser()
         workflow_options.add_section("log")
@@ -707,7 +707,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
                     filename, encoding="utf-8", tagset_name=self.annotation_name
                 )
                 args = {
-                    "master": None,
+                    "workflow": None,
                     "infiles": [document],
                     "pipeline": pipeline,
                     "options": workflow_options,
@@ -782,7 +782,7 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
         model_update_message = (
             "\n\nNo candidate location found, model update has to be done manually"
         )
-        output_pipeline = sem.SEM_RESOURCE_DIR / "pipelines" / self.lang / masterfile.stem
+        output_pipeline = sem.SEM_RESOURCE_DIR / "pipelines" / self.lang / workflowfile.stem
         try:
             output_pipeline.parent.mkdir(parents=True)
         except FileExistsError:
@@ -819,14 +819,14 @@ class SEMTkWapitiTrain(tkinter.ttk.Frame):
 
 
 class SEMTkTrainInterface(tkinter.ttk.Frame):
-    def __init__(self, documents, lang=None, master=None):
+    def __init__(self, documents, lang=None, workflow=None):
         self.documents = documents
         self._lang = lang
-        self._master = master
-        if not (master and lang):
-            self._master = None
+        self._workflow = workflow
+        if not (workflow and lang):
+            self._workflow = None
             self._lang = None
-        self.master_selector = None
+        self.workflow_selector = None
         self.lang_selector = None
 
         trainTop = tkinter.Toplevel()
@@ -846,14 +846,14 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
         annotation_level["values"] = sorted(str2filter.keys())
         annotation_level.current(sorted(str2filter.keys()).index("top level"))
 
-        directory = sem.SEM_DATA_DIR / "resources" / "master"
-        if not self._master:
-            self.master_selector = SemTkResourceSelector(
+        directory = sem.SEM_DATA_DIR / "resources" / "workflow"
+        if not self._workflow:
+            self.workflow_selector = SemTkResourceSelector(
                 varsFrame, directory, filter=lambda x: pathlib.Path(x).suffix == ".xml"
             )
         if not self._lang:
             self.lang_selector = SemTkLangSelector(varsFrame, directory)
-            self.lang_selector.register(self.master_selector)
+            self.lang_selector.register(self.workflow_selector)
 
         algsFrame = tkinter.ttk.LabelFrame(trainTop, text="Algorithm-specific variables")
 
@@ -876,8 +876,8 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
         vars_cur_row += 1
         if self.lang_selector:
             vars_cur_row, _ = self.lang_selector.grid(row=vars_cur_row, column=0)
-        if self.master_selector:
-            vars_cur_row, _ = self.master_selector.grid(row=vars_cur_row, column=0)
+        if self.workflow_selector:
+            vars_cur_row, _ = self.workflow_selector.grid(row=vars_cur_row, column=0)
 
         for _ in range(5):
             tkinter.ttk.Separator(trainTop, orient=tkinter.HORIZONTAL).pack()
@@ -888,7 +888,7 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
 
         SEMTkWapitiTrain(
             self.documents,
-            self.master,
+            self.workflow,
             None,
             lang=self.lang,
             annotation_level=annotation_level_var,
@@ -899,8 +899,8 @@ class SEMTkTrainInterface(tkinter.ttk.Frame):
         )
 
     @property
-    def master(self):
-        return self._master or self.master_selector
+    def workflow(self):
+        return self._workflow or self.workflow_selector
 
     @property
     def lang(self):

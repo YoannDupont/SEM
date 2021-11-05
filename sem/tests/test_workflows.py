@@ -35,39 +35,39 @@ from sem.storage import Document
 import sem.pipelines
 
 
-def launch(path_to_master):
+def launch(path_to_workflow):
     document = Document("document", "Ceci est un test.")
-    pipeline, options, exporter, couples = sem.pipelines.load_master(path_to_master)
+    pipeline, options, exporter, couples = sem.pipelines.load_workflow(path_to_workflow)
     pipeline.process_document(document)
 
 
 class TestWorkflows(unittest.TestCase):
     def test_pos(self):
-        path = SEM_RESOURCE_DIR / "master" / "fr" / "pos.xml"
+        path = SEM_RESOURCE_DIR / "workflow" / "fr" / "pos.xml"
         if not path.exists():
             self.skipTest(f"{path.name} workflow not found.")
         launch(path)
 
     def test_pos_leff(self):
-        path = SEM_RESOURCE_DIR / "master" / "fr" / "pos-lefff.xml"
+        path = SEM_RESOURCE_DIR / "workflow" / "fr" / "pos-lefff.xml"
         if not path.exists():
             self.skipTest(f"{path.name} workflow not found.")
         launch(path)
 
     def test_chunking(self):
-        path = SEM_RESOURCE_DIR / "master" / "fr" / "chunking.xml"
+        path = SEM_RESOURCE_DIR / "workflow" / "fr" / "chunking.xml"
         if not path.exists():
             self.skipTest(f"{path.name} workflow not found.")
         launch(path)
 
     def test_np_chunking(self):
-        path = SEM_RESOURCE_DIR / "master" / "fr" / "np_chunking.xml"
+        path = SEM_RESOURCE_DIR / "workflow" / "fr" / "np_chunking.xml"
         if not path.exists():
             self.skipTest(f"{path.name} workflow not found.")
         launch(path)
 
     def test_ner(self):
-        path = SEM_RESOURCE_DIR / "master" / "fr" / "NER.xml"
+        path = SEM_RESOURCE_DIR / "workflow" / "fr" / "NER.xml"
         if not path.exists():
             self.skipTest(f"{path.name} workflow not found.")
         launch(path)

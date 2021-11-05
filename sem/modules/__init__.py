@@ -42,11 +42,11 @@ __all__ = [
     "gui",
     "label_consistency",
     "map_annotations",
-    "master_to_pipeline",
     "pymorphy",
     "segmentation",
     "tagger",
     "wapiti_label",
+    "workflow_to_pipeline",
 ]
 
 

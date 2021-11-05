@@ -5,7 +5,7 @@ file: pipeline.py
 
 Description: a file for basic stuff related to pipelines. This file was
 created to workaround a cycle dependency between 'sem.util' and 'sem.processors'
-when trying to move the 'load_master' method in the 'sem.util' module.
+when trying to move the 'load_workflow' method in the 'sem.util' module.
 
 author: Yoann Dupont
 
@@ -57,7 +57,7 @@ class Pipeline(sem.processors.Processor):
         super(Pipeline, self).__init__(**kwargs)
 
         self._pipes = pipes
-        self._pipeline_mode = pipeline_mode
+        self.pipeline_mode = pipeline_mode
 
     def __iter__(self):
         for pipe in self._pipes:
@@ -73,16 +73,6 @@ class Pipeline(sem.processors.Processor):
     def pipes(self):
         return self._pipes
 
-    @property
-    def pipeline_mode(self):
-        return self._pipeline_mode
-
-    @pipeline_mode.setter
-    def pipeline_mode(self, mode):
-        self._pipeline_mode = mode
-        for pipe in self._pipes:
-            pipe.check_mode(self.pipeline_mode)
-
     def append(self, pipe):
         self._pipes.append(pipe)
 
@@ -91,26 +81,26 @@ class Pipeline(sem.processors.Processor):
 
     def process_document(self, document, **kwargs):
         for pipe in self._pipes:
-            if self.pipeline_mode == "all" or pipe.pipeline_mode in ("all", self.pipeline_mode):
+            if pipe.check_mode(self.pipeline_mode):
                 pipe.process_document(document, **kwargs)
             else:
                 sem.logger.info("pipe %s not executed", pipe)
         return document  # allows multiprocessing
 
 
-def load_master(master, force_format="default", pipeline_mode="all"):
+def load_workflow(workflow, force_format="default", pipeline_mode="all"):
     """Load a SEM workflow from a file.
 
     Parameters
     ----------
-    master : str
+    workflow : str
         the path to the file.
     force_format : str ["default"]
-        if "default", use the normal format defined in master file. Otherwise,
+        if "default", use the normal format defined in workflow file. Otherwise,
         use force_format.
     """
 
-    tree = ET.parse(str(pathlib.Path(master).resolve()))
+    tree = ET.parse(str(pathlib.Path(workflow).resolve()))
     root = tree.getroot()
     xmlpipes, xmloptions = list(root)
 
@@ -150,14 +140,14 @@ def load_master(master, force_format="default", pipeline_mode="all"):
             if path != user_path:  # path startswith "~"
                 value = str(user_path)
             elif str(path).startswith("../") or str(path).startswith("./"):
-                value = str((pathlib.Path(master).parent / path).resolve())
+                value = str((pathlib.Path(workflow).parent / path).resolve())
             arguments[key.replace("-", "_")] = value
         if list(xmlpipe):
             subpipes = list(xmlpipe)
             for pipe in subpipes:
                 path = pipe.attrib.get("path")
                 if path and path.startswith("../") or path.startswith("./"):
-                    pipe.attrib["path"] = str((pathlib.Path(master).parent / path).resolve())
+                    pipe.attrib["path"] = str((pathlib.Path(workflow).parent / path).resolve())
                 if pipe.attrib.get("priority", "top-down") == "top-down":
                     subpipes = subpipes[::-1]
             arguments["xmllist"] = subpipes

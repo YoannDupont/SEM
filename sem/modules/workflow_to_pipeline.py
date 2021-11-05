@@ -1,5 +1,5 @@
 """
-file: master_to_pipeline.py
+file: workflow_to_pipeline.py
 
 author: Yoann Dupont
 
@@ -27,20 +27,20 @@ SOFTWARE.
 """
 
 import argparse
-from sem.pipelines import (load_master, save)
+from sem.pipelines import (load_workflow, save)
 
 
 def main(argv=None):
-    master_to_pipeline(**vars(parser.parse_args(argv)))
+    workflow_to_pipeline(**vars(parser.parse_args(argv)))
 
 
-def master_to_pipeline(inputfile, outputfile, force=False):
+def workflow_to_pipeline(inputfile, outputfile, force=False):
     outputmode = ("w" if force else "x")
-    p, _, _, _ = load_master(inputfile)
+    p, _, _, _ = load_workflow(inputfile)
     save(p, outputfile, outputmode)
 
 
-parser = argparse.ArgumentParser("Create a serialized pipeline file from a master file.")
-parser.add_argument("inputfile", help="The input master file (XML).")
+parser = argparse.ArgumentParser("Create a serialized pipeline file from a workflow file.")
+parser.add_argument("inputfile", help="The input workflow file (XML).")
 parser.add_argument("outputfile", help="The output pipeline file (binary).")
 parser.add_argument("-f", "--force", action="store_true", help="Overwrite outputfile if it exists.")

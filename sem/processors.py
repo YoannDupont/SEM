@@ -73,12 +73,8 @@ DEFAULT_LICENSE = (
 
 class Processor:
     def __init__(self, pipeline_mode="all", license=None, **kwargs):
-        self._pipeline_mode = pipeline_mode
+        self.pipeline_mode = pipeline_mode
         self._license = license or DEFAULT_LICENSE
-
-    @property
-    def pipeline_mode(self):
-        return self._pipeline_mode
 
     @property
     def license(self):
@@ -91,7 +87,7 @@ class Processor:
         self._license = license
 
     def check_mode(self, expected_mode):
-        pass
+        return expected_mode == "all" or self.pipeline_mode in ("all", expected_mode)
 
     def process_document(self, document, **kwargs):
         raise NotImplementedError(
@@ -458,7 +454,10 @@ class CleanProcessor(Processor):
 
 def model_from_string(mdl_str, encoding="utf-8"):
     with tempfile.NamedTemporaryFile() as fl:
-        fl.write(mdl_str.encode(encoding=encoding))
+        try:
+            fl.write(mdl_str.encode(encoding=encoding))
+        except AttributeError:
+            fl.write(mdl_str)
         fl.seek(0)
         return WapitiModel(encoding=encoding, model=fl.name)
 
@@ -468,7 +467,6 @@ class WapitiLabelProcessor(Processor):
         self, model, field, annotation_fields=None, model_str=None, model_encoding="utf-8", **kwargs
     ):
         super(WapitiLabelProcessor, self).__init__(**kwargs)
-        self._expected_mode = kwargs.get("expected_mode", self.pipeline_mode)
 
         if model is not None and model_str is not None:
             raise ValueError("both 'model' and 'model_str' were provided, only one may be given.")
@@ -494,20 +492,7 @@ class WapitiLabelProcessor(Processor):
 
     def __setstate__(self, newstate):
         self.__dict__.update(newstate)
-        if self._mdl_str is not None:
-            self._wapiti_model = model_from_string(self._mdl_str, self._model_encoding)
-        elif self._model is not None:
-            # loading a model through api will not raise an exception if file does not exist
-            try:
-                with open(self._model):
-                    pass
-                self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            except FileNotFoundError:
-                sem.logger.warning(
-                    "Model file {} does not exist, you will need to train one.".format(self._model)
-                )
-        else:
-            sem.logger.warning("No model in serialized file, you will need to train one.")
+        self.load_model()
 
     @property
     def field(self):
@@ -523,28 +508,22 @@ class WapitiLabelProcessor(Processor):
         if self._model is not None:
             self._model = str(self._model)
 
-        pipeline_mode = self.pipeline_mode
-        if pipeline_mode == "all" or self._expected_mode in ("all", "label", pipeline_mode):
-            check_model_available(self._model)
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            with open(self._model, "rb") as input_stream:
-                self._mdl_str = input_stream.read()
-        else:
-            sem.logger.warning("Invalid mode for loading model: %s", pipeline_mode)
-
-    def check_mode(self, expected_mode):
-        if (self._wapiti_model is None) and self.pipeline_mode == expected_mode:
-            check_model_available(self._model)
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-            with open(self._model, "rb") as input_stream:
-                self._mdl_str = input_stream.read()
+        check_model_available(self._model)
+        self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+        with open(self._model, "rb") as input_stream:
+            self._mdl_str = input_stream.read()
 
     def load_model(self):
-        if self._model is not None:
-            check_model_available(self._model)
-            self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
-        elif self._mdl_str is not None:
+        if self._mdl_str is not None:
             self._wapiti_model = model_from_string(self._mdl_str, self._model_encoding)
+        elif self._model is not None:
+            try:
+                check_model_available(self._model)
+                self._wapiti_model = WapitiModel(encoding="utf-8", model=self._model)
+            except FileNotFoundError:
+                sem.logger.warning(
+                    "Model file {} does not exist, you will need to train one.".format(self._model)
+                )
         else:
             sem.logger.warning("No available model to load.")
 

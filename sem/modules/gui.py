@@ -67,9 +67,9 @@ class SemTkMainWindow(ttk.Frame):
         if not self.current_output.exists():
             os.makedirs(self.current_output)
 
-        self.master_zone = ttk.Frame(root)
-        self.master_zone.grid(row=0, column=0, rowspan=2, columnspan=1, sticky="ns")
-        self.master_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        self.workflow_zone = ttk.Frame(root)
+        self.workflow_zone.grid(row=0, column=0, rowspan=2, columnspan=1, sticky="ns")
+        self.workflow_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
         self.file_select_zone = ttk.Frame(root)
         self.file_select_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
@@ -77,11 +77,11 @@ class SemTkMainWindow(ttk.Frame):
         self.launch_zone = ttk.Frame(root)
         self.launch_zone.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
 
-        self.lang_selector = SemTkLangSelector(self.master_zone, self.resource_dir / "master")
-        self.master = SemTkResourceSelector(self.master_zone, self.resource_dir / "master")
-        self.lang_selector.register(self.master)
+        self.lang_selector = SemTkLangSelector(self.workflow_zone, self.resource_dir / "workflow")
+        self.workflow = SemTkResourceSelector(self.workflow_zone, self.resource_dir / "workflow")
+        self.lang_selector.register(self.workflow)
         self.lang_selector.pack()
-        self.master.pack()
+        self.workflow.pack()
 
         self.file_selector = SemTkFileSelector(
             self.file_select_zone, self, button_opt={"fill": "both", "padx": 5, "pady": 5}
@@ -114,11 +114,11 @@ class SemTkMainWindow(ttk.Frame):
             tkinter.messagebox.showwarning("launching SEM", "No files specified.")
             return
 
-        workflow = self.master.resource()
+        workflow = self.workflow.resource()
         if not workflow:
             tkinter.messagebox.showwarning("launching SEM", "No workflow selected.")
             return
-        masterfile = self.resource_dir / "master" / self.lang_selector.lang() / workflow
+        workflowfile = self.resource_dir / "workflow" / self.lang_selector.lang() / workflow
 
         output_dir = self.current_output / time.strftime("%Y%m%d%H%M%S")
         if not output_dir.exists():
@@ -127,7 +127,7 @@ class SemTkMainWindow(ttk.Frame):
         try:
             export_format = self.export_format_selector.export_format()
             args = {
-                "master": masterfile,
+                "workflow": workflowfile,
                 "infiles": [],
                 "output_directory": output_dir,
                 "force_format": export_format,
