@@ -1,8 +1,0 @@
-Location
-Organization
-Person
-Company
-Product
-Date
-Hour
-Event
