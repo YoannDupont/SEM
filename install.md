@@ -2,7 +2,7 @@
 
 ## Python
 
-### Install setuptools
+### Install setuptools (should not be required anymore)
 
 If pip is installed, run: ```pip install setuptools```
 
@@ -10,7 +10,7 @@ Otherwise, run: ```apt install python-setuptools```
 
 ### Install Tkinter (optional)
 
-Run: ```apt install python-tk```
+Run: ```apt install python3-tk```
 
 ## GCC compiler
 
