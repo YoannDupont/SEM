@@ -2,7 +2,7 @@
 
 import pathlib
 import sys
-import sem.misc
+import sem
 from sem.modules.export import SEMModule as ExporterModule
 import sem.logger
 
@@ -17,7 +17,7 @@ except IndexError:
     inputfile = None
 
 sem.logger.setLevel("INFO")
-p = sem.misc.load_pipeline(path)
+p = sem.load(path)
 
 if inputfile:
     with open(inputfile, encoding="utf-8") as input_stream:

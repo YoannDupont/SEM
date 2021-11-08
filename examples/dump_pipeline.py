@@ -3,7 +3,7 @@
 import dill
 import pathlib
 import sys
-from sem.modules.tagger import load_master
+import sem
 
 try:
     path = sys.argv[1]
@@ -17,7 +17,7 @@ except IndexError:
     output_file = path.stem
 
 
-p, _, _, _ = load_master(path)
+p, _, _, _ = sem.load_workflow(path)
 
 p.couples = {"pos": "POS", "chunking": "chunking", "ner": "NER"}
 p.license = (
@@ -25,5 +25,4 @@ p.license = (
     ", it may not be used for any other reason."
 )
 
-with open(output_file, "wb") as output_stream:
-    dill.dump(p, output_stream)
+sem.save(p, output_file)
