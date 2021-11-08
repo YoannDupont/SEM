@@ -96,7 +96,7 @@ class AnnotationTool(tkinter.Frame):
         self.resource_to_load = None
         self.parent = parent
         self.user = None
-        self.doc = None
+        self._doc = None
         self.doc_is_modified = False
         self.annotation_name = None
         self.annotations = []
@@ -149,7 +149,9 @@ class AnnotationTool(tkinter.Frame):
         self.file_menu.add_command(
             label="Load tagset...", underline=5, command=self.load_tagset_gui
         )
-        self.file_menu.add_command(label="Load workflow...", underline=5, command=self.load_workflow)
+        self.file_menu.add_command(
+            label="Load workflow...", underline=5, command=self.load_workflow
+        )
         self.file_menu.add_command(
             label="Load pipeline...", underline=5, command=self.load_pipeline
         )
@@ -291,13 +293,25 @@ class AnnotationTool(tkinter.Frame):
         # skip_auth=> self.auth()
 
     @property
+    def doc(self):
+        return self._doc
+
+    @doc.setter
+    def doc(self, value):
+        self._doc = value
+        if self.can_label():
+            self.tag_document_btn.configure(state=tkinter.NORMAL)
+        else:
+            self.tag_document_btn.configure(state=tkinter.DISABLED)
+
+    @property
     def pipeline_loaded(self):
         return self._pipeline_loaded
 
     @pipeline_loaded.setter
     def pipeline_loaded(self, value):
         self._pipeline_loaded = value
-        if self.pipeline_loaded and self.tagset_loaded:
+        if self.can_label():
             self.tag_document_btn.configure(state=tkinter.NORMAL)
         else:
             self.tag_document_btn.configure(state=tkinter.DISABLED)
@@ -309,7 +323,7 @@ class AnnotationTool(tkinter.Frame):
     @tagset_loaded.setter
     def tagset_loaded(self, value):
         self._tagset_loaded = value
-        if self.pipeline_loaded and self.tagset_loaded:
+        if self.can_label():
             self.tag_document_btn.configure(state=tkinter.NORMAL)
         else:
             self.tag_document_btn.configure(state=tkinter.DISABLED)
@@ -317,6 +331,9 @@ class AnnotationTool(tkinter.Frame):
     @property
     def whole_word(self):
         return bool(self._whole_word.get())
+
+    def can_label(self):
+        return self.pipeline_loaded and self.tagset_loaded and self.doc is not None
 
     def exit(self, event=None):
         do_quit = True
@@ -1089,10 +1106,14 @@ class AnnotationTool(tkinter.Frame):
         return "{0}.{1}".format(line, offset)
 
     def tab(self, event=None):
+        if not self.tagset_loaded or self.doc is None:
+            return
         self.adder.up_one_level()
         self.update_level()
 
     def shift_tab(self, event=None):
+        if not self.tagset_loaded or self.doc is None:
+            return
         self.adder.down_one_level()
         self.update_level()
 
