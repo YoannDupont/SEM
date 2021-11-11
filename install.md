@@ -21,9 +21,9 @@ Run: ```apt install build-essential```
 New way of installing SEM is with pip. This installation method will give you an
 "empty" SEM installation, with no resources, which you will need to install.
 
-It is recommended to use a virtual environment to install SEM, you (of course)
-use an existing one. If you want, you can create a new one with the following
-command:
+It is recommended to use a virtual environment to install SEM, you can (of
+course) use an existing one. If you want, you can create a new one with the
+following command:
 
 ```python3 -m venv ~/envs/semtest```
 
@@ -39,7 +39,7 @@ You can then install SEM with pip:
 ```pip install semtagger```
 
 You now have an empty SEM installation! To make it functional, you will need to
-download some resources. For the basic french worflows, you can launch the two
+download some resources. For the basic french workflows, you can launch the two
 following commands to have a fully functional SEM installation:
 
 ```
@@ -49,7 +49,7 @@ sem download gui -k resource-pack
 
 This will install two resource packs required for SEM to work on french data:
 
-- `fr/base` will download lexica, models and worflows for french.
+- `fr/base` will download lexica, models and workflows for french.
 - `gui` will download some images used in GUI. This might get removed as they only have aesthetic purpose.
 
 # Install SEM (before 4.0.0)

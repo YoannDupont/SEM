@@ -329,7 +329,7 @@ def xml2feat(xml, default_entry="word", default_shift=0, path=None):
                 functools.partial(is_upper_at, index=int(xml.text)), x=x, y=y
             )
         else:
-            return ValueError("Invalid unaty action: {}".format(action))
+            return ValueError("Invalid unary action: {}".format(action))
 
     elif xml.tag == "directory":
         children = list(xml)
@@ -389,9 +389,10 @@ def xml2feat(xml, default_entry="word", default_shift=0, path=None):
 
     elif xml.tag == "regexp":
         flags = re.U + re.M + (re.I * int("i" == xml.attrib.get("casing", "s")))
-        if attrib["action"].lower() == "check":
+        action = attrib["action"].lower()
+        if action == "check":
             return functools.partial(matches, regexp=re.compile(xml.text, flags=flags), y=y)
-        raise RuntimeError
+        raise ValueError("Invalid regexp {} expression.".format(action))
 
     else:
         raise ValueError("Invalid feature kind: {}".format(xml.tag))
