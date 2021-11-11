@@ -132,9 +132,6 @@ class Tag:
     def __str__(self):
         return "{0},{1}".format(self.value, self.span)
 
-    def __unicode__(self):
-        return "{0},{1}".format(self.value, self.span)
-
     @property
     def value(self):
         return self._value
@@ -578,8 +575,8 @@ class Corpus:
         for element in self.sentences:
             yield element
 
-    def __unicode__(self):
-        return self.unicode(self.fields)
+    def __str__(self):
+        return self.tostring(self.fields)
 
     @property
     def fields(self):
@@ -592,7 +589,7 @@ class Corpus:
             raise KeyError("missing fields: {}".format(','.join(missing)))
         self._fields = value
 
-    def unicode(self, fields, separator="\t"):
+    def tostring(self, fields, separator="\t"):
         sentences = []
         for sentence in self:
             sentences.append([])
@@ -674,10 +671,10 @@ class Segmentation:
     def __init__(self, name, reference=None, spans=None):
         """parameters
         ----------
-        name: unicode
+        name: str
             the name of the segmentation (tokens, sentences, paragraphs, etc.)
-        reference: unicode or Segmentation
-            if unicode: the name of the referenced segmentation in the document
+        reference: str or Segmentation
+            if str: the name of the referenced segmentation in the document
             if Segmentation: the referenced segmentation
         spans: list of span
         bounds: list of span

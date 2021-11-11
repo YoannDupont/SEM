@@ -32,6 +32,7 @@ SOFTWARE.
 
 import html
 import json
+import warnings
 
 import sem.storage
 from sem.storage import Segmentation
@@ -83,7 +84,7 @@ class Exporter:
             output : str
                 the name of the file to write into
         """
-        to_write = self.document_to_unicode(document, couples, **kwargs)
+        to_write = self.document_to_string(document, couples, **kwargs)
         try:
             output.write(to_write)
         except AttributeError:
@@ -108,10 +109,16 @@ class Exporter:
             "export_to_data not implemented for class {}".format(self.__class__)
         )
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         raise NotImplementedError(
-            'document_to_unicode is not implemented for {}'.format(self.__class__)
+            'document_to_string is not implemented for {}'.format(self.__class__)
         )
+
+    def document_to_unicode(self, document, couples, **kwargs):
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn("'document_to_unicode' is deprecated, use 'load' instead", DeprecationWarning)
+        warnings.filterwarnings("default", category=DeprecationWarning)
+        return self.document_to_string(document, couples, **kwargs)
 
 
 class BratExporter(Exporter):
@@ -120,7 +127,7 @@ class BratExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         lowers = dict([(x.lower(), y) for (x, y) in couples.items()])
         if "ner" not in lowers and "NER" in document.annotationsets:
             lowers["ner"] = "NER"
@@ -149,7 +156,7 @@ class CoNLLExporter(Exporter):
     def __init__(self, *args, **kwargs):
         self.scheme = kwargs.get("scheme", "BIO")
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         if len(document.corpus.fields) == 0:
             sem.logger.warning("No fields found for Corpus, cannot create string.")
             return ""
@@ -191,7 +198,7 @@ class CoNLLExporter(Exporter):
                     sem.logger.warning('field "%s" not in corpus, adding', field)
                     document.add_to_corpus(field, scheme=self.scheme)
 
-            return document.corpus.unicode(fields)
+            return document.corpus.tostring(fields)
 
     def document_to_data(self, document, couples, **kwargs):
         return document.corpus.sentences
@@ -203,7 +210,7 @@ class GateExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' \
                + ET.tostring(
                    self.document_to_data(document, couples),
@@ -291,7 +298,7 @@ class HTMLInlineExporter(Exporter):
         self._lang = lang
         self._lang_style = lang_style
 
-    def document_to_unicode(self, document, couples, encoding="utf-8", **kwargs):
+    def document_to_string(self, document, couples, encoding="utf-8", **kwargs):
         entry_names = {}
         for entry in couples:
             entry_names[entry.lower()] = couples[entry]
@@ -364,7 +371,7 @@ class HTMLExporter(Exporter):
 
         return escaped_tokens, escaped_nontokens
 
-    def document_to_unicode(self, document, couples, encoding="utf-8", **kwargs):
+    def document_to_string(self, document, couples, encoding="utf-8", **kwargs):
         entry_names = {}
         for entry in couples:
             entry_names[entry.lower()] = couples[entry]
@@ -524,7 +531,7 @@ class HTMLExporter(Exporter):
         """
         return ET.ElementTree(
             ET.fromstring(
-                self.document_to_unicode(
+                self.document_to_string(
                     document, couples, encoding=kwargs.pop("encoding", "utf-8"), **kwargs
                 )
             )
@@ -537,7 +544,7 @@ class JSONExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         return json.dumps(
             self.document_to_data(document, couples, **kwargs), indent=2, ensure_ascii=False
         )
@@ -545,7 +552,7 @@ class JSONExporter(Exporter):
     def document_to_data(self, document, couples, **kwargs):
         """
         This is just creating a dictionary from the document.
-        Nearly copy-pasta of the Document.unicode method.
+        Nearly copy-pasta of the Document.tostring method.
         """
 
         json_dict = {}
@@ -597,11 +604,6 @@ class SEMExporter(Exporter):
             document.write(output_stream, add_header=True)
 
     def document_to_data(self, document, couples, **kwargs):
-        """
-        This is just creating a dictionary from the document.
-        Nearly copy-pasta of the Document.unicode method.
-        """
-
         return document
 
 
@@ -611,7 +613,7 @@ class AnalecTEIExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + ET.tostring(
             self.document_to_data(document, couples), encoding="utf-8"
         ).decode("utf-8")
@@ -754,7 +756,7 @@ class TEINPExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, encoding="utf-8", **kwargs):
+    def document_to_string(self, document, couples, encoding="utf-8", **kwargs):
         return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + ET.tostring(
             self.document_to_data(document, couples), encoding="utf-8"
         ).decode("utf-8")
@@ -926,7 +928,7 @@ class REDENTEIExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + ET.tostring(
             self.document_to_data(document, couples), encoding="utf-8"
         ).decode("utf-8")
@@ -1022,7 +1024,7 @@ class TextExporter(Exporter):
     def __init__(self, *args, **kwargs):
         pass
 
-    def document_to_unicode(self, document, couples, **kwargs):
+    def document_to_string(self, document, couples, **kwargs):
         corpus = document.corpus
 
         lower = {}
@@ -1072,7 +1074,7 @@ class TextExporter(Exporter):
         return "\n".join(data)
 
     def document_to_data(self, document, couples, **kwargs):
-        return self.document_to_unicode(document, couples).split("\n")
+        return self.document_to_string(document, couples).split("\n")
 
 
 __exporters = {
