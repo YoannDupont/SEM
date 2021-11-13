@@ -38,8 +38,8 @@ spaces = re.compile(r"\s+", re.U + re.M)
 def bounds2spans(bounds):
     """Create spans from bounds.
     """
-    spans = [Span(bounds[i].ub, bounds[i + 1].lb) for i in range(0, len(bounds) - 1)]
-    spans = [span for span in spans if span.lb != span.ub]
+    spans = [Span(bounds[i].end, bounds[i + 1].start) for i in range(0, len(bounds) - 1)]
+    spans = [span for span in spans if span.start != span.end]
     return spans
 
 
@@ -79,7 +79,7 @@ class Tokeniser:
 
         sent_bounds = [Span(0, 0)]
         for index, span in enumerate(token_spans):
-            token = content[span.lb: span.ub]
+            token = content[span.start: span.end]
             if token in "\r\n":
                 add_last(sent_bounds, Span(index, index + 1))
         add_last(sent_bounds, Span(len(token_spans), len(token_spans)))
@@ -107,10 +107,10 @@ class Tokeniser:
             The list of paragraph bounds in content.
         """
 
-        s_spans = [Span(token_spans[e.lb].lb, token_spans[e.ub - 1].ub) for e in sentence_spans]
+        s_spans = [Span(token_spans[e.start].start, token_spans[e.end - 1].end) for e in sentence_spans]
         bounds = [Span(0, 0)]
         for index, sentence in enumerate(sentence_spans[1:], 1):
-            substring = content[s_spans[index - 1].ub: s_spans[index].lb]
+            substring = content[s_spans[index - 1].end: s_spans[index].start]
             if substring.count("\n") > 1:
                 bounds.append(Span(index, index))
         bounds.append(Span(len(sentence_spans), len(sentence_spans)))
@@ -262,7 +262,7 @@ class FrenchTokeniser(Tokeniser):
 
     def sentence_bounds(self, content, token_spans):
         sent_bounds = []
-        tokens = [content[t.lb: t.ub] for t in token_spans]
+        tokens = [content[t.start: t.end] for t in token_spans]
         opening_counts = [0 for i in token_spans]
         count = 0
         for i in range(len(opening_counts)):
@@ -282,7 +282,7 @@ class FrenchTokeniser(Tokeniser):
                     sent_bounds.append(Span(index + 1, index + 1))
             elif (
                 index < len(token_spans) - 1
-                and content[span.ub: token_spans[index + 1].lb].count("\n") > 1
+                and content[span.end: token_spans[index + 1].start].count("\n") > 1
             ):
                 sent_bounds.append(Span(index + 1, index + 1))
         sent_bounds.append(Span(len(tokens), len(tokens)))
@@ -336,7 +336,7 @@ class EnglishTokeniser(Tokeniser):
 
     def sentence_bounds(self, content, token_spans):
         sent_bounds = []
-        tokens = [content[t.lb: t.ub] for t in token_spans]
+        tokens = [content[t.start: t.end] for t in token_spans]
         openings = set(["«", "(", "[", "``"])
         closings = set(["»", ")", "]", "''"])
         opening_counts = [0 for i in tokens]

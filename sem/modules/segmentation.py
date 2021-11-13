@@ -72,8 +72,8 @@ def segmentation(
     content = document.content
     with open(outfile, "w", encoding=oenc) as output_stream:
         for sentence in sentence_spans:
-            sentence_token_spans = tokens_spans[sentence.lb: sentence.ub]
-            sentence_tokens = [content[s.lb: s.ub] for s in sentence_token_spans]
+            sentence_token_spans = tokens_spans[sentence.start: sentence.end]
+            sentence_tokens = [content[s.start: s.end] for s in sentence_token_spans]
             output_stream.write(joiner.join(sentence_tokens))
             if output_format == "vector":
                 output_stream.write("\n")

@@ -150,8 +150,8 @@ def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_sep
             for segmentation in list(element):
                 spans = [
                     Span(
-                        lb=int(span.attrib.get("start", span.attrib["s"])),
-                        ub=0,
+                        start=int(span.attrib.get("start", span.attrib["s"])),
+                        end=0,
                         length=int(span.attrib.get("length", span.attrib["l"])),
                     )
                     for span in list(segmentation)
@@ -172,8 +172,8 @@ def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_sep
                     tags.append(
                         Tag(
                             value=value,
-                            lb=int(tag.attrib.get("start", tag.attrib["s"])),
-                            ub=0,
+                            start=int(tag.attrib.get("start", tag.attrib["s"])),
+                            end=0,
                             length=int(tag.attrib.get("length", tag.attrib["l"])),
                         )
                     )
@@ -199,19 +199,19 @@ def sem_document_from_xml(xml, chunks_to_load=None, load_subtypes=True, type_sep
                 i = 0
                 sent_iter = iter(document.corpus)
                 shift = 0
-                present = set([(a.lb, a.ub) for a in cur_annot])
+                present = set([(a.start, a.end) for a in cur_annot])
                 for sentence in document.segmentation("sentences"):
                     sent = next(sent_iter)
                     annots = []
-                    while i < len(cur_annot) and cur_annot[i].ub <= sentence.ub:
+                    while i < len(cur_annot) and cur_annot[i].end <= sentence.end:
                         annots.append(cur_annot[i])
-                        if tuple([cur_annot[i].lb, cur_annot[i].ub]) not in present:
+                        if tuple([cur_annot[i].start, cur_annot[i].end]) not in present:
                             raise Exception
                         i += 1
                     l1 = ["O" for _ in range(len(sentence))]
                     for annot in annots:
-                        l1[annot.lb - shift] = "B-{0}".format(annot.value)
-                        for j in range(annot.lb + 1 - shift, annot.ub - shift):
+                        l1[annot.start - shift] = "B-{0}".format(annot.value)
+                        for j in range(annot.start + 1 - shift, annot.end - shift):
                             l1[j] = "I-{}".format(annot.value)
                     for j in range(len(l1)):
                         sent[j]["NER"] = l1[j]
@@ -470,15 +470,15 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
             value, bounds = parts[1].split(" ", 1)
             if discontinuous == "split":
                 for bound in bounds.split(";"):
-                    lb, ub = bound.split()
-                    lb = int(lb)
-                    ub = int(ub)
-                    annotations.append(Tag(value=value, lb=lb, ub=ub))
+                    start, end = bound.split()
+                    start = int(start)
+                    end = int(end)
+                    annotations.append(Tag(value=value, start=start, end=end))
             elif discontinuous == "merge":
                 parts = bounds.split()
-                lb = int(parts[0])
-                ub = int(parts[-1])
-                annotations.append(Tag(value=value, lb=lb, ub=ub))
+                start = int(parts[0])
+                end = int(parts[-1])
+                annotations.append(Tag(value=value, start=start, end=end))
             else:
                 raise ValueError(
                     f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)'
@@ -531,9 +531,9 @@ def gate_data(data, name=None):
         annotation_name = annotation_set.attrib["Name"]
         sem_annotation = AnnotationSet(annotation_name)
         for annotation in annotation_set:
-            lb = nodes[int(annotation.attrib["StartNode"])]
-            ub = nodes[int(annotation.attrib["EndNode"])]
-            sem_annotation.append(Tag(annotation.attrib["Type"], lb, ub))
+            start = nodes[int(annotation.attrib["StartNode"])]
+            end = nodes[int(annotation.attrib["EndNode"])]
+            sem_annotation.append(Tag(annotation.attrib["Type"], start, end))
         document.add_annotationset(sem_annotation)
 
     return document
@@ -555,7 +555,7 @@ def json_data(data):
 
     for segmentation_name in data.get("segmentations", {}):
         d = data["segmentations"][segmentation_name]
-        spans = [Span(lb=span["s"], ub=0, length=span["l"]) for span in d["spans"]]
+        spans = [Span(start=span["s"], end=0, length=span["l"]) for span in d["spans"]]
         segmentation = Segmentation(
             segmentation_name, spans=spans, reference=d.get("reference", None)
         )
@@ -567,7 +567,7 @@ def json_data(data):
     for annotation_name in data.get("annotations", {}):
         d = data["annotations"][annotation_name]
         annotations = [
-            Tag(value=annotation["v"], lb=annotation["s"], ub=0, length=annotation["l"])
+            Tag(value=annotation["v"], start=annotation["s"], end=0, length=annotation["l"])
             for annotation in d["annotations"]
         ]
         annotation = AnnotationSet(

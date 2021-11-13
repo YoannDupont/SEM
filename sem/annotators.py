@@ -125,17 +125,17 @@ class LexicaAnnotator:
             source = chunks_to_annotation(old)
             candidates = chunks_to_annotation(new)
 
-        indices_new = [set(range(ann.lb, ann.ub)) for ann in source]
+        indices_new = [set(range(ann.start, ann.end)) for ann in source]
         for candidate in candidates:
-            indices = set(range(candidate.lb, candidate.ub))
+            indices = set(range(candidate.start, candidate.end))
             if not any(indices & idxs for idxs in indices_new):
                 source.add(candidate)
         source = get_top_level(source)
         tags = ["O" for _ in new]
         for tag in source:
             val = tag.value
-            tags[tag.lb] = f"B-{val}"
-            for i in range(tag.lb+1, tag.ub):
+            tags[tag.start] = f"B-{val}"
+            for i in range(tag.start+1, tag.end):
                 tags[i] = f"I-{val}"
         return tags
 

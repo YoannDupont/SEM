@@ -808,12 +808,12 @@ class AnnotationTool(tkinter.Frame):
             return
         if event.keysym.islower():
             fst = (
-                self.charindex2position(self.adder.current_annotation.lb)
+                self.charindex2position(self.adder.current_annotation.start)
                 if self.adder.current_annotation
                 else self.text.index("sel.first")
             )
             lst = (
-                self.charindex2position(self.adder.current_annotation.ub)
+                self.charindex2position(self.adder.current_annotation.end)
                 if self.adder.current_annotation
                 else self.text.index("sel.last")
             )
@@ -821,8 +821,8 @@ class AnnotationTool(tkinter.Frame):
             self.add_annotation(event, remove_focus=False)
         else:
             if self.adder.current_annotation is not None:
-                start = self.charindex2position(self.adder.current_annotation.lb)
-                end = self.charindex2position(self.adder.current_annotation.ub)
+                start = self.charindex2position(self.adder.current_annotation.start)
+                end = self.charindex2position(self.adder.current_annotation.end)
             else:
                 start, end = ("sel.first", "sel.last")
             try:
@@ -863,7 +863,7 @@ class AnnotationTool(tkinter.Frame):
             greater = [
                 annot
                 for annot in self.current_annotations
-                if annot.lb <= pos[0] and annot.ub >= pos[1] and value == annot.value
+                if annot.start <= pos[0] and annot.end >= pos[1] and value == annot.value
             ]
             tag = Tag(value, pos[0], pos[1])
             tag.levels = [value]
@@ -872,7 +872,7 @@ class AnnotationTool(tkinter.Frame):
                 self.adder.current_annotation = tag
                 index = 0
                 for annot in self.current_annotations:
-                    if annot.lb > tag.lb:
+                    if annot.start > tag.start:
                         break
                     index += 1
                 key = "{}".format(tag)
@@ -901,22 +901,25 @@ class AnnotationTool(tkinter.Frame):
             self.text.tag_remove("SELECTION", "1.0", "end")
             self.type_combos[0].current(0)
         else:
-            lb = self.position2charindex(first)
-            ub = self.position2charindex(last)
+            start = self.position2charindex(first)
+            end = self.position2charindex(last)
             if self.wish_to_add is not None:
                 for annot in self.current_annotations:
                     if annot.levels == []:
                         annot.levels = annot.value.split(".")
                     if (
                         annot.getLevel(0) == self.adder.current_annotation.getLevel(0)
-                        and annot.lb == lb
-                        and annot.ub == ub
+                        and annot.start == start
+                        and annot.end == end
                     ):
                         tree_item_str = self.locate_tree_item()
                         if check_in_tagset(annot.getValue(), self.tagset):
                             annot.setLevel(self.adder.current_hierarchy_level, self.wish_to_add[0])
                             new_text = '{0} "{1}" [{2}:{3}]'.format(
-                                annot.getValue(), self.doc.content[annot.lb: annot.ub], lb, ub
+                                annot.getValue(),
+                                self.doc.content[annot.start: annot.end],
+                                start,
+                                end
                             )
                             self.tree.item(tree_item_str, text=new_text)
                             prev_item = self.ner2history.get(tree_item_str)
@@ -926,7 +929,7 @@ class AnnotationTool(tkinter.Frame):
                             new_item = self.tree.insert(self.tree_ids["history"], 0, text=new_text)
                             self.ner2history[tree_item_str] = new_item
                             self.treeitem2annot[new_item] = self.treeitem2annot[tree_item_str]
-                            key = "{}".format(Tag(annot.getLevel(0), lb, ub))
+                            key = "{}".format(Tag(annot.getLevel(0), start, end))
                             self.annot2treeitems["history"][key] = new_item
         if remove_focus:
             self.wish_to_add = None
@@ -955,7 +958,7 @@ class AnnotationTool(tkinter.Frame):
         annotations = [
             annotation
             for annotation in self.current_annotations
-            if annotation.lb <= charindex and charindex <= annotation.ub
+            if annotation.start <= charindex and charindex <= annotation.end
         ]
 
         if annotations != self.annotations:
@@ -967,9 +970,9 @@ class AnnotationTool(tkinter.Frame):
         if len(self.annotations) > 0:
             curr_annot = self.annotations[self.annotations_tick]
             ci2p = self.charindex2position
-            self.text.tag_add("SELECTION", ci2p(curr_annot.lb), ci2p(curr_annot.ub))
-            self.text.tag_remove(curr_annot.value, ci2p(curr_annot.lb), ci2p(curr_annot.ub))
-            self.text.tag_add(curr_annot.value, ci2p(curr_annot.lb), ci2p(curr_annot.ub))
+            self.text.tag_add("SELECTION", ci2p(curr_annot.start), ci2p(curr_annot.end))
+            self.text.tag_remove(curr_annot.value, ci2p(curr_annot.start), ci2p(curr_annot.end))
+            self.text.tag_add(curr_annot.value, ci2p(curr_annot.start), ci2p(curr_annot.end))
             self.adder.current_annotation = curr_annot
 
         tree_item = self.locate_tree_item()
@@ -988,14 +991,14 @@ class AnnotationTool(tkinter.Frame):
         if self.adder.current_annotation is None:
             return None
         if self.wish_to_add:
-            lb = self.position2charindex(self.wish_to_add[1])
-            ub = self.position2charindex(self.wish_to_add[2])
+            start = self.position2charindex(self.wish_to_add[1])
+            end = self.position2charindex(self.wish_to_add[2])
         else:
-            lb = self.adder.current_annotation.lb
-            ub = self.adder.current_annotation.ub
+            start = self.adder.current_annotation.start
+            end = self.adder.current_annotation.end
         ner_root = self.tree.get_children()[0]
         value = self.adder.current_annotation.getLevel(0)
-        bounds = "[{}:{}]".format(lb, ub)
+        bounds = "[{}:{}]".format(start, end)
         for child in self.tree.get_children(ner_root):
             text = self.tree.item(child)["text"]
             ok = text.startswith(value) and text.endswith(bounds)
@@ -1009,8 +1012,8 @@ class AnnotationTool(tkinter.Frame):
             return
 
         annot = self.treeitem2annot[self.tree.selection()[0]]
-        lb_str = self.charindex2position(annot.lb)
-        ub_str = self.charindex2position(annot.ub)
+        lb_str = self.charindex2position(annot.start)
+        ub_str = self.charindex2position(annot.end)
 
         self.text.tag_remove("SELECTION", "1.0", "end")
         self.text.tag_add("SELECTION", lb_str, ub_str)
@@ -1035,17 +1038,17 @@ class AnnotationTool(tkinter.Frame):
             return
 
         value = self.adder.current_annotation.getValue()
-        lb = self.adder.current_annotation.lb
-        ub = self.adder.current_annotation.ub
+        start = self.adder.current_annotation.start
+        end = self.adder.current_annotation.end
         matching = [
             a
             for a in self.current_annotations
-            if a.lb == lb and a.ub == ub and a.getValue() == value
+            if a.start == start and a.end == end and a.getValue() == value
         ]
         greater = [
             a
             for a in self.current_annotations
-            if a.lb <= lb and a.ub >= ub and a.getValue() == value and a not in matching
+            if a.start <= start and a.end >= end and a.getValue() == value and a not in matching
         ]
         try:
             greater.remove(matching[0])
@@ -1055,10 +1058,10 @@ class AnnotationTool(tkinter.Frame):
             if len(greater) == 0:
                 self.text.tag_remove(
                     self.adder.current_annotation.getLevel(0),
-                    self.charindex2position(annotation.lb),
-                    self.charindex2position(annotation.ub),
+                    self.charindex2position(annotation.start),
+                    self.charindex2position(annotation.end),
                 )
-            tag = Tag(self.adder.current_annotation.getLevel(0), annotation.lb, annotation.ub)
+            tag = Tag(self.adder.current_annotation.getLevel(0), annotation.start, annotation.end)
             key = "{}".format(tag)
             for v in self.annot2treeitems.values():
                 item = v.get(key, None)
@@ -1078,8 +1081,8 @@ class AnnotationTool(tkinter.Frame):
     def delete_all(self, event):
         if self.adder.current_annotation is not None:
             value = self.adder.current_annotation.value
-            start = self.adder.current_annotation.lb
-            end = self.adder.current_annotation.ub
+            start = self.adder.current_annotation.start
+            end = self.adder.current_annotation.end
             for occ in find_occurrences(
                 self.doc.content[start:end], self.doc.content, whole_word=False
             ):
@@ -1207,12 +1210,15 @@ class AnnotationTool(tkinter.Frame):
                 annots = self.doc.annotationset(self.annotation_name).get_reference_annotations()
                 for nth_annot, annot in enumerate(annots):
                     annot.levels = annot.value.split(".")
-                    self.add_tag(annot.levels[0], annot.lb, annot.ub)
+                    self.add_tag(annot.levels[0], annot.start, annot.end)
                     item = self.tree.insert(
                         self.tree_ids[self.annotation_name],
                         len(self.annot2treeitems[self.annotation_name]) + 1,
                         text='{0} "{1}" [{2}:{3}]'.format(
-                            annot.value, self.doc.content[annot.lb: annot.ub], annot.lb, annot.ub
+                            annot.value,
+                            self.doc.content[annot.start: annot.end],
+                            annot.start,
+                            annot.end
                         ),
                     )
                     self.annot2treeitems[self.annotation_name]["{}".format(annot)] = item
@@ -1316,12 +1322,12 @@ class AnnotationTool(tkinter.Frame):
 
         try:
             first = (
-                self.charindex2position(self.adder.current_annotation.lb)
+                self.charindex2position(self.adder.current_annotation.start)
                 if self.adder.current_annotation
                 else self.text.index("sel.first")
             )
             last = (
-                self.charindex2position(self.adder.current_annotation.ub)
+                self.charindex2position(self.adder.current_annotation.end)
                 if self.adder.current_annotation
                 else self.text.index("sel.last")
             )

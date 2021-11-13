@@ -53,7 +53,7 @@ def add_text(node, text):
     parts = text.split("\n")
     node.text = parts[0]
     for i in range(1, len(parts)):
-        br = ET.SubElement(node, "lb")
+        br = ET.SubElement(node, "start")
         br.tail = "\n{}".format(parts[1])
 
 
@@ -61,7 +61,7 @@ def add_tail(node, tail):
     parts = tail.split("\n")
     node.tail = parts[0]
     for i in range(1, len(parts)):
-        br = ET.SubElement(node, "lb")
+        br = ET.SubElement(node, "start")
         br.tail = "\n{}".format(parts[1])
 
 
@@ -116,7 +116,7 @@ class Exporter:
 
     def document_to_unicode(self, document, couples, **kwargs):
         warnings.filterwarnings("always", category=DeprecationWarning)
-        warnings.warn("'document_to_unicode' is deprecated, use 'load' instead", DeprecationWarning)
+        warnings.warn("'document_to_unicode' is deprecated, use 'document_to_string' instead", DeprecationWarning)
         warnings.filterwarnings("default", category=DeprecationWarning)
         return self.document_to_string(document, couples, **kwargs)
 
@@ -141,10 +141,12 @@ class BratExporter(Exporter):
             document.annotationset(lowers["ner"]).get_reference_annotations(), 1
         ):
             parts.append(
-                "T{id}\t{annotation.value} {annotation.lb} {annotation.ub}\t{txt}".format(
+                "T{id}\t{annotation.value} {annotation.start} {annotation.end}\t{txt}".format(
                     id=id,
                     annotation=annotation,
-                    txt=content[annotation.lb: annotation.ub].replace("\r", "").replace("\n", " "),
+                    txt=content[annotation.start: annotation.end]
+                    .replace("\r", "")
+                    .replace("\n", " "),
                 )
             )
         return "\n".join(parts)
@@ -256,8 +258,8 @@ class GateExporter(Exporter):
             annotations = annotationset.get_reference_annotations()
             boundaries = set()
             for annotation in annotations:
-                boundaries.add(annotation.lb)
-                boundaries.add(annotation.ub)
+                boundaries.add(annotation.start)
+                boundaries.add(annotation.end)
             boundaries = sorted(boundaries)
         else:
             annotationset = None
@@ -284,8 +286,8 @@ class GateExporter(Exporter):
                 annotation = ET.SubElement(typeAnnotationSet, "Annotation")
                 annotation.set("Id", str(id))
                 annotation.set("Type", annot.value)
-                annotation.set("StartNode", str(annot.lb))
-                annotation.set("EndNode", str(annot.ub))
+                annotation.set("StartNode", str(annot.start))
+                annotation.set("EndNode", str(annot.end))
                 id += 1
 
         return gateDocument
@@ -316,16 +318,16 @@ class HTMLInlineExporter(Exporter):
         position2html = {}
         annotations = document.annotationset(key).get_reference_annotations()
         for annotation in reversed(annotations):
-            lb = annotation.lb
-            ub = annotation.ub
+            start = annotation.start
+            end = annotation.end
             value = annotation.value
 
-            if ub not in position2html:
-                position2html[ub] = []
-            position2html[ub].insert(0, "</span>")
-            if lb not in position2html:
-                position2html[lb] = []
-            position2html[lb].append('<span id="{0}" title="{0}">'.format(value))
+            if end not in position2html:
+                position2html[end] = []
+            position2html[end].insert(0, "</span>")
+            if start not in position2html:
+                position2html[start] = []
+            position2html[start].append('<span id="{0}" title="{0}">'.format(value))
 
         for index in reversed(sorted(position2html.keys())):
             content = content[:index] + "".join(position2html[index]) + content[index:]
@@ -362,12 +364,12 @@ class HTMLExporter(Exporter):
     def make_escaped_content(self, document):
         content = document.content
         tokens = document.segmentation("tokens")
-        escaped_tokens = [html.escape(content[token.lb: token.ub]) for token in tokens]
+        escaped_tokens = [html.escape(content[token.start: token.end]) for token in tokens]
         escaped_nontokens = [
-            html.escape(content[tokens[i].ub: tokens[i + 1].lb]) for i in range(len(tokens) - 1)
+            html.escape(content[tokens[i].end: tokens[i + 1].start]) for i in range(len(tokens) - 1)
         ]
-        escaped_nontokens.insert(0, html.escape(content[0: tokens[0].lb]))
-        escaped_nontokens.append(html.escape(content[tokens[-1].ub: len(content)]))
+        escaped_nontokens.insert(0, html.escape(content[0: tokens[0].start]))
+        escaped_nontokens.append(html.escape(content[tokens[-1].end: len(content)]))
 
         return escaped_tokens, escaped_nontokens
 
@@ -400,18 +402,18 @@ class HTMLExporter(Exporter):
         last = len(content)
         for annotation in annotations:
             parts.append(
-                html.escape(content[annotation.ub: last])
+                html.escape(content[annotation.end: last])
                 .replace("\n", "<br />\n")
                 .replace("\r<br />", "<br />\r")
             )
             parts.append("</span>")
             parts.append(
-                html.escape(content[annotation.lb: annotation.ub])
+                html.escape(content[annotation.start: annotation.end])
                 .replace("\n", "<br />\n")
                 .replace("\r<br />", "<br />\r")
             )
             parts.append('<span id="{0}" title="{0}">'.format(annotation.value))
-            last = annotation.lb
+            last = annotation.start
         parts.append(
             html.escape(content[0:last]).replace("\n", "<br />\n").replace("\r<br />", "<br />\r")
         )
@@ -567,7 +569,7 @@ class JSONExporter(Exporter):
             if ref:
                 json_dict["segmentations"][seg.name]["reference"] = ref
             json_dict["segmentations"][seg.name]["spans"] = [
-                {"s": span.lb, "l": len(span)} for span in seg.spans
+                {"s": span.start, "l": len(span)} for span in seg.spans
             ]
 
         json_dict["annotations"] = {}
@@ -585,7 +587,7 @@ class JSONExporter(Exporter):
             if reference:
                 json_dict["annotations"][annotation.name]["reference"] = reference
             json_dict["annotations"][annotation.name]["annotations"] = [
-                {"v": tag.value, "s": tag.lb, "l": len(tag)} for tag in annotation
+                {"v": tag.value, "s": tag.start, "l": len(tag)} for tag in annotation
             ]
 
         return json_dict
@@ -686,13 +688,14 @@ class AnalecTEIExporter(Exporter):
         nth = dict([(value, 0) for value in values])
         for paragraph in paragraphs:
             entities = [
-                entity for entity in NEs if entity.lb >= paragraph.lb and entity.ub <= paragraph.ub
+                entity for entity in NEs
+                if entity.start >= paragraph.start and entity.end <= paragraph.end
             ]
             p = ET.SubElement(body, "p")
             if len(entities) == 0:
-                p.text = content[paragraph.lb: paragraph.ub]
+                p.text = content[paragraph.start: paragraph.end]
             else:
-                p.text = content[paragraph.lb: entities[0].lb]
+                p.text = content[paragraph.start: entities[0].start]
                 for i, entity in enumerate(entities):
                     nth[entity.value] += 1
                     entity_start = ET.SubElement(
@@ -704,7 +707,7 @@ class AnalecTEIExporter(Exporter):
                             "subtype": "UnitStart",
                         },
                     )
-                    entity_start.tail = content[entity.lb: entity.ub]
+                    entity_start.tail = content[entity.start: entity.end]
                     entity_end = ET.SubElement(
                         p,
                         "anchor",
@@ -715,9 +718,9 @@ class AnalecTEIExporter(Exporter):
                         },
                     )
                     if i < len(entities) - 1:
-                        entity_end.tail = content[entity.ub: entities[i + 1].lb]
+                        entity_end.tail = content[entity.end: entities[i + 1].start]
                     else:
-                        entity_end.tail = content[entity.ub: paragraph.ub]
+                        entity_end.tail = content[entity.end: paragraph.end]
 
         back = ET.SubElement(root, "back")
         for value in sorted(values):
@@ -837,26 +840,26 @@ class TEINPExporter(Exporter):
         pos = []
         for i in range(len(np_chunks)):
             chunk = np_chunks[i]
-            pos.append(
-                [annot for annot in pos_tags if annot.lb >= chunk.lb and annot.ub <= chunk.ub]
-            )
+            pos.append([
+                annot for annot in pos_tags if annot.start >= chunk.start and annot.end <= chunk.end
+            ])
 
         for i in range(len(np_chunks)):
-            np_chunks[i].ub = words[np_chunks[i].ub - 1].ub
-            np_chunks[i].lb = words[np_chunks[i].lb].lb
+            np_chunks[i].end = words[np_chunks[i].end - 1].end
+            np_chunks[i].start = words[np_chunks[i].start].start
 
         nth = 0
         for paragraph in paragraphs:
             nps = [
                 chunk
                 for chunk in np_chunks
-                if chunk.lb >= paragraph.lb and chunk.ub <= paragraph.ub
+                if chunk.start >= paragraph.start and chunk.end <= paragraph.end
             ]
             p = ET.SubElement(body, "p")
             if len(nps) == 0:
-                p.text = content[paragraph.lb: paragraph.ub]
+                p.text = content[paragraph.start: paragraph.end]
             else:
-                p.text = content[paragraph.lb: nps[0].lb]
+                p.text = content[paragraph.start: nps[0].start]
                 for i, np in enumerate(nps):
                     nth += 1
                     np_start = ET.SubElement(
@@ -868,7 +871,7 @@ class TEINPExporter(Exporter):
                             "subtype": "UnitStart",
                         },
                     )
-                    np_start.tail = content[np.lb: np.ub]
+                    np_start.tail = content[np.start: np.end]
                     np_end = ET.SubElement(
                         p,
                         "anchor",
@@ -879,9 +882,9 @@ class TEINPExporter(Exporter):
                         },
                     )
                     if i < len(nps) - 1:
-                        np_end.tail = content[np.ub: nps[i + 1].lb]
+                        np_end.tail = content[np.end: nps[i + 1].start]
                     else:
-                        np_end.tail = content[np.ub: paragraph.ub]
+                        np_end.tail = content[np.end: paragraph.end]
 
         back = ET.SubElement(root, "back")
         spanGrp = ET.SubElement(back, "spanGrp")
@@ -1000,20 +1003,21 @@ class REDENTEIExporter(Exporter):
 
         for paragraph in paragraphs:
             entities = [
-                entity for entity in NEs if entity.lb >= paragraph.lb and entity.ub <= paragraph.ub
+                entity for entity in NEs
+                if entity.start >= paragraph.start and entity.end <= paragraph.end
             ]
             p = ET.SubElement(div, "p")
             if len(entities) == 0:
-                p.text = content[paragraph.lb: paragraph.ub]
+                p.text = content[paragraph.start: paragraph.end]
             else:
-                p.text = content[paragraph.lb: entities[0].lb]
+                p.text = content[paragraph.start: entities[0].start]
                 for i, entity in enumerate(entities):
                     entity_xml = ET.SubElement(p, entity.value)
-                    entity_xml.text = content[entity.lb: entity.ub]
+                    entity_xml.text = content[entity.start: entity.end]
                     if i < len(entities) - 1:
-                        entity_xml.tail = content[entity.ub: entities[i + 1].lb]
+                        entity_xml.tail = content[entity.end: entities[i + 1].start]
                     else:
-                        entity_xml.tail = content[entity.ub: paragraph.ub]
+                        entity_xml.tail = content[entity.end: paragraph.end]
 
         return TEI
 
@@ -1048,25 +1052,25 @@ class TextExporter(Exporter):
 
             if "pos" in lower and lower["pos"] in corpus:
                 for annotation in get_pos(sentence, lower["pos"]):
-                    tokens[annotation.ub - 1] += "/{}".format(annotation.value)
+                    tokens[annotation.end - 1] += "/{}".format(annotation.value)
                     # regrouping tokens for tags spanning over >2 tokens
-                    for i in range(annotation.lb, annotation.ub - 1):
+                    for i in range(annotation.start, annotation.end - 1):
                         tokens[i + 1] = "{}{}{}".format(tokens[i], "_", tokens[i + 1])
                         tokens[i] = ""
 
             if "chunking" in lower and lower["chunking"] in corpus:
                 for annotation in get_chunks(sentence, lower["chunking"]):
-                    tokens[annotation.lb] = "({0} {1}".format(
-                        annotation.value, tokens[annotation.lb]
+                    tokens[annotation.start] = "({0} {1}".format(
+                        annotation.value, tokens[annotation.start]
                     )
-                    tokens[annotation.ub - 1] = "{0} )".format(tokens[annotation.ub - 1])
+                    tokens[annotation.end - 1] = "{0} )".format(tokens[annotation.end - 1])
 
             if "ner" in lower and lower["ner"] in corpus:
                 for annotation in get_chunks(sentence, lower["ner"]):
-                    tokens[annotation.lb] = "({0} {1}".format(
-                        annotation.value, tokens[annotation.lb]
+                    tokens[annotation.start] = "({0} {1}".format(
+                        annotation.value, tokens[annotation.start]
                     )
-                    tokens[annotation.ub - 1] = "{0} )".format(tokens[annotation.ub - 1])
+                    tokens[annotation.end - 1] = "{0} )".format(tokens[annotation.end - 1])
 
             # if regrouping tokens, some are empty and would generate superfluous spaces
             tokens = [token for token in tokens if token != ""]

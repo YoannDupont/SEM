@@ -195,9 +195,9 @@ class Adder:
     def add(self, event, remove_focus=False):
         if self.frame.current_selection is not None:
             f_cs = self.frame.current_selection
-            tag = Tag(self.type, f_cs.lb, f_cs.ub)
-            first = self.frame.charindex2position(f_cs.lb)
-            last = self.frame.charindex2position(f_cs.ub)
+            tag = Tag(self.type, f_cs.start, f_cs.end)
+            first = self.frame.charindex2position(f_cs.start)
+            last = self.frame.charindex2position(f_cs.end)
             if (
                 tag in self.frame.current_annotations
                 and self.frame.current_type_hierarchy_level == 0
@@ -211,8 +211,8 @@ class Adder:
 
     def add_all(self, event):
         if self.frame.current_selection is not None:
-            start = self.frame.charindex2position(self.frame.current_selection.lb)
-            end = self.frame.charindex2position(self.frame.current_selection.ub)
+            start = self.frame.charindex2position(self.frame.current_selection.start)
+            end = self.frame.charindex2position(self.frame.current_selection.end)
         else:
             start, end = ("sel.first", "sel.last")
         try:

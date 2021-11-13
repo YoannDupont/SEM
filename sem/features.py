@@ -246,8 +246,8 @@ def directory_feature(s, features):
             annotation.add(annot)
     tags = get_top_level(annotation)
     for tag in tags:
-        data[tag.lb] = "B-{}".format(tag.value)
-        for index in range(tag.lb + 1, tag.ub):
+        data[tag.start] = "B-{}".format(tag.value)
+        for index in range(tag.start + 1, tag.end):
             data[index] = "I-{}".format(tag.value)
     return data
 

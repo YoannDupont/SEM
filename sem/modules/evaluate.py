@@ -111,88 +111,90 @@ def substitution(d):
 
 def get_diff(content, gold, guess, error_kind, context_size=20):
     if error_kind == TYPE_ERROR:
-        diff = content[gold.lb - context_size: gold.lb]
+        diff = content[gold.start - context_size: gold.start]
         diff += "{{+<{0}>+}} ".format(guess.value)
         diff += "[-<{0}>-] ".format(gold.value)
-        diff += content[gold.lb: gold.ub]
+        diff += content[gold.start: gold.end]
         diff += " [-</{0}>-]".format(gold.value)
         diff += " {{+</{0}>+}}".format(guess.value)
-        diff += content[gold.ub: gold.ub + context_size]
+        diff += content[gold.end: gold.end + context_size]
     elif error_kind == BOUNDARY_ERROR:
-        if gold.lb == guess.lb:
-            diff = content[gold.lb - context_size: gold.lb]
+        if gold.start == guess.start:
+            diff = content[gold.start - context_size: gold.start]
             diff += "<{0}> ".format(gold.value)
-            gold_min = gold.ub < guess.ub
-            diff += content[gold.lb: min(gold.ub, guess.ub)]
+            gold_min = gold.end < guess.end
+            diff += content[gold.start: min(gold.end, guess.end)]
             diff += (
                 " [-</{0}>-]".format(gold.value)
-                if min(gold.ub, guess.ub)
+                if min(gold.end, guess.end)
                 else " {{+</{0}>+}}".format(guess.value)
             )
-            diff += content[min(gold.ub, guess.ub): max(gold.ub, guess.ub)]
+            diff += content[min(gold.end, guess.end): max(gold.end, guess.end)]
             diff += (
                 " {{+</{0}>+}}".format(guess.value)
-                if min(gold.ub, guess.ub)
+                if min(gold.end, guess.end)
                 else " [-</{0}>-]".format(gold.value)
             )
-            diff += content[max(gold.ub, guess.ub): max(gold.ub, guess.ub) + context_size]
+            diff += content[max(gold.end, guess.end): max(gold.end, guess.end) + context_size]
         else:
-            gold_min = gold.lb < guess.lb
-            diff = content[min(gold.lb, guess.lb) - context_size: min(gold.lb, guess.lb)]
+            gold_min = gold.start < guess.start
+            diff = content[
+                min(gold.start, guess.start) - context_size: min(gold.start, guess.start)
+            ]
             diff += (
                 "[-<{0}>-] ".format(gold.value) if gold_min else "{{+<{0}>+}} ".format(guess.value)
             )
-            diff += content[min(gold.lb, guess.lb): max(gold.lb, guess.lb)]
+            diff += content[min(gold.start, guess.start): max(gold.start, guess.start)]
             diff += (
                 "{{+<{0}>+}} ".format(guess.value) if gold_min else "[-<{0}>-] ".format(gold.value)
             )
-            diff += content[max(gold.lb, guess.lb): gold.ub]
+            diff += content[max(gold.start, guess.start): gold.end]
             diff += " </{0}>".format(gold.value)
-            diff += content[gold.ub: gold.ub + context_size]
+            diff += content[gold.end: gold.end + context_size]
     elif error_kind == TYPE_AND_BOUNDARY_ERROR:
-        min_lb = (
+        min_start = (
             gold
-            if gold.lb < guess.lb
-            else (gold if gold.lb == guess.lb and gold.ub > guess.ub else guess)
+            if gold.start < guess.start
+            else (gold if gold.start == guess.start and gold.end > guess.end else guess)
         )
-        max_lb = gold if min_lb == guess else guess
-        min_ub = (
+        max_start = gold if min_start == guess else guess
+        min_end = (
             gold
-            if gold.ub < guess.ub
-            else (gold if gold.ub == guess.ub and gold.lb > guess.lb else guess)
+            if gold.end < guess.end
+            else (gold if gold.end == guess.end and gold.start > guess.start else guess)
         )
-        max_ub = gold if min_ub == guess else guess
-        diff = content[min_lb.lb - context_size: min_lb.lb]
-        if min_lb == gold:
+        max_end = gold if min_end == guess else guess
+        diff = content[min_start.start - context_size: min_start.start]
+        if min_start == gold:
             diff += "[-<{0}>-] ".format(gold.value)
-            diff += content[min_lb.lb: max_lb.lb]
+            diff += content[min_start.start: max_start.start]
             diff += "{{+<{0}>+}} ".format(guess.value)
         else:
             diff += "{{+<{0}>+}} ".format(guess.value)
-            diff += content[min_lb.lb: max_lb.lb]
+            diff += content[min_start.start: max_start.start]
             diff += "[-<{0}>-] ".format(gold.value)
-        diff += content[max_lb.lb: min_ub.ub]
-        if min_ub == gold:
+        diff += content[max_start.start: min_end.end]
+        if min_end == gold:
             diff += " [-</{0}>-]".format(gold.value)
-            diff += content[min_ub.ub: max_ub.ub]
+            diff += content[min_end.end: max_end.end]
             diff += " {{+</{0}>+}}".format(guess.value)
         else:
             diff += " {{+</{0}>+}}".format(guess.value)
-            diff += content[min_ub.ub: max_ub.ub]
+            diff += content[min_end.end: max_end.end]
             diff += " [-</{0}>-]".format(gold.value)
-        diff += content[max_ub.ub: max_ub.ub + context_size]
+        diff += content[max_end.end: max_end.end + context_size]
     elif error_kind == NOISE_ERROR:
-        diff = content[guess.lb - context_size: guess.lb]
+        diff = content[guess.start - context_size: guess.start]
         diff += "{{+<{0}>+}} ".format(guess.value)
-        diff += content[guess.lb: guess.ub]
+        diff += content[guess.start: guess.end]
         diff += " {{+</{0}>+}}".format(guess.value)
-        diff += content[guess.ub: guess.ub + context_size]
+        diff += content[guess.end: guess.end + context_size]
     elif error_kind == SILENCE_ERROR:
-        diff = content[gold.lb - context_size: gold.lb]
+        diff = content[gold.start - context_size: gold.start]
         diff += "[-<{0}>-] ".format(gold.value)
-        diff += content[gold.lb: gold.ub]
+        diff += content[gold.start: gold.end]
         diff += " [-</{0}>-]".format(gold.value)
-        diff += content[gold.ub: gold.ub + context_size]
+        diff += content[gold.end: gold.end + context_size]
     else:
         raise ValueError("Unknown error kind: {0}".format(error_kind))
     return diff.replace("\r", "").replace("\n", " ").replace('"', '\\"')
@@ -279,7 +281,7 @@ def evaluate(
         j = 0
         while j < len(R):
             RR = R[j]
-            if LR.value != RR.value and LR.lb == RR.lb and LR.ub == RR.ub:
+            if LR.value != RR.value and LR.start == RR.start and LR.end == RR.end:
                 del L[i]
                 del R[j]
                 d[TYPE_ERROR].append([LR, RR])
@@ -297,7 +299,8 @@ def evaluate(
         while j < len(R):
             RR = R[j]
             if LR.value == RR.value and (
-                (LR.lb != RR.lb and LR.ub == RR.ub) or (LR.lb == RR.lb and LR.ub != RR.ub)
+                (LR.start != RR.start and LR.end == RR.end)
+                or (LR.start == RR.start and LR.end != RR.end)
             ):
                 del L[i]
                 del R[j]
@@ -318,8 +321,8 @@ def evaluate(
             RR = R[j]
             if (
                 LR.value != RR.value
-                and (LR.lb != RR.lb and LR.ub == RR.ub)
-                or (LR.lb == RR.lb and LR.ub != RR.ub)
+                and (LR.start != RR.start and LR.end == RR.end)
+                or (LR.start == RR.start and LR.end != RR.end)
             ):
                 del L[i]
                 del R[j]
@@ -367,7 +370,7 @@ def evaluate(
                     guess = ex[1]
                 gold_str = (
                     (
-                        "{0}:{1}".format(gold.value, document.content[gold.lb: gold.ub])
+                        "{0}:{1}".format(gold.value, document.content[gold.start: gold.end])
                         if gold
                         else ""
                     )
@@ -376,7 +379,7 @@ def evaluate(
                 )
                 guess_str = (
                     (
-                        "{0}:{1}".format(guess.value, document.content[guess.lb: guess.ub])
+                        "{0}:{1}".format(guess.value, document.content[guess.start: guess.end])
                         if guess
                         else ""
                     )

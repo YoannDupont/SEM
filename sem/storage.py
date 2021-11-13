@@ -33,6 +33,7 @@ SOFTWARE.
 import pathlib
 import html
 import re
+import warnings
 
 import sem
 import sem.util
@@ -47,57 +48,71 @@ class Span:
 
     Attributes
     ----------
-    _lb : int
+    _start : int
         the lower bound of a Span.
-    _ub : int
+    _end : int
         the upper bound of a Span.
     """
 
-    __slots__ = ("_lb", "_ub")
+    __slots__ = ("_start", "_end")
 
-    def __init__(self, lb, ub, length=-1):
-        self._lb = min(lb, ub) if length < 0 else lb
-        self._ub = max(lb, ub) if length < 0 else lb + length
+    def __init__(self, start, end, length=-1):
+        self._start = min(start, end) if length < 0 else start
+        self._end = max(start, end) if length < 0 else start + length
 
     def __eq__(self, span):
-        return self.lb == span.lb and self.ub == span.ub
+        return self.start == span.start and self.end == span.end
 
     def __contains__(self, i):
         try:
-            return self._lb <= i and i < self._ub
+            return self._start <= i and i < self._end
         except TypeError:
-            return (self.lb <= i.lb) and (i.ub <= self.ub)
+            return (self.start <= i.start) and (i.end <= self.end)
 
     def __len__(self):
-        return self._ub - self._lb
+        return self._end - self._start
 
     def __str__(self):
-        return "[{span.lb}:{span.ub}]".format(span=self)
+        return "[{span.start}:{span.end}]".format(span=self)
 
     @property
     def lb(self):
-        return self._lb
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn("'lb' is deprecated, use 'start' instead", DeprecationWarning)
+        warnings.filterwarnings("default", category=DeprecationWarning)
+        return self.start
 
     @property
     def ub(self):
-        return self._ub
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn("'ub' is deprecated, use 'end' instead", DeprecationWarning)
+        warnings.filterwarnings("default", category=DeprecationWarning)
+        return self.end
 
-    @lb.setter
-    def lb(self, lb):
-        self._lb = min(lb, self._ub)
+    @property
+    def start(self):
+        return self._start
 
-    @ub.setter
-    def ub(self, ub):
-        self._ub = max(ub, self._lb)
+    @property
+    def end(self):
+        return self._end
+
+    @start.setter
+    def start(self, start):
+        self._start = min(start, self._end)
+
+    @end.setter
+    def end(self, end):
+        self._end = max(end, self._start)
 
     def strictly_contains(self, i):
-        return i > self._lb and i < self.ub
+        return i > self._start and i < self.end
 
-    def expand_lb(self, length):
-        self._lb -= length
+    def expand_start(self, length):
+        self._start -= length
 
-    def expand_ub(self, length):
-        self._ub += length
+    def expand_end(self, length):
+        self._end += length
 
 
 def add_last(spanlist, span):
@@ -109,8 +124,8 @@ def add_last(spanlist, span):
     if span in spanlist[-1]:
         return
 
-    if spanlist[-1].ub == span.lb:
-        spanlist[-1].ub = span.ub
+    if spanlist[-1].end == span.start:
+        spanlist[-1].end = span.end
     else:
         spanlist.append(span)
 
@@ -118,8 +133,8 @@ def add_last(spanlist, span):
 class Tag:
     __slots__ = ("_span", "_value", "levels")
 
-    def __init__(self, value, lb, ub, length=-1):
-        self._span = Span(lb, ub, length=length)
+    def __init__(self, value, start, end, length=-1):
+        self._span = Span(start, end, length=length)
         self._value = value.strip().strip(".")
         self.levels = self._value.split(".")
 
@@ -143,23 +158,23 @@ class Tag:
 
     @property
     def span(self):
-        return Span(self._span.lb, self._span.ub)
+        return Span(self._span.start, self._span.end)
 
     @property
-    def lb(self):
-        return self._span.lb
+    def start(self):
+        return self._span.start
 
-    @lb.setter
-    def lb(self, lb):
-        self._span.lb = lb
+    @start.setter
+    def start(self, start):
+        self._span.start = start
 
     @property
-    def ub(self):
-        return self._span.ub
+    def end(self):
+        return self._span.end
 
-    @ub.setter
-    def ub(self, ub):
-        self._span.ub = ub
+    @end.setter
+    def end(self, end):
+        self._span.end = end
 
     def kind(self):
         return "chunking"
@@ -233,14 +248,14 @@ class AnnotationSet:
         i = 0
         if after is None:
             while i < len(self._annotations):
-                if annotation.lb > self._annotations[i].lb:
+                if annotation.start > self._annotations[i].start:
                     None
-                elif annotation.lb > self._annotations[i].ub:
+                elif annotation.start > self._annotations[i].end:
                     None
-                elif annotation.lb > self._annotations[i].ub:
+                elif annotation.start > self._annotations[i].end:
                     break
-                elif annotation.lb == self._annotations[i].lb:
-                    if self._annotations[i].ub <= annotation.ub:
+                elif annotation.start == self._annotations[i].start:
+                    if self._annotations[i].end <= annotation.end:
                         break
                 else:
                     break
@@ -266,18 +281,18 @@ class AnnotationSet:
             pass
 
     def sort(self):
-        self._annotations.sort(key=lambda x: (x.lb, -x.ub, x.value))
+        self._annotations.sort(key=lambda x: (x.start, -x.end, x.value))
 
     def get_reference_annotations(self):
         if self.reference is None:
-            return [Tag(a.value, a.lb, a.ub) for a in self.annotations]
+            return [Tag(a.value, a.start, a.end) for a in self.annotations]
         else:
             reference_spans = self.reference.get_reference_spans()
             return [
                 Tag(
                     element.value,
-                    reference_spans[element.lb].lb,
-                    reference_spans[element.ub - 1].ub,
+                    reference_spans[element.start].start,
+                    reference_spans[element.end - 1].end,
                 )
                 for element in self.annotations
             ]
@@ -289,7 +304,9 @@ def get_top_level(annotations):
     while modified:
         modified = False
         for i in range(len(result) - 1):
-            modified = result[i].lb <= result[i + 1].lb and result[i].ub > result[i + 1].lb
+            modified = (
+                result[i].start <= result[i + 1].start and result[i].end > result[i + 1].start
+            )
             if modified:
                 del result[i + 1]
                 break
@@ -302,7 +319,7 @@ def get_bottom_level(annotations):
     while modified:
         modified = False
         for i in range(len(result) - 1):
-            modified = result[i].lb <= result[i + 1].lb <= result[i].ub
+            modified = result[i].start <= result[i + 1].start <= result[i].end
             if modified:
                 del result[i]
                 break
@@ -613,8 +630,8 @@ class Corpus:
         self.sentences = [
             Sentence({
                 field_name: [
-                    content[token.lb: token.ub]
-                    for token in tokens.spans[sentence.lb: sentence.ub]
+                    content[token.start: token.end]
+                    for token in tokens.spans[sentence.start: sentence.end]
                 ]
             })
             for sentence in sentences
@@ -720,7 +737,7 @@ class Segmentation:
         else:
             reference_spans = self.reference.get_reference_spans()
             return [
-                Span(reference_spans[element.lb].lb, reference_spans[element.ub - 1].ub)
+                Span(reference_spans[element.start].start, reference_spans[element.end - 1].end)
                 for element in self.spans
             ]
 
@@ -783,7 +800,7 @@ class Document:
         tokens = []
         content = self.content
         for span in self.segmentation("tokens"):
-            tokens.append(content[span.lb: span.ub])
+            tokens.append(content[span.start: span.end])
         return tokens
 
     def set_content(self, content):
@@ -853,7 +870,7 @@ class Document:
                         f.write("\n{0}".format(depth * indent * " "))
                     f.write(
                         '{0}<s s="{1}" l="{2}" />'.format(
-                            ("" if lf else " "), element.lb, len(element)
+                            ("" if lf else " "), element.start, len(element)
                         )
                     )
                 f.write("\n")
@@ -884,7 +901,7 @@ class Document:
                 for tag in annotation:
                     f.write(
                         '{0}<tag v="{1}" s="{2}" l="{3}"/>\n'.format(
-                            depth * indent * " ", tag.getValue(), tag.lb, len(tag)
+                            depth * indent * " ", tag.getValue(), tag.start, len(tag)
                         )
                     )
                 depth -= 1
@@ -907,15 +924,15 @@ class Document:
             begin = 0
             i = 0
             for annotation in annot:
-                start = annotation.lb
-                end = annotation.ub
-                while not (spans[i].lb <= start and start < spans[i].ub):
+                start = annotation.start
+                end = annotation.end
+                while not (spans[i].start <= start and start < spans[i].end):
                     i += 1
                 begin = i
-                while spans[i].ub < end:
+                while spans[i].end < end:
                     i += 1
-                annotation.lb = begin
-                annotation.ub = i + 1
+                annotation.start = begin
+                annotation.end = i + 1
                 i = max(begin - 1, 0)
                 begin = 0
             annot._reference = self.segmentation(reference_name)
@@ -932,20 +949,20 @@ class Document:
         i = 0
         to_remove = []  # annotations that cannot be aligned with tokens will be removed
         for j, annotation in enumerate(annotations):
-            start = annotation.lb
-            end = annotation.ub
-            while (i > 0) and start < spans[i].lb:
+            start = annotation.start
+            end = annotation.end
+            while (i > 0) and start < spans[i].start:
                 i -= 1
-            while (i < len(spans)) and not (spans[i].lb <= start < spans[i].ub):
+            while (i < len(spans)) and not (spans[i].start <= start < spans[i].end):
                 i += 1
             if i < len(spans):
                 begin = i
-                while spans[i].ub < end:
+                while spans[i].end < end:
                     i += 1
-                annotation.lb = begin
-                annotation.ub = i + 1
+                annotation.start = begin
+                annotation.end = i + 1
             else:
-                mention = self.content[annotation.lb: annotation.ub].strip().replace("\n", " ")
+                mention = self.content[annotation.start: annotation.end].strip().replace("\n", " ")
                 if len(mention) > 32:
                     mention = mention[:27] + "[...]"
                 sem.logger.warning(
@@ -982,14 +999,18 @@ class Document:
         for sentence in self.corpus.sentences:
             span = next(sentence_spans)
             tags = [OUT for _ in range(len(sentence))]
-            while cur_annot is not None and cur_annot.lb >= span.lb and cur_annot.ub <= span.ub:
+            while (
+                cur_annot is not None
+                and cur_annot.start >= span.start
+                and cur_annot.end <= span.end
+            ):
                 if len(cur_annot) == 1:
-                    tags[cur_annot.lb - shift] = "{}-{}".format(SINGLE, cur_annot.value)
+                    tags[cur_annot.start - shift] = "{}-{}".format(SINGLE, cur_annot.value)
                 else:
-                    tags[cur_annot.lb - shift] = "{}-{}".format(BEGIN, cur_annot.value)
-                    for k in range(cur_annot.lb + 1, cur_annot.ub - 1):
+                    tags[cur_annot.start - shift] = "{}-{}".format(BEGIN, cur_annot.value)
+                    for k in range(cur_annot.start + 1, cur_annot.end - 1):
                         tags[k - shift] = "{}-{}".format(IN, cur_annot.value)
-                    tags[cur_annot.ub - 1 - shift] = "{}-{}".format(LAST, cur_annot.value)
+                    tags[cur_annot.end - 1 - shift] = "{}-{}".format(LAST, cur_annot.value)
 
                 try:
                     annot_index += 1
@@ -998,9 +1019,9 @@ class Document:
                     cur_annot = None
 
             sentence.add(tags, annotation_name)
-            if cur_annot is not None and (cur_annot.lb in span and cur_annot.ub > span.ub):
+            if cur_annot is not None and (cur_annot.start in span and cur_annot.end > span.end):
                 # annotation spans over at least two sentences
-                mention = self.content[cur_annot.lb: cur_annot.ub].strip().replace("\n", " ")
+                mention = self.content[cur_annot.start: cur_annot.end].strip().replace("\n", " ")
                 if len(mention) > 32:
                     mention = mention[:27] + "[...]"
                 sem.logger.warning(

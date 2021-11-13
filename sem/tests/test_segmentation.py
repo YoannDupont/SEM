@@ -86,7 +86,7 @@ class TestSegmentation(unittest.TestCase):
         tokens_reference = FR_TOKENS[:]
         tokeniser = sem.tokenisers.FrenchTokeniser()
         token_spans = tokeniser.word_spans(content)
-        tokens_guess = [content[s.lb: s.ub] for s in token_spans]
+        tokens_guess = [content[s.start: s.end] for s in token_spans]
 
         self.assertEquals(tokens_guess, tokens_reference)
 
@@ -94,7 +94,7 @@ class TestSegmentation(unittest.TestCase):
         content = EN_TEXT
         tokeniser = sem.tokenisers.EnglishTokeniser()
         token_spans = tokeniser.word_spans(content)
-        token_content = "".join([content[s.lb: s.ub] for s in token_spans])
+        token_content = "".join([content[s.start: s.end] for s in token_spans])
         spaceless_content = re.sub(r"\s+", "", content)
 
         self.assertEquals(token_content, spaceless_content)  # no lost content

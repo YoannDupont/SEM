@@ -122,21 +122,21 @@ def token_spans_buffered(tokeniser, content):
         if not spans:
             rem = chnk
             continue
-        elif spans[-1].ub < len(chnk):
-            rem = chnk[spans[-1].ub:]
-        elif spans[-1].ub == len(chnk):
-            rem = chnk[spans[-1].lb:]
+        elif spans[-1].end < len(chnk):
+            rem = chnk[spans[-1].end:]
+        elif spans[-1].end == len(chnk):
+            rem = chnk[spans[-1].start:]
             del spans[-1]
         else:
             rem = ""
-        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
+        token_spans.extend([Span(shift + s.start, shift + s.end) for s in spans])
         shift += len(chnk) - len(rem)
         del spans[:]
 
     if rem:
         spans = tokeniser.word_spans(rem) or [Span(0, len(rem))]
-        token_spans.extend([Span(shift + s.lb, shift + s.ub) for s in spans])
-    if not content[token_spans[-1].lb: token_spans[-1].ub].strip():
+        token_spans.extend([Span(shift + s.start, shift + s.end) for s in spans])
+    if not content[token_spans[-1].start: token_spans[-1].end].strip():
         del token_spans[-1]
 
     return token_spans
@@ -592,11 +592,11 @@ def tokens_from_bounds(document, start, end):
     word_spans = document.segmentation("tokens")
     toks = []
     for span in word_spans:
-        if span.lb >= start:
-            toks.append(document.content[span.lb: span.ub])
-            if span.ub >= end:
+        if span.start >= start:
+            toks.append(document.content[span.start: span.end])
+            if span.end >= end:
                 break
-        if span.lb > end:
+        if span.start > end:
             break
     return toks
 
@@ -618,7 +618,7 @@ def detect_abbreviations(document, field):
         sentence_spans_ref = document.segmentation("sentences").get_reference_spans()
     else:
         sentence_spans_ref = [Span(0, len(document.content))]
-    tokens = [content[span.lb: span.ub] for span in word_spans]
+    tokens = [content[span.start: span.end] for span in word_spans]
     annotations = document.annotationset(field).get_reference_annotations()
 
     counts = {}
@@ -641,7 +641,7 @@ def detect_abbreviations(document, field):
     for token, indices in positions.items():
         for index in indices:
             for i, span in enumerate(sentence_spans):
-                if span.lb <= index and span.ub >= index:
+                if span.start <= index and span.end >= index:
                     position2sentence[index] = sentence_spans_ref[i]
 
     reg2type = {}
@@ -650,29 +650,29 @@ def detect_abbreviations(document, field):
         for position in positions[key]:
             span = position2sentence[position]
             word_span = word_spans[position]
-            lb = span.lb
-            ub = word_span.lb
+            start = span.start
+            end = word_span.start
             solutions = longest_common_substring(
-                content[lb:ub], tokens[position], casesensitive=False
+                content[start:end], tokens[position], casesensitive=False
             )
             if solutions == []:
                 solutions = longest_common_substring(
-                    normalize(content[lb:ub]), tokens[position], casesensitive=False
+                    normalize(content[start:end]), tokens[position], casesensitive=False
                 )
             solutions = [
                 solution for solution in solutions if len(solution) == len(tokens[position])
             ]
             if len(solutions) > 0:
                 all_solutions.extend(
-                    [[(x + lb, y + lb) for (x, y) in solution] for solution in solutions]
+                    [[(x + start, y + start) for (x, y) in solution] for solution in solutions]
                 )
         if len(all_solutions) > 0:
             all_solutions.sort(key=lambda x: x[-1][0] - x[0][0])
             best_solution = all_solutions[0]
             lo = best_solution[0][0]
             hi = best_solution[-1][0]
-            lo_tokens = [tok for tok in word_spans if tok.lb <= lo and tok.ub > lo]
-            hi_tokens = [tok for tok in word_spans if tok.lb <= hi and tok.ub > hi]
+            lo_tokens = [tok for tok in word_spans if tok.start <= lo and tok.end > lo]
+            hi_tokens = [tok for tok in word_spans if tok.start <= hi and tok.end > hi]
             abbrev_annots = []
             for position in positions[key]:
                 span = word_spans[position]
@@ -680,25 +680,25 @@ def detect_abbreviations(document, field):
                     [
                         annotation
                         for annotation in annotations
-                        if annotation.lb == span.lb and annotation.ub == span.ub
+                        if annotation.start == span.start and annotation.end == span.end
                     ]
                 )
             try:
-                toks = tokens_from_bounds(document, lo_tokens[0].lb, hi_tokens[0].ub)
+                toks = tokens_from_bounds(document, lo_tokens[0].start, hi_tokens[0].end)
                 reg = tokens2regex(toks, re.U + re.I)
                 for match in reg.finditer(content):
                     annots = [
                         annotation
                         for annotation in annotations
                         if (
-                            (annotation.lb <= match.start() and match.start() <= annotation.ub)
-                            or (annotation.lb <= match.end() and match.end() <= annotation.ub)
+                            (annotation.start <= match.start() and match.start() <= annotation.end)
+                            or (annotation.start <= match.end() and match.end() <= annotation.end)
                         )
                     ]
                     if len(annots) > 0:
                         annot = annots[0]
                         new_toks = tokens_from_bounds(
-                            document, min(annot.lb, match.start()), max(annot.ub, match.end())
+                            document, min(annot.start, match.start()), max(annot.end, match.end())
                         )
                         new_reg = tokens2regex(new_toks, re.U + re.I)
                         if new_reg.pattern not in reg2type:
@@ -727,8 +727,8 @@ def detect_abbreviations(document, field):
         fav_type = type_counts[0][0]
         regexp = re.compile(v, re.U + re.I * (" " in v))
         for match in regexp.finditer(content):
-            lo_tok = word_spans.spans.index([t for t in word_spans if t.lb == match.start()][0])
-            hi_tok = word_spans.spans.index([t for t in word_spans if t.ub == match.end()][0]) + 1
+            lo_tok = word_spans.spans.index([t for t in word_spans if t.start == match.start()][0])
+            hi_tok = word_spans.spans.index([t for t in word_spans if t.end == match.end()][0]) + 1
             new_tags.append(Tag(fav_type, lo_tok, hi_tok))
 
     to_remove_tags = []
@@ -737,7 +737,7 @@ def detect_abbreviations(document, field):
             [
                 ann
                 for ann in document.annotationset(field)
-                if new_tag.lb <= ann.lb and ann.ub <= new_tag.ub and ann.value == new_tag.value
+                if new_tag.start <= ann.start and ann.end <= new_tag.end and ann.value == new_tag.value
             ]
         )
     for to_remove_tag in to_remove_tags:
@@ -747,16 +747,16 @@ def detect_abbreviations(document, field):
             pass
 
     all_tags = [sent.feature(field) for sent in document.corpus.sentences]
-    new_tags.sort(key=lambda x: (x.lb, -x.ub))
+    new_tags.sort(key=lambda x: (x.start, -x.end))
     for new_tag in new_tags:
         nth_word = 0
         nth_sent = 0
         sents = document.corpus.sentences
-        while nth_word + len(sents[nth_sent]) - 1 < new_tag.lb:
+        while nth_word + len(sents[nth_sent]) - 1 < new_tag.start:
             nth_word += len(sents[nth_sent])
             nth_sent += 1
-        start = new_tag.lb - nth_word
-        end = new_tag.ub - nth_word
+        start = new_tag.start - nth_word
+        end = new_tag.end - nth_word
         document.corpus.sentences[nth_sent][start][field] = "B-{}".format(new_tag.value)
         all_tags[nth_sent][start] = "B-{0}".format(new_tag.value)
         for index in range(start + 1, end):
@@ -860,21 +860,21 @@ def overriding_label_consistency(sentence, form2entity, trie, entry, ne_entry):
     for i in reversed(range(len(entities))):
         e = entities[i]
         for r in gold:
-            if r.lb == e.lb and r.ub == e.ub:
+            if r.start == e.start and r.end == e.end:
                 del entities[i]
                 break
 
     for i in reversed(range(len(gold))):
         r = gold[i]
         for e in entities:
-            if r.lb >= e.lb and r.ub <= e.ub:
+            if r.start >= e.start and r.end <= e.end:
                 del gold[i]
                 break
 
     for r in gold + entities:
         appendice = "-{}".format(r.value)
-        res[r.lb] = "B{}".format(appendice)
-        for i in range(r.lb + 1, r.ub):
+        res[r.start] = "B{}".format(appendice)
+        for i in range(r.start + 1, r.end):
             res[i] = "I{}".format(appendice)
 
     return res
@@ -908,7 +908,7 @@ class LabelConsistencyProcessor(Processor):
             G = chunk_annotation_from_sentence(p, column=field)
             for entity in G:
                 id = entity.value
-                form = " ".join(p.feature(token_field)[entity.lb: entity.ub])
+                form = " ".join(p.feature(token_field)[entity.start: entity.end])
                 if form not in counts:
                     counts[form] = {}
                 if id not in counts[form]:
@@ -965,7 +965,7 @@ class MapAnnotationsProcessor(Processor):
         ref_annotation = document.annotationset(self._annotation_name)
         ref_annotations = ref_annotation.annotations
         new_annotations = [
-            Tag(self._mapping.get(annotation.value, annotation.value), annotation.lb, annotation.ub)
+            Tag(self._mapping.get(annotation.value, annotation.value), annotation.start, annotation.end)
             for annotation in ref_annotations
             if self._mapping.get(annotation.value, None) != ""
         ]

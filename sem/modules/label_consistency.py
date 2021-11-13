@@ -59,7 +59,7 @@ def label_consistency(
         for entity in G:
             id = entity.value
             form = " ".join(
-                [p.feature(token_column)[index] for index in range(entity.lb, entity.ub)]
+                [p.feature(token_column)[index] for index in range(entity.start, entity.end)]
             )
             if form not in counts:
                 counts[form] = {}
