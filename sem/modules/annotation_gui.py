@@ -87,7 +87,7 @@ def check_in_tagset(tag, tagset):
 
 
 class AnnotationTool(tkinter.Frame):
-    def __init__(self, parent, documents=None, tagset=None, *args, **kwargs):
+    def __init__(self, parent, documents=None, tagset=None, font="Helvetica 12", *args, **kwargs):
         tkinter.Frame.__init__(self, parent, *args, **kwargs)
 
         parent.protocol("WM_DELETE_WINDOW", self.exit)
@@ -103,6 +103,10 @@ class AnnotationTool(tkinter.Frame):
         self.annotations_tick = 0
         self._pipeline_loaded = False
         self._tagset_loaded = False
+        try:
+            self.font = font.rsplit(None, 1)
+        except AttributeError:
+            self.font = font
 
         # True = bind_all
         self.shortcuts = [
@@ -217,7 +221,7 @@ class AnnotationTool(tkinter.Frame):
         self.corpus_doc2id = {}
 
         self.text = tkinter.scrolledtext.ScrolledText(
-            self.annotation_row, wrap=tkinter.WORD, font="Helvetica"
+            self.annotation_row, wrap=tkinter.WORD, font=self.font
         )
         self.text.configure(state="disabled")
         self.text.bind("<Shift-Tab>", self.shift_tab)
@@ -1396,11 +1400,11 @@ def main(argv=None):
     annotation_gui(**vars(parser.parse_args(argv)))
 
 
-def annotation_gui(documents=None, tagset=None, log_level="WARNING"):
+def annotation_gui(documents=None, tagset=None, font="Helvetica 12", log_level="WARNING"):
     root = tkinter.Tk()
     root.title("SEM")
     sem.logger.setLevel(log_level)
-    AnnotationTool(root, documents=documents, tagset=tagset).pack(expand=1, fill="both")
+    AnnotationTool(root, documents=documents, tagset=tagset, font=font).pack(expand=1, fill="both")
     root.mainloop()
 
 
@@ -1408,6 +1412,9 @@ parser = argparse.ArgumentParser("An annotation tool for SEM.")
 
 parser.add_argument("-d", "--documents", nargs="*", help="Documents to load at startup.")
 parser.add_argument("-t", "--tagset", help="The tagset to load at startup.")
+parser.add_argument(
+    "-f", "--font", default="Helvetica 12", help="The font to use (default: %(default)s)."
+)
 parser.add_argument(
     "-l",
     "--log",
