@@ -80,12 +80,47 @@ class Pipeline(sem.processors.Processor):
         self._pipes.remove(pipe)
 
     def process_document(self, document, **kwargs):
+        """Process a document. Every element of pipeline will process the document sequentially.
+        Some elements may be disactivated depending on the mode of the pipeline. Pipes in "label"
+        mode will not get executed in "train" model. For example, the named entity pipes should
+        not be executed when training an NER system.
+
+        Parameters
+        ----------
+        input_data : str
+            the text to process.
+        """
         for pipe in self._pipes:
             if pipe.check_mode(self.pipeline_mode):
                 pipe.process_document(document, **kwargs)
             else:
                 sem.logger.info("pipe %s not executed", pipe)
         return document  # allows multiprocessing
+
+    def process_text(self, text, **kwargs):
+        """Process textual data (string). It is just an overlay to using your input text
+        as the content of the document.
+
+        Parameters
+        ----------
+        input_data : str
+            the text to process.
+        """
+        return self.process_document(sem.storage.Document(name="", content=text), **kwargs)
+
+    def process(self, input_data, **kwargs):
+        """Process is the generic method that works on both string and sem.storage.Document. Use it
+        when you do not know in advance the type of the input data or want to save some keystrokes.
+
+        Parameters
+        ----------
+        input_data : Union[str, sem.storage.Document]
+            the data to process.
+        """
+        if type(input_data) == str:
+            return self.process_text(input_data, **kwargs)
+        else:
+            return self.process_document(input_data, **kwargs)
 
 
 def load_workflow(workflow, force_format="default", pipeline_mode="all"):
@@ -167,6 +202,7 @@ def load_workflow(workflow, force_format="default", pipeline_mode="all"):
 
 
 def load_pipeline(path, auto_download=True):
+    """See sem.pipelines.load"""
     warnings.filterwarnings("always", category=DeprecationWarning)
     warnings.warn("'load_pipeline' is deprecated, use 'load' instead", DeprecationWarning)
     warnings.filterwarnings("default", category=DeprecationWarning)
@@ -181,7 +217,7 @@ def load(path, auto_download=True):
 
     Parameters
     ----------
-    path : str or pathlib.Path
+    path : Union[str, pathlib.Path]
         The path (relative or absolute) to the pipeline.
         SEM will look for the file in the following folders:
         "." and sem.PIPELINE_DIR (defined in sem.__init__.py)
@@ -238,11 +274,23 @@ def load(path, auto_download=True):
 
 
 def save(pipeline, path, mode="w"):
+    """Save a pipeline as a serialized file on the computer.
+
+    Parameters
+    ----------
+    pipeline : sem.pipelines.Pipeline
+        the pipeline to save.
+    path : Union[str, pathlib.Path]
+        the path where to save the pipeline.
+    mode : str (default="w")
+        the file mode (can be "w" or "x").
+    """
     with open(path, f"{mode}b") as output_stream:
         dill.dump(pipeline, output_stream)
 
 
 def save_pipeline(pipeline, path):
+    """see sem.pipelines.save"""
     warnings.filterwarnings("always", category=DeprecationWarning)
     warnings.warn("'save_pipeline' is deprecated, use 'save' instead", DeprecationWarning)
     warnings.filterwarnings("default", category=DeprecationWarning)
