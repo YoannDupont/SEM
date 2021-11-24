@@ -233,14 +233,14 @@ def evaluate(
         document = sem.importers.conll_file(infile, keys, keys[0], encoding=ienc)
         L = AnnotationSet(
             "", annotations=L, reference=document.segmentation("tokens")
-        ).get_reference_annotations()
+        ).char_offsets()
         R = AnnotationSet(
             "", annotations=R, reference=document.segmentation("tokens")
-        ).get_reference_annotations()
+        ).char_offsets()
     elif input_format == "brat":
         document = sem.importers.brat_file(reference_file)
-        L = document.annotationset("NER").get_reference_annotations()
-        R = sem.importers.brat_file(infile).annotationset("NER").get_reference_annotations()
+        L = document.annotationset("NER").char_offsets()
+        R = sem.importers.brat_file(infile).annotationset("NER").char_offsets()
     elif input_format in ("sem", "SEM"):
         document = sem.importers.sem_document_from_xml(reference_file)
         system = sem.importers.sem_document_from_xml(infile)
@@ -249,8 +249,8 @@ def evaluate(
             annotation_name = list(common_annotations)[0]
         if annotation_name is None:
             raise RuntimeError("Could not find an annotation set to evaluate: please provide one")
-        L = document.annotationset(annotation_name).get_reference_annotations()
-        R = system.annotationset(annotation_name).get_reference_annotations()
+        L = document.annotationset(annotation_name).char_offsets()
+        R = system.annotationset(annotation_name).char_offsets()
     else:
         raise RuntimeError("format not handled: {0}".format(input_format))
 

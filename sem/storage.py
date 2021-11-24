@@ -283,11 +283,11 @@ class AnnotationSet:
     def sort(self):
         self._annotations.sort(key=lambda x: (x.start, -x.end, x.value))
 
-    def get_reference_annotations(self):
+    def char_offsets(self):
         if self.reference is None:
             return [Tag(a.value, a.start, a.end) for a in self.annotations]
         else:
-            reference_spans = self.reference.get_reference_spans()
+            reference_spans = self.reference.char_offsets()
             return [
                 Tag(
                     element.value,
@@ -296,6 +296,16 @@ class AnnotationSet:
                 )
                 for element in self.annotations
             ]
+
+    def get_reference_annotations(self):
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn(
+            "'get_reference_annotations' is deprecated, use 'char_offsets' instead",
+            DeprecationWarning
+        )
+        warnings.filterwarnings("default", category=DeprecationWarning)
+
+        return self.char_offsets()
 
 
 def get_top_level(annotations):
@@ -729,17 +739,30 @@ class Segmentation:
     def spans(self):
         return self._spans
 
-    def get_reference_spans(self):
-        """returns spans according to the reference chain."""
+    def char_offsets(self):
+        """return a list[Span] according to the reference chain of segmentation. This *should* give
+        character offsets for the spans. If the Segmentation object has no reference, spans
+        will be returned unchanged, which can be the wrong result.
+        """
 
         if self.reference is None:
             return self.spans
         else:
-            reference_spans = self.reference.get_reference_spans()
+            reference_spans = self.reference.char_offsets()
             return [
                 Span(reference_spans[element.start].start, reference_spans[element.end - 1].end)
                 for element in self.spans
             ]
+
+    def get_reference_spans(self):
+        """returns spans according to the reference chain."""
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn(
+            "'get_reference_spans' is deprecated, use 'char_offsets' instead", DeprecationWarning
+        )
+        warnings.filterwarnings("default", category=DeprecationWarning)
+
+        return self.char_offsets()
 
 
 class Document:
@@ -920,7 +943,7 @@ class Document:
         if annot is not None and (
             annot.reference is None or annot.reference.name != reference_name
         ):
-            spans = self.segmentation(reference_name).get_reference_spans()
+            spans = self.segmentation(reference_name).char_offsets()
             begin = 0
             i = 0
             for annotation in annot:
@@ -942,9 +965,9 @@ class Document:
 
     def add_to_corpus(self, annotation_name, filter=get_top_level, scheme="BIO"):
         base_annotations = self.annotationset(annotation_name) or AnnotationSet(annotation_name)
-        annotations = base_annotations.get_reference_annotations()
+        annotations = base_annotations.char_offsets()
 
-        spans = self.segmentation("tokens").get_reference_spans()
+        spans = self.segmentation("tokens").char_offsets()
         begin = 0
         i = 0
         to_remove = []  # annotations that cannot be aligned with tokens will be removed

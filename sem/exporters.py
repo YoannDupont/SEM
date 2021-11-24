@@ -116,7 +116,10 @@ class Exporter:
 
     def document_to_unicode(self, document, couples, **kwargs):
         warnings.filterwarnings("always", category=DeprecationWarning)
-        warnings.warn("'document_to_unicode' is deprecated, use 'document_to_string' instead", DeprecationWarning)
+        warnings.warn(
+            "'document_to_unicode' is deprecated, use 'document_to_string' instead",
+            DeprecationWarning
+        )
         warnings.filterwarnings("default", category=DeprecationWarning)
         return self.document_to_string(document, couples, **kwargs)
 
@@ -138,7 +141,7 @@ class BratExporter(Exporter):
         content = document.content
         parts = []
         for id, annotation in enumerate(
-            document.annotationset(lowers["ner"]).get_reference_annotations(), 1
+            document.annotationset(lowers["ner"]).char_offsets(), 1
         ):
             parts.append(
                 "T{id}\t{annotation.value} {annotation.start} {annotation.end}\t{txt}".format(
@@ -255,7 +258,7 @@ class GateExporter(Exporter):
             couples["ner"] = "NER"
         if "ner" in couples:
             annotationset = document.annotationset(couples["ner"])
-            annotations = annotationset.get_reference_annotations()
+            annotations = annotationset.char_offsets()
             boundaries = set()
             for annotation in annotations:
                 boundaries.add(annotation.start)
@@ -316,7 +319,7 @@ class HTMLInlineExporter(Exporter):
         content = document.original_content[:]
 
         position2html = {}
-        annotations = document.annotationset(key).get_reference_annotations()
+        annotations = document.annotationset(key).char_offsets()
         for annotation in reversed(annotations):
             start = annotation.start
             end = annotation.end
@@ -395,7 +398,7 @@ class HTMLExporter(Exporter):
         return self.makeHTML_document(document, pos_html, chunk_html, ner_html, encoding)
 
     def add_annotation_document(self, document, column):
-        annotations = document.annotationset(column).get_reference_annotations()[::-1]
+        annotations = document.annotationset(column).char_offsets()[::-1]
         content = document.content
 
         parts = []
@@ -678,11 +681,11 @@ class AnalecTEIExporter(Exporter):
 
         content = document.content
         paragraphs = (
-            document.segmentation("paragraphs").get_reference_spans()
+            document.segmentation("paragraphs").char_offsets()
             if document.segmentation("paragraphs") is not None
             else [Span(0, len(content))]
         )
-        NEs = document.annotationset(field).get_reference_annotations()
+        NEs = document.annotationset(field).char_offsets()
         values = set([entity.value for entity in NEs])
 
         nth = dict([(value, 0) for value in values])
@@ -827,8 +830,8 @@ class TEINPExporter(Exporter):
             "PROWH": "PR_WH",
             "P+PRO": "PR_PP",
         }
-        words = document.segmentation("tokens").get_reference_spans()
-        paragraphs = document.segmentation("paragraphs").get_reference_spans() or Span(
+        words = document.segmentation("tokens").char_offsets()
+        paragraphs = document.segmentation("paragraphs").char_offsets() or Span(
             0, len(content)
         )
         np_chunks = [
@@ -995,11 +998,11 @@ class REDENTEIExporter(Exporter):
 
         content = document.content
         paragraphs = (
-            document.segmentation("paragraphs").get_reference_spans()
+            document.segmentation("paragraphs").char_offsets()
             if document.segmentation("paragraphs") is not None
             else [Span(0, len(content))]
         )
-        NEs = document.annotationset(field).get_reference_annotations()
+        NEs = document.annotationset(field).char_offsets()
 
         for paragraph in paragraphs:
             entities = [

@@ -615,11 +615,11 @@ def detect_abbreviations(document, field):
     word_spans = document.segmentation("tokens")
     if document.segmentation("sentences") is not None:
         sentence_spans = document.segmentation("sentences").spans
-        sentence_spans_ref = document.segmentation("sentences").get_reference_spans()
+        sentence_spans_ref = document.segmentation("sentences").char_offsets()
     else:
         sentence_spans_ref = [Span(0, len(document.content))]
     tokens = [content[span.start: span.end] for span in word_spans]
-    annotations = document.annotationset(field).get_reference_annotations()
+    annotations = document.annotationset(field).char_offsets()
 
     counts = {}
     positions = {}

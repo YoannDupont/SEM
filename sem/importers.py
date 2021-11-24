@@ -451,6 +451,8 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
         the encoding of the file.
     tagset_name : str [None]
         the name of the annotation set to load.
+    discontinuous : str ["split"]
+        the name of the annotation set to load ("split", "merge").
     """
     tagset_name = tagset_name or "NER"
     path = pathlib.Path(filename)

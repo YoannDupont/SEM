@@ -522,7 +522,7 @@ class AnnotationTool(tkinter.Frame):
                                     reference=None,
                                     annotations=doc.annotationset(
                                         annotation_name
-                                    ).get_reference_annotations(),
+                                    ).char_offsets(),
                                 )
                             )
                     for doc in [doc for doc in docs if doc.name not in names]:
@@ -542,7 +542,7 @@ class AnnotationTool(tkinter.Frame):
                                     reference=None,
                                     annotations=documents[-1]
                                     .annotationset(annotation_name)
-                                    .get_reference_annotations(),
+                                    .char_offsets(),
                                 )
                             )
             else:
@@ -1211,7 +1211,7 @@ class AnnotationTool(tkinter.Frame):
             self.text.configure(state="disabled")
 
             if self.doc.annotationset(self.annotation_name):
-                annots = self.doc.annotationset(self.annotation_name).get_reference_annotations()
+                annots = self.doc.annotationset(self.annotation_name).char_offsets()
                 for nth_annot, annot in enumerate(annots):
                     annot.levels = annot.value.split(".")
                     self.add_tag(annot.levels[0], annot.start, annot.end)
@@ -1389,7 +1389,7 @@ class AnnotationTool(tkinter.Frame):
         for key in self.doc.annotationsets:
             annotation = self.doc.annotationset(key)
             self.doc.add_annotationset(
-                AnnotationSet(annotation.name, annotations=annotation.get_reference_annotations())
+                AnnotationSet(annotation.name, annotations=annotation.char_offsets())
             )
         self.current_annotations = self.doc.annotationset(self.annotation_name)
         self.load_document(same_doc=True)
