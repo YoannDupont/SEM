@@ -876,7 +876,7 @@ class AnnotationTool(tkinter.Frame):
                 self.adder.current_annotation = tag
                 index = 0
                 for annot in self.current_annotations:
-                    if annot.start > tag.start:
+                    if annot.start >= tag.start:
                         break
                     index += 1
                 key = "{}".format(tag)
@@ -1227,7 +1227,7 @@ class AnnotationTool(tkinter.Frame):
                     )
                     self.annot2treeitems[self.annotation_name]["{}".format(annot)] = item
                     self.treeitem2annot[item] = annot
-                    self.current_annotations.add(annot)
+                    self.current_annotations.append(annot)
                     if self.adder.shortcut_trie.goto(annot.levels[0]) is None:
                         separator = find_potential_separator(annot.value)
                         if separator is not None:

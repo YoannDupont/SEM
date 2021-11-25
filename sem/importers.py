@@ -464,7 +464,7 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
 
     document = Document(pathlib.Path(txt_file).name, encoding=encoding, mime_type="text/plain")
     document.content = open(txt_file, "r", encoding=encoding).read().replace("\r", "\n")
-    annotations = AnnotationSet(tagset_name)
+    brat_anns = []
     for line in open(ann_file, "r", encoding=encoding, newline=""):
         line = line.strip()
         if line != "" and line.startswith("T"):
@@ -475,17 +475,20 @@ def brat_file(filename, encoding="utf-8", tagset_name=None, discontinuous="split
                     start, end = bound.split()
                     start = int(start)
                     end = int(end)
-                    annotations.append(Tag(value=value, start=start, end=end))
+                    brat_anns.append([int(parts[0][1:]), value, start, end])
             elif discontinuous == "merge":
                 parts = bounds.split()
                 start = int(parts[0])
                 end = int(parts[-1])
-                annotations.append(Tag(value=value, start=start, end=end))
+                brat_anns.append([int(parts[0][1:]), value, start, end])
             else:
                 raise ValueError(
                     f'Invalid discontinuous annotation handling: "{discontinuous}" (split, merge)'
                 )
-    annotations.sort()
+    brat_anns.sort(key=lambda x: x[0])
+    annotations = AnnotationSet(
+        tagset_name, annotations=[Tag(value, start, end) for id, value, start, end in brat_anns]
+    )
     document.add_annotationset(annotations)
 
     return document
