@@ -60,6 +60,16 @@ class SemTkMainWindow(ttk.Frame):
 
         ttk.Frame.__init__(self, root)
 
+        self.parent = root
+
+        self.global_menu = tkinter.Menu(root)
+        self.file_menu = tkinter.Menu(self.global_menu, tearoff=False)
+        self.global_menu.add_cascade(label="File", underline=0, menu=self.file_menu)
+        self.file_menu.add_command(
+            label="Exit", underline=0, command=self.exit
+        )
+        self.parent.config(menu=self.global_menu)
+
         self.resource_dir = resource_dir
 
         self.current_files = None
@@ -161,6 +171,10 @@ class SemTkMainWindow(ttk.Frame):
             return
 
         SEMTkTrainInterface(self.file_selector, None, None)
+
+    def exit(self, event=None):
+        self.destroy()
+        self.parent.destroy()
 
 
 def main(argv=None):

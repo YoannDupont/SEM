@@ -159,6 +159,10 @@ class AnnotationTool(tkinter.Frame):
         self.file_menu.add_command(
             label="Load pipeline...", underline=5, command=self.load_pipeline
         )
+        self.file_menu.add_separator()
+        self.file_menu.add_command(
+            label="Exit", underline=0, command=self.exit
+        )
         # edit menu
         self.edit_menu = tkinter.Menu(self.global_menu, tearoff=False)
         self.global_menu.add_cascade(label="Edit", underline=0, menu=self.edit_menu)
