@@ -161,12 +161,26 @@ class Tag:
         return Span(self._span.start, self._span.end)
 
     @property
+    def lb(self):
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn("'lb' is deprecated, use 'start' instead", DeprecationWarning)
+        warnings.filterwarnings("default", category=DeprecationWarning)
+        return self._span.start
+
+    @property
     def start(self):
         return self._span.start
 
     @start.setter
     def start(self, start):
         self._span.start = start
+
+    @property
+    def ub(self):
+        warnings.filterwarnings("always", category=DeprecationWarning)
+        warnings.warn("'ub' is deprecated, use 'end' instead", DeprecationWarning)
+        warnings.filterwarnings("default", category=DeprecationWarning)
+        return self._span.end
 
     @property
     def end(self):
@@ -363,7 +377,7 @@ def chunks_to_annotation(lst, shift=0, strict=False):
         elif flag in IN:
             if value != tag[2:] and strict:
                 raise ValueError(
-                    'Got different values for same chunk: "{}" <> "{}"'.format(tag[2:], value)
+                    'Got different values for same chunk: "{}" <> "{}"'.format(value, tag[2:])
                 )
             length += 1
             if index == last:  # last token ==> add annotation
