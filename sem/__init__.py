@@ -40,7 +40,7 @@ ON_WINDOWS = SYSTEM == "windows"
 
 _name = "SEM"
 
-__version__ = "4.0.0-alpha.1"
+__version__ = "4.0.0-alpha.2"
 
 
 def name():
